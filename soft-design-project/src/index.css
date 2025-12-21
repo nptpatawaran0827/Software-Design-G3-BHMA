@@ -30,6 +30,24 @@ body {
   min-height: 100vh;
 }
 
+/* App centering wrapper */
+.app-root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+.app-content {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  align-items: center;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -66,3 +84,71 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Login page styles */
+.login-page {
+  /* Changed: Use 100vw and 100vh to force the container to fill the screen */
+  width: 100vw; 
+  height: 100vh;
+  
+  display: flex;
+  justify-content: center; /* Centers horizontally */
+  align-items: center;     /* Centers vertically */
+  
+  /* Added: reset margins/positioning in case parent containers have padding */
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #f8f9fa; /* Optional: light gray background */
+  padding: 0;
+  margin: 0;
+  z-index: 9999; /* Ensures it sits above everything else */
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  /* Changed: Standard background for visibility, adjust as needed */
+  background: #ffffff; 
+  border: 1px solid rgba(0,0,0,0.1);
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  color: #333;
+  text-align: center;
+}
+
+/* Ensure inputs are centered within the card */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+  text-align: left; /* Better for readability */
+}
+
+.field input {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  background: #fff;
+  color: #212529;
+  width: 100%;
+}
+
+.login-card button {
+  width: 100%; /* Makes button fill the card width */
+  padding: 0.75rem;
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-card button:hover {
+  background-color: #0b5ed7;
+}
+
+
