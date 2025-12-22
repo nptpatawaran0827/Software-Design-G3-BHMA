@@ -1,33 +1,45 @@
-import { useState } from 'react'
+import { useState } from 'react';
+// Import your logo image here
+import logo from './assets/logo.png'; 
 
 function LoginPage({ onLoginSuccess }) {
-	const [username, setUsername] = useState('')
-	const [password, setPassword] = useState('')
-	const [error, setError] = useState('')
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
-	function handleSubmit(e) {
-		e.preventDefault()
-		setError('')
-		if (!username || !password) {
-			setError('Please enter both username and password')
-			return
-		}
-		// Mock auth: accept admin / password
-		if (username === 'admin' && password === 'password') {
-			localStorage.setItem('authToken', 'demo-token')
-			onLoginSuccess && onLoginSuccess()
-		} else {
-			setError('Invalid username or password')
-		}
-	}
+    function handleSubmit(e) {
+        e.preventDefault();
+        setError('');
+        if (!username || !password) {
+            setError('Please enter both username and password');
+            return;
+        }
+        if (username === 'admin' && password === 'password') {
+            localStorage.setItem('authToken', 'demo-token');
+            onLoginSuccess && onLoginSuccess();
+        } else {
+            setError('Invalid username or password');
+        }
+    }
 
-	return (
-        <div className="login-page d-flex align-items-center justify-content-center vh-100 bg-light">
-            <form className="login-card p-4 shadow-sm bg-white rounded" style={{ width: '100%', maxWidth: '400px' }} onSubmit={handleSubmit}>
-                <h1 className="text-center mb-4">Sign in</h1>
+    return (
+        /* The "login-page" class now handles the blue gradient background from our CSS */
+        <div className="login-page">
+            <form className="login-card shadow bg-white" onSubmit={handleSubmit}>
+                {/* Logo Section */}
+                <div className="text-center mb-4">
+                    <img 
+                        src={logo} 
+                        alt="Barangay Logo" 
+                        style={{ width: '200px', height: '200px', objectFit: 'contain' }} 
+                        className="mb-3"
+                    />
+                    <h2 className="fw-bold" style={{ color: '#333' }}>Log in</h2>
+                 
+                </div>
 
                 <div className="mb-3">
-                    <label className="form-label">Username</label>
+                    <label className="form-label fw-semibold">Username</label>
                     <input
                         className="form-control"
                         value={username}
@@ -38,7 +50,7 @@ function LoginPage({ onLoginSuccess }) {
                 </div>
 
                 <div className="mb-3">
-                    <label className="form-label">Password</label>
+                    <label className="form-label fw-semibold">Password</label>
                     <input
                         type="password"
                         className="form-control"
@@ -49,17 +61,18 @@ function LoginPage({ onLoginSuccess }) {
                     />
                 </div>
 
-                <button type="submit" className="btn btn-primary w-100 mt-2">Sign in</button>
+                <button type="submit" className="btn text-white w-100 mt-2 py-2" style={{ backgroundColor: '#4da3ff', fontWeight: 'bold' }}>
+                    Log in
+                </button>
                 
-                <p className="text-muted text-center mt-3 small">
+                <p className="text-muted text-center mt-4 small">
                     Tip: try <strong>admin</strong> / <strong>password</strong>
                 </p>
 
-                {error && <div className="alert alert-danger mt-3 py-2 text-center">{error}</div>}
+                {error && <div className="alert alert-danger mt-3 py-2 text-center" style={{ fontSize: '0.9rem' }}>{error}</div>}
             </form>
         </div>
-	);
+    );
 }
 
-
-export default LoginPage
+export default LoginPage;

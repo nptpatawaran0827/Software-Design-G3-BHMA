@@ -59,22 +59,37 @@ body, html {
 }
 
 /* --- Keep your Login Page styles below --- */
+/* --- Updated Login Page Styles --- */
 .login-page {
   position: fixed;
   inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f8f9fa;
+  /* Using your specific blue #4da3ff with a gradient */
+  background: linear-gradient(135deg, #4da3ff 0%, #80bdff 100%);
   z-index: 9999;
 }
+
 .login-card {
   width: 100%;
   max-width: 420px;
   background: #ffffff;
   padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  /* Increased border radius to match your header's rounded-4 (approx 16px) */
+  border-radius: 16px; 
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* Optional: Make the Sign In button match your header exactly */
+.login-card button {
+  background-color: #4da3ff;
+  border: none;
+  font-weight: bold;
+}
+
+.login-card button:hover {
+  background-color: #3b8ce0; /* Slightly darker on hover */
 }
 
 /* Sidebar Nav Link Hover Effects */
