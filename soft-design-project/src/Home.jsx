@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import RecordsPage from './RecordsPage';
 import AnalyticsPage from './AnalyticsPage';
 
-// Simple CSS Pie Chart Component (NO EXTERNAL LIBRARIES NEEDED)
 const SimplePieChart = ({ data }) => {
   const total = data.reduce((sum, item) => sum + item.value, 0);
   let currentAngle = 0;
@@ -50,40 +49,119 @@ function Home({ onLogout }) {
   const [activeTab, setActiveTab] = useState('Home');
   const [filter, setFilter] = useState('All Activities');
   const [activities, setActivities] = useState([]);
+  
+  const [shouldAutoOpenForm, setShouldAutoOpenForm] = useState(false);
 
-  // Database placeholders
   const dbStats = {
-    totalPatients: 670,
-    newPatients: 13,
-    patientsWithDisability: 10,
-    totalReports: 13,
-    maleCount: 402,
-    femaleCount: 268
+    totalPatients: 0,
+    newPatients: 0,
+    patientsWithDisability: 0,
+    totalReports: 0,
+    maleCount: 0,
+    femaleCount: 0
   };
 
-  // Chart data
   const chartData = [
     { label: 'Tonsilitis', value: 30, color: '#FFB3A7' },
     { label: 'UTI', value: 20, color: '#86EFAC' },
     { label: 'Ulcer', value: 50, color: '#67E8F9' }
   ];
 
+  const handleAddPatient = () => {
+    setShouldAutoOpenForm(true);
+    setActiveTab('Records');
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'Records') {
+      setShouldAutoOpenForm(false);
+    }
+  }, [activeTab]);
+
+
+  const getActivityIcon = (type) => {
+    switch(type) {
+      case 'New Patient':
+        return 'bi-person-plus-fill';
+      case 'Updated Record':
+        return 'bi-pencil-square';
+      case 'Deleted Record':
+        return 'bi-trash-fill';
+      case 'Report Generated':
+        return 'bi-file-earmark-text-fill';
+      default:
+        return 'bi-circle-fill';
+    }
+  };
+
+
+  const getActivityIconColor = (type) => {
+    switch(type) {
+      case 'New Patient':
+        return 'text-success';
+      case 'Updated Record':
+        return 'text-primary';
+      case 'Deleted Record':
+        return 'text-danger';
+      case 'Report Generated':
+        return 'text-info';
+      default:
+        return 'text-secondary';
+    }
+  };
+
+  // ACTIVITY SECTION //
+  const formatActivityMessage = (activity) => {
+    switch(activity.type) {
+      case 'New Patient':
+        return (
+          <span>New Patient Added: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
+        );
+      case 'Updated Record':
+        return (
+          <span>Record Updated: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
+        );
+      case 'Deleted Record':
+        return (
+          <span>Record Deleted: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
+        );
+      case 'Report Generated':
+        return (
+          <span>Report Generated for: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
+        );
+      default:
+        return <span>Activity recorded at {activity.time}.</span>;
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'Records':
-        return <RecordsPage />;
+        return <RecordsPage autoOpenForm={shouldAutoOpenForm} />;
+        
       case 'Analytics':
         return <AnalyticsPage />;
+        
       case 'Scan & Upload':
         return <div className="p-4"><h3>Scan & Upload Page</h3></div>;
+        
       default:
         return (
           <div className="p-4">
+            <div className="position-relative">
+              <button 
+                className="btn btn-outline-dark position-absolute top-0 end-0" 
+                onClick={onLogout}
+                style={{ zIndex: 10 }}
+              >
+                Logout
+              </button>
+            </div>
+
             <h2 className="fw-bold mb-4 text-uppercase">WELCOME BACK, ADMIN!</h2>
 
-            {/* SECTION 1: RECENT ACTIVITY */}
             <div className="card border-0 shadow-sm rounded-4 mb-4">
-              <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom-0">
+              <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
                 <h5 className="mb-0 fw-bold">Recent Activity</h5>
                 <select 
                   className="form-select form-select-sm w-auto" 
@@ -94,16 +172,18 @@ function Home({ onLogout }) {
                   <option value="New Patients">New Patients</option>
                   <option value="Updated Records">Updated Records</option>
                   <option value="Deleted Records">Deleted Records</option>
+                  <option value="Report Generated">Report Generated</option>
                 </select>
               </div>
+              
               <div className="card-body p-0">
                 <ul className="list-group list-group-flush">
                   {activities.length > 0 ? (
                     activities.map((item, index) => (
                       <li key={index} className="list-group-item d-flex align-items-center py-3 border-0">
-                        <i className={`bi ${item.icon} ${item.iconColor} me-3 fs-5`}></i>
+                        <i className={`bi ${getActivityIcon(item.type)} ${getActivityIconColor(item.type)} me-3 fs-5`}></i>
                         <div>
-                          <span>New Patient Added: <strong>{item.patientName}</strong> (ID {item.id}) at {item.time}.</span>
+                          {formatActivityMessage(item)}
                         </div>
                       </li>
                     ))
@@ -116,16 +196,17 @@ function Home({ onLogout }) {
               </div>
             </div>
 
-            {/* SECTION 2: DASHBOARD */}
             <h2 className="text-success fw-bold mb-3">Dashboard</h2>
             <div className="bg-white p-4 rounded-4 shadow-sm border">
               
-              <button className="btn btn-success fw-bold px-4 mb-4 rounded-3">
+              <button 
+                className="btn btn-success fw-bold px-4 mb-4 rounded-3"
+                onClick={handleAddPatient}
+              >
                 <i className="bi bi-plus-lg me-2"></i>Add Patient
               </button>
 
               <div className="row g-3">
-                {/* Left side: 4 Stat Cards */}
                 <div className="col-lg-5">
                   <div className="row g-3">
                     <div className="col-6">
@@ -159,7 +240,6 @@ function Home({ onLogout }) {
                   </div>
                 </div>
 
-                {/* Middle: Gender Distribution */}
                 <div className="col-lg-4">
                   <div className="border rounded-4 overflow-hidden h-100 d-flex flex-column">
                     <div className="text-white text-center py-2 fw-bold" style={{backgroundColor: '#6CB4EE'}}>
@@ -178,7 +258,6 @@ function Home({ onLogout }) {
                   </div>
                 </div>
 
-                {/* Right: Common Diagnosis Chart */}
                 <div className="col-lg-3">
                   <div className="border rounded-4 p-3 h-100">
                     <h6 className="fw-bold text-center mb-3">Common Diagnosis</h6>
@@ -194,11 +273,6 @@ function Home({ onLogout }) {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Logout Button Footer */}
-            <div className="mt-5 text-end">
-              <button className="btn btn-outline-dark" onClick={onLogout}>Logout</button>
             </div>
           </div>
         );

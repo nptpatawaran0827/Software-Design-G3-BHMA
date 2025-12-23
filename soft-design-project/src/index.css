@@ -105,3 +105,8 @@ body, html {
   overflow-y: auto;
   background-color: #f8f9fa;
 }
+
+.table.table-hover thead th {
+    background-color: rgba(112, 185, 221, 0.19) !important;
+    border-bottom: 2px solid #70B9DD;
+}
