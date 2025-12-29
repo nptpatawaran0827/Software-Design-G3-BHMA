@@ -60,25 +60,27 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     setEditingRecord(null);
   };
 
-  /**
-   * Handle Form Submission
-   * Handles both creating and updating records
-   */
   const handleSubmitForm = async (formData) => {
     try {
       if (editingRecord) {
         // UPDATE MODE
+        const updatedRecord = {
+          ...formData,
+          Health_Record_ID: editingRecord.Health_Record_ID,
+          status: editingRecord.status 
+        };
+        
         setRecords(prevRecords =>
           prevRecords.map(record =>
-            record.id === formData.id ? formData : record
+            record.Health_Record_ID === editingRecord.Health_Record_ID ? updatedRecord : record 
           )
         );
-        console.log('Record updated:', formData);
+        console.log('Record updated:', updatedRecord);
       } else {
         // CREATE MODE
         const newRecord = {
           ...formData,
-          id: Date.now(),
+          Health_Record_ID: Date.now(), // Generate temporary ID (replace with actual DB ID after API call)
           status: 'Active'
         };
         setRecords(prevRecords => [...prevRecords, newRecord]);
@@ -94,22 +96,19 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     }
   };
 
-  /**
-   * Handle Toggle Status
-   */
   const handleToggleStatus = async (recordId, newStatus) => {
     try {
       setRecords(prevRecords =>
         prevRecords.map(record =>
-          record.id === recordId ? { ...record, status: newStatus } : record
+          record.Health_Record_ID === recordId ? { ...record, status: newStatus } : record
         )
       );
       
-      if (editingRecord && editingRecord.id === recordId) {
+      if (editingRecord && editingRecord.Health_Record_ID === recordId) {
         setEditingRecord(prev => ({ ...prev, status: newStatus }));
       }
       
-      console.log(`Record ${recordId} status changed to: ${newStatus}`);
+      console.log(`✓ Record ${recordId} status changed to: ${newStatus}`); 
       
     } catch (err) {
       console.error('Error updating status:', err);
@@ -117,9 +116,6 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     }
   };
 
-  /**
-   * Handle Delete Record
-   */
   const handleDeleteRecord = async (recordId) => {
     if (!window.confirm('Are you sure you want to delete this record?')) {
       return;
@@ -127,7 +123,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     
     try {
       setRecords(prevRecords =>
-        prevRecords.filter(record => record.id !== recordId)
+        prevRecords.filter(record => record.Health_Record_ID !== recordId)
       );
       console.log(`Record ${recordId} deleted`);
       
@@ -221,7 +217,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                     </tr>
                   ) : (
                     records.map((record) => (
-                      <tr key={record.id}>
+                      <tr key={record.Health_Record_ID}>
                         <td className="fw-medium">{record.Resident_Name}</td>
                         <td>{record.Age}</td>
                         <td>{record.Sex}</td>
@@ -248,7 +244,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                           </button>
                           <button 
                             className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDeleteRecord(record.id)}
+                            onClick={() => handleDeleteRecord(record.Health_Record_ID)}
                             title="Delete record"
                           >
                             Delete

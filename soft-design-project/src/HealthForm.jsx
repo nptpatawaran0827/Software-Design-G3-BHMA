@@ -113,11 +113,20 @@ const HealthForm = ({
   /**
    * Handle Status Toggle
    * Only available in edit mode
+   * 
+   * CHANGES:
+   * - Fixed: Now uses Health_Record_ID (database field name) instead of id
+   * - Added: Console logging for debugging
+   * - Added: Validation check to ensure onToggleStatus exists before calling
    */
   const handleStatusToggle = () => {
     if (onToggleStatus && initialData) {
       const newStatus = initialData.status === 'Active' ? 'Not Active' : 'Active';
+      // FIXED: Use initialData.Health_Record_ID (database field)
       onToggleStatus(initialData.Health_Record_ID, newStatus);
+      console.log(`Toggling status for record ${initialData.Health_Record_ID} to: ${newStatus}`); // ADDED: Debug logging
+    } else {
+      console.error('Cannot toggle status: missing onToggleStatus function or initialData'); // ADDED: Error handling
     }
   };
 
