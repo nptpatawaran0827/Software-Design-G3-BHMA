@@ -207,7 +207,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                         <div>
                           <svg 
                             className="mb-3" 
-                            width="48" 
+                            width="48"
                             height="48" 
                             fill="currentColor" 
                             viewBox="0 0 16 16"
@@ -222,12 +222,12 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                   ) : (
                     records.map((record) => (
                       <tr key={record.id}>
-                        <td className="fw-medium">{record.residentName}</td>
-                        <td>{record.age}</td>
-                        <td>{record.sex}</td>
+                        <td className="fw-medium">{record.Resident_Name}</td>
+                        <td>{record.Age}</td>
+                        <td>{record.Sex}</td>
                         <td>
-                          {record.dateVisited ? 
-                            new Date(record.dateVisited).toLocaleDateString() : 
+                          {record.Date_Visited ? 
+                            new Date(record.Date_Visited).toLocaleDateString() : 
                             'N/A'
                           }
                         </td>
