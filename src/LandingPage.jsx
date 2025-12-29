@@ -2,20 +2,29 @@ import React, { useState } from "react";
 import "./style/LandingPage.css"; 
 import logo from "./assets/logo.png";
 
-function LandingPage({ onHealthWorkerClick }) {
+
+
+
+function LandingPage({ onHealthWorkerClick, onResidentClick }) {
   const [clickedRole, setClickedRole] = useState(null);
 
   const handleRoleSelection = (role) => {
     setClickedRole(role);
     
-    // If Health Worker is clicked, trigger the prop from App.jsx
     if (role === 'health-worker') {
       setTimeout(() => {
-        onHealthWorkerClick();
+        if (onHealthWorkerClick) onHealthWorkerClick();
       }, 150);
-    } else {
-      // Logic for Resident can be added here later
-      console.log("Resident selected");
+    } else if (role === 'resident') {
+      // Log for debugging
+      console.log('LandingPage: resident button clicked, invoking onResidentClick');
+
+      // Call immediately (keeps feedback) and still keep small delay if desired
+      if (onResidentClick) {
+        onResidentClick();
+      } else {
+        console.warn('LandingPage: onResidentClick prop is not provided');
+      }
     }
   };
 
