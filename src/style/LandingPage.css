@@ -1,0 +1,87 @@
+/* ===== Landing Page Root ===== */
+.landing-page {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(45deg, rgba(185, 239, 240, 1) 0%, rgba(157, 207, 174, 1) 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; 
+}
+
+.landing-page .landing-card {
+  background: #e9ffff;
+  width: 85%;
+  max-width: 850px;
+  padding: 100px 40px;
+  border-radius: 30px;
+  text-align: center;
+}
+
+.landing-page .landing-logo {
+  width: 180px;
+  height: auto;
+  margin-bottom: 50px;
+}
+
+.landing-page .welcome-banner {
+  background-color: #98e5cc;
+  padding: 15px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 1.3rem;
+  margin: 0 auto 30px auto;
+  width: fit-content;
+  padding-left: 50px;
+  padding-right: 50px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.landing-page .landing-title {
+  font-family: "Times New Roman", serif;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 40px;
+  color: #000;
+}
+
+.landing-page .landing-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+/* ===== Buttons: DEFAULT WHITE ===== */
+.landing-page .landing-btn {
+  width: 230px;
+  padding: 20px 0;
+  background-color: #ffffff; /* Default background is white */
+  color: #000;
+  border: 1px solid #8ecae6;
+  border-radius: 15px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* ===== RESIDENT: Hover & Click Colors ===== */
+.landing-page .resident-btn:hover,
+.landing-page .resident-btn.active {
+  background-color: #42b5ff; /* Blue on hover/click */
+  color: white;
+  transform: scale(1.05);
+}
+
+/* ===== HEALTH WORKER: Hover & Click Colors ===== */
+.landing-page .health-btn:hover,
+.landing-page .health-btn.active {
+  background-color: #5eead4; /* Teal on hover/click */
+  color: #000;
+  transform: scale(1.05);
+}
+
+/* Click feedback effect */
+.landing-page .landing-btn:active {
+  transform: scale(0.95);
+}
