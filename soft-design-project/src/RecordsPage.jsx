@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HealthForm from './HealthForm';
 
-/**
- * Features:
- * - Create new records
- * - Edit existing records
- * - Toggle Active/Not Active status
- * - Delete records (optional)
- * - Auto-open form when navigating from home page "Add Patient" button 
- */
+
 const RecordsPage = ({ autoOpenForm = false }) => {
   
   /* ==================== STATE MANAGEMENT ==================== */
@@ -161,8 +154,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
   /* ==================== TABLE VIEW ==================== */
   
   return (
-
-      <div className="p-4">
+    <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="fw-bold">Patient Records</h3>
         <button 
