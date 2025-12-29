@@ -2,6 +2,7 @@ import Header from './Header.jsx'
 import LoginPage from './LoginPage.jsx'
 import Home from './Home.jsx'
 import LandingPage from './LandingPage.jsx'
+import ResidentPage from './ResidentPage.jsx'
 import { useState } from 'react'
 
 function App() {
@@ -31,7 +32,14 @@ function App() {
         {isAuthed && page === 'home' && <Header />}
 
         {page === 'landing' && (
-          <LandingPage onHealthWorkerClick={() => setPage('login')} />
+          <LandingPage 
+            onHealthWorkerClick={() => setPage('login')}
+            onResidentClick={() => setPage('resident')}
+          />
+        )}
+
+        {page === 'resident' && (
+          <ResidentPage onCancel={() => setPage('landing')} />
         )}
 
         {page === 'login' && (
