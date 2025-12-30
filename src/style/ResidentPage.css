@@ -1,0 +1,78 @@
+/* Scoped styles for ResidentPage — won't affect other pages
+   Edit the variables below to change colors quickly:
+     --resident-bg         (page background)
+     --resident-card-bg    (form box background)
+     --resident-card-shadow (form box shadow color)
+*/
+
+/* ---------- Defaults (safe values) ---------- */
+.resident-page-root {
+  /* editable variables */
+  --resident-bg: linear-gradient(45deg, rgba(185, 239, 240, 1) 0%, rgba(157, 207, 174, 1) 100%);
+  --resident-card-bg: rgba(255, 255, 255, 0.96);
+  --resident-card-shadow: rgba(0, 0, 0, 0.08);
+  --resident-text-color: #222;
+
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+
+  /* Apply page background via variable */
+  background: var(--resident-bg);
+  color: var(--resident-text-color);
+}
+
+/* ---------- Form wrapper & card ---------- */
+.resident-form-wrapper {
+  width: 100%;
+  max-width: 980px; /* constrain the form width */
+}
+
+.resident-card {
+  background-color: var(--resident-card-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px var(--resident-card-shadow);
+}
+
+/* Slightly tighter card padding */
+.resident-page-root .card-body {
+  padding: 1.25rem;
+}
+
+/* Slight label emphasis */
+.resident-page-root .form-label {
+  font-weight: 600;
+  color: var(--resident-text-color);
+}
+
+/* ---------- Theme presets (examples) ----------
+   Use by adding e.g. class="resident-page-root theme-dark"
+   to the root element (via devtools or CSS if you prefer)
+----------------------------------------------- */
+.resident-page-root.theme-light {
+  --resident-bg: linear-gradient(180deg, #f4fbff 0%, #eafaf6 100%);
+  --resident-card-bg: #ffffff;
+  --resident-card-shadow: rgba(0,0,0,0.06);
+  --resident-text-color: #222;
+}
+
+.resident-page-root.theme-dark {
+  --resident-bg: linear-gradient(180deg, #133b3b 0%, #1a6b66 100%);
+  --resident-card-bg: rgba(18, 25, 30, 0.9);
+  --resident-card-shadow: rgba(0,0,0,0.45);
+  --resident-text-color: #f3f6f5;
+}
+.resident-page-root.theme-dark .form-label { color: var(--resident-text-color); }
+
+/* ---------- Responsive adjustments ---------- */
+@media (max-width: 768px) {
+  .resident-page-root {
+    padding: 20px;
+  }
+  .resident-form-wrapper {
+    max-width: 100%;
+  }
+}
