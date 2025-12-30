@@ -16,48 +16,45 @@ const HealthForm = ({
   onToggleStatus = null 
 }) => {
   
-  /**
-   * Form State Management
-   * Initializes with either empty values (add mode) or existing data (edit mode)
-   */
+  
   const [formData, setFormData] = useState({
-    residentName: '',
-    residentId: '',
-    age: '',
-    sex: '',
-    civilStatus: '',
-    bloodPressure: '',
-    bmi: '',
-    healthCondition: '',
-    diagnostic: '',
-    allergies: '',
-    contactNumber: '',
-    address: '',
-    dateVisited: '',
-    remarks: ''
+    Resident_Name: '',
+    Resident_ID: '',
+    Age: '',
+    Sex: '',
+    Civil_Status: '',
+    Blood_Pressure: '',
+    Weight: '',
+    Height: '',
+    BMI: '',
+    Health_Condition: '',
+    Diagnosis: '',
+    Allergies: '',
+    Contact_Number: '',
+    Address: '',
+    Date_Visited: '',
+    Remarks: ''
   });
 
-  /**
-   * Pre-fill form when in edit mode
-   * This effect runs when initialData changes
-   */
   useEffect(() => {
     if (editMode && initialData) {
       setFormData({
-        residentName: initialData.residentName || '',
-        residentId: initialData.residentId || '',
-        age: initialData.age || '',
-        sex: initialData.sex || '',
-        civilStatus: initialData.civilStatus || '',
-        bloodPressure: initialData.bloodPressure || '',
-        bmi: initialData.bmi || '',
-        healthCondition: initialData.healthCondition || '',
-        diagnostic: initialData.diagnostic || '',
-        allergies: initialData.allergies || '',
-        contactNumber: initialData.contactNumber || '',
-        address: initialData.address || '',
-        dateVisited: initialData.dateVisited || '',
-        remarks: initialData.remarks || ''
+        Resident_Name: initialData.Resident_Name || '',
+        Resident_ID: initialData.Resident_ID || '',
+        Age: initialData.Age || '',
+        Sex: initialData.Sex || '',
+        Civil_Status: initialData.Civil_Status || '',
+        Blood_Pressure: initialData.Blood_Pressure || '',
+        Weight: initialData.Weight || '',
+        Height: initialData.Height || '',
+        BMI: initialData.BMI || '',
+        Health_Condition: initialData.Health_Condition || '',
+        Diagnosis: initialData.Diagnosis || '',
+        Allergies: initialData.Allergies || '',
+        Contact_Number: initialData.Contact_Number || '',
+        Address: initialData.Address || '',
+        Date_Visited: initialData.Date_Visited || '',
+        Remarks: initialData.Remarks || ''
       });
     }
   }, [editMode, initialData]);
@@ -67,7 +64,7 @@ const HealthForm = ({
     const { name, value } = e.target;
     
     // For fields that should only contain numbers
-    if (name === 'residentId' || name === 'contactNumber') {
+    if (name === 'Resident_ID' || name === 'Contact_Number') {
       // Remove any non-numeric characters (letters, symbols, spaces, etc.)
       const numericValue = value.replace(/\D/g, '');
       setFormData(prev => ({
@@ -85,7 +82,7 @@ const HealthForm = ({
 
   /**
    * Form Submission Handler
-   * Handles both creating new records and updating existing ones
+   * Handles both creating and updating records
    */
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -94,9 +91,9 @@ const HealthForm = ({
       // EDIT MODE: Update existing record
       const dataToSubmit = {
         ...formData,
-        id: initialData.id,
+        Health_Record_ID: initialData.Health_Record_ID,
         status: initialData.status,
-        dateRegistered: initialData.dateRegistered,
+        Date_Registered: initialData.Date_Registered,
         updatedAt: new Date().toISOString()
       };
       
@@ -105,7 +102,7 @@ const HealthForm = ({
       // ADD MODE: Create new record
       const dataToSubmit = {
         ...formData,
-        dateRegistered: new Date().toISOString(),
+        Date_Registered: new Date().toISOString(),
         status: 'Active'
       };
       
@@ -113,14 +110,14 @@ const HealthForm = ({
     }
   };
 
-  /**
-   * Handle Status Toggle
-   * Only available in edit mode
-   */
   const handleStatusToggle = () => {
     if (onToggleStatus && initialData) {
       const newStatus = initialData.status === 'Active' ? 'Not Active' : 'Active';
-      onToggleStatus(initialData.id, newStatus);
+      // FIXED: Use initialData.Health_Record_ID (database field)
+      onToggleStatus(initialData.Health_Record_ID, newStatus);
+      console.log(`Toggling status for record ${initialData.Health_Record_ID} to: ${newStatus}`); // ADDED: Debug logging
+    } else {
+      console.error('Cannot toggle status: missing onToggleStatus function or initialData'); // ADDED: Error handling
     }
   };
 
@@ -171,9 +168,9 @@ const HealthForm = ({
               <label className="form-label">Resident Name</label>
               <input 
                 type="text" 
-                name="residentName"
+                name="Resident_Name"
                 className="form-control"
-                value={formData.residentName}
+                value={formData.Resident_Name}
                 onChange={handleChange}
                 required
                 placeholder="Enter full name"
@@ -184,9 +181,9 @@ const HealthForm = ({
               <label className="form-label">Resident ID</label>
               <input 
                 type="text" 
-                name="residentId"
+                name="Resident_ID"
                 className="form-control"
-                value={formData.residentId}
+                value={formData.Resident_ID}
                 onChange={handleChange}
                 required
                 placeholder="Enter numeric ID (numbers only)"
@@ -200,9 +197,9 @@ const HealthForm = ({
               <label className="form-label">Age</label>
               <input 
                 type="number" 
-                name="age"
+                name="Age"
                 className="form-control"
-                value={formData.age}
+                value={formData.Age}
                 onChange={handleChange}
                 required
                 min="0"
@@ -213,9 +210,9 @@ const HealthForm = ({
             <div className="col-md-4">
               <label className="form-label">Sex</label>
               <select 
-                name="sex" 
+                name="Sex" 
                 className="form-select"
-                value={formData.sex}
+                value={formData.Sex}
                 onChange={handleChange}
                 required
               >
@@ -228,9 +225,9 @@ const HealthForm = ({
             <div className="col-md-4">
               <label className="form-label">Civil Status</label>
               <select 
-                name="civilStatus" 
+                name="Civil_Status" 
                 className="form-select"
-                value={formData.civilStatus}
+                value={formData.Civil_Status}
                 onChange={handleChange}
                 required
               >
@@ -244,26 +241,56 @@ const HealthForm = ({
 
             {/* SECTION 2: Health Metrics */}
 
-            <div className="col-md-4">
+            <div className="col-md-3">
               <label className="form-label">Blood Pressure</label>
               <input 
                 type="text" 
-                name="bloodPressure"
+                name="Blood_Pressure"
                 className="form-control"
-                value={formData.bloodPressure}
+                value={formData.Blood_Pressure}
                 onChange={handleChange}
                 placeholder="e.g., 120/80"
               />
             </div>
 
-            <div className="col-md-4">
+            <div className="col-md-3">
+              <label className="form-label">Weight (kg)</label>
+              <input 
+                type="number" 
+                step="0.1"
+                name="Weight"
+                className="form-control"
+                value={formData.Weight}
+                onChange={handleChange}
+                min="0"
+                max="500"
+                placeholder="e.g., 65.5"
+              />
+            </div>
+
+            <div className="col-md-3">
+              <label className="form-label">Height (cm)</label>
+              <input 
+                type="number" 
+                step="0.1"
+                name="Height"
+                className="form-control"
+                value={formData.Height}
+                onChange={handleChange}
+                min="0"
+                max="300"
+                placeholder="e.g., 170.5"
+              />
+            </div>
+
+            <div className="col-md-3">
               <label className="form-label">BMI</label>
               <input 
                 type="number" 
                 step="0.1"
-                name="bmi"
+                name="BMI"
                 className="form-control"
-                value={formData.bmi}
+                value={formData.BMI}
                 onChange={handleChange}
                 min="0"
                 max="100"
@@ -271,30 +298,31 @@ const HealthForm = ({
               />
             </div>
 
-            <div className="col-md-4">
+            <div className="col-md-12">
               <label className="form-label">Health Condition</label>
               <select 
-                name="healthCondition" 
+                name="Health_Condition" 
                 className="form-select"
-                value={formData.healthCondition}
+                value={formData.Health_Condition}
                 onChange={handleChange}
               >
                 <option value="">Select...</option>
                 <option value="Good">Good</option>
                 <option value="Fair">Fair</option>
                 <option value="Poor">Poor</option>
+                <option value="With Disability">With Disability</option>
               </select>
             </div>
 
             {/* SECTION 3: Medical Information */}
 
             <div className="col-md-6">
-              <label className="form-label">Diagnostic</label>
+              <label className="form-label">Diagnosis</label>
               <input 
                 type="text" 
-                name="diagnostic"
+                name="Diagnosis"
                 className="form-control"
-                value={formData.diagnostic}
+                value={formData.Diagnosis}
                 onChange={handleChange}
                 placeholder="Enter diagnosis"
               />
@@ -304,9 +332,9 @@ const HealthForm = ({
               <label className="form-label">Allergies</label>
               <input 
                 type="text" 
-                name="allergies"
+                name="Allergies"
                 className="form-control"
-                value={formData.allergies}
+                value={formData.Allergies}
                 onChange={handleChange}
                 placeholder="List any allergies (comma-separated)"
               />
@@ -318,9 +346,9 @@ const HealthForm = ({
               <label className="form-label">Contact Number</label>
               <input 
                 type="text" 
-                name="contactNumber"
+                name="Contact_Number"
                 className="form-control"
-                value={formData.contactNumber}
+                value={formData.Contact_Number}
                 onChange={handleChange}
                 placeholder="e.g., 09123456789"
                 inputMode="numeric"
@@ -333,9 +361,9 @@ const HealthForm = ({
               <label className="form-label">Address</label>
               <input 
                 type="text" 
-                name="address"
+                name="Address"
                 className="form-control"
-                value={formData.address}
+                value={formData.Address}
                 onChange={handleChange}
                 placeholder="Enter complete address"
               />
@@ -347,9 +375,9 @@ const HealthForm = ({
               <label className="form-label">Date Visited</label>
               <input 
                 type="date" 
-                name="dateVisited"
+                name="Date_Visited"
                 className="form-control"
-                value={formData.dateVisited}
+                value={formData.Date_Visited}
                 onChange={handleChange}
                 required
               />
@@ -361,8 +389,8 @@ const HealthForm = ({
                 type="text" 
                 className="form-control bg-light" 
                 value={
-                  editMode && initialData?.dateRegistered 
-                    ? new Date(initialData.dateRegistered).toLocaleDateString()
+                  editMode && initialData?.Date_Registered 
+                    ? new Date(initialData.Date_Registered).toLocaleDateString()
                     : "Auto-generated on submission"
                 }
                 disabled
@@ -375,9 +403,9 @@ const HealthForm = ({
             <div className="col-12">
               <label className="form-label">Remarks / Notes</label>
               <textarea 
-                name="remarks"
+                name="Remarks"
                 className="form-control"
-                value={formData.remarks}
+                value={formData.Remarks}
                 onChange={handleChange}
                 rows="4"
                 placeholder="Health worker notes, observations, recommendations..."
