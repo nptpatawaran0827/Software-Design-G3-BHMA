@@ -1,0 +1,143 @@
+/* Scoped login page styles: won't affect other pages */
+.login-portal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  z-index: 9999;
+  background: linear-gradient(160deg, #a7ecd8 0%, #9de7df 45%, #bff7e8 100%);
+}
+
+/* Card container (split) */
+.login-card-split {
+  width: min(920px, 96%);
+  min-height: 520px; /* CRITICAL FIX */
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  box-shadow: 0 12px 30px rgba(25, 45, 66, 0.14);
+  background: transparent;
+}
+
+/* Left panel (form) */
+.login-left {
+  flex: 1 1 540px;
+  background: #ffffff;
+  padding: 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* centers form vertically */
+  min-width: 320px;
+}
+
+/* Circular logo at top */
+.logo-wrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;   /* extra top space so logo sits visually centered in the white card */
+  margin-bottom: 22px; /* space between logo and the form/title */
+}
+
+.logo-placeholder {
+  width: 120px;
+  height: 120px;
+  background-color: transparent; /* keep card background visible */
+  box-shadow: 0 6px 20px rgba(41, 79, 86, 0.06);
+  transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.logo-placeholder img {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 0; /* ensure no clipping is applied */
+}
+
+/* Form styles */
+.login-title {
+  font-size: 1.25rem;
+  margin: 6px 0 18px 0;
+  color: #21303a;
+}
+.login-form .form-label {
+  font-weight: 600;
+  color: #324047;
+  margin-bottom: 6px;
+}
+.login-form .form-control {
+  border-radius: 8px;
+  border: 1px solid #e6e9ee;
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+/* Greenish submit button like design */
+.btn-login {
+  background-color: #4caf83; /* solid green default */
+  border-color: #4caf83;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+/* Hover: slightly lighter */
+.btn-login:hover {
+  background-color: #63c59b;
+  border-color: #63c59b;
+}
+
+/* Active (click): lightest + subtle press */
+.btn-login:active {
+  background-color: #7ad1aa;
+  border-color: #7ad1aa;
+  transform: scale(0.98);
+}
+
+/* Right panel (image) */
+.login-right {
+   flex: 0 0 420px;
+  min-width: 280px;
+  position: relative;
+  overflow: hidden;
+
+  /* 🔑 USE the variable directly */
+  background-image: var(--login-right-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* light overlay to match the example */
+.login-right::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
+}
+
+/* Responsive: stack on small screens and hide right image */
+@media (max-width: 768px) {
+  .login-card-split {
+    flex-direction: column;
+    width: min(520px, 96%);
+  }
+  .login-right {
+    display: none;
+  }
+  .logo-placeholder {
+    width: 96px;
+    height: 96px;
+    transform: translateY(6px);
+  }
+}
+

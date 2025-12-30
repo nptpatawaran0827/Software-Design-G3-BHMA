@@ -58,24 +58,7 @@ body, html {
   }
 }
 
-/* --- Keep your Login Page styles below --- */
-.login-page {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #f8f9fa;
-  z-index: 9999;
-}
-.login-card {
-  width: 100%;
-  max-width: 420px;
-  background: #ffffff;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-}
+
 
 /* Sidebar Nav Link Hover Effects */
 .nav-link {
