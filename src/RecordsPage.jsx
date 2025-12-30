@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HealthForm from './HealthForm';
 
-/**
- * Features:
- * - Create new records
- * - Edit existing records
- * - Toggle Active/Not Active status
- * - Delete records (optional)
- * - Auto-open form when navigating from home page "Add Patient" button 
- */
+
 const RecordsPage = ({ autoOpenForm = false }) => {
   
   /* ==================== STATE MANAGEMENT ==================== */
@@ -67,25 +60,27 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     setEditingRecord(null);
   };
 
-  /**
-   * Handle Form Submission
-   * Handles both creating and updating records
-   */
   const handleSubmitForm = async (formData) => {
     try {
       if (editingRecord) {
         // UPDATE MODE
+        const updatedRecord = {
+          ...formData,
+          Health_Record_ID: editingRecord.Health_Record_ID,
+          status: editingRecord.status 
+        };
+        
         setRecords(prevRecords =>
           prevRecords.map(record =>
-            record.id === formData.id ? formData : record
+            record.Health_Record_ID === editingRecord.Health_Record_ID ? updatedRecord : record 
           )
         );
-        console.log('Record updated:', formData);
+        console.log('Record updated:', updatedRecord);
       } else {
         // CREATE MODE
         const newRecord = {
           ...formData,
-          id: Date.now(),
+          Health_Record_ID: Date.now(), // Generate temporary ID (replace with actual DB ID after API call)
           status: 'Active'
         };
         setRecords(prevRecords => [...prevRecords, newRecord]);
@@ -101,22 +96,19 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     }
   };
 
-  /**
-   * Handle Toggle Status
-   */
   const handleToggleStatus = async (recordId, newStatus) => {
     try {
       setRecords(prevRecords =>
         prevRecords.map(record =>
-          record.id === recordId ? { ...record, status: newStatus } : record
+          record.Health_Record_ID === recordId ? { ...record, status: newStatus } : record
         )
       );
       
-      if (editingRecord && editingRecord.id === recordId) {
+      if (editingRecord && editingRecord.Health_Record_ID === recordId) {
         setEditingRecord(prev => ({ ...prev, status: newStatus }));
       }
       
-      console.log(`Record ${recordId} status changed to: ${newStatus}`);
+      console.log(`✓ Record ${recordId} status changed to: ${newStatus}`); 
       
     } catch (err) {
       console.error('Error updating status:', err);
@@ -124,9 +116,6 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     }
   };
 
-  /**
-   * Handle Delete Record
-   */
   const handleDeleteRecord = async (recordId) => {
     if (!window.confirm('Are you sure you want to delete this record?')) {
       return;
@@ -134,7 +123,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     
     try {
       setRecords(prevRecords =>
-        prevRecords.filter(record => record.id !== recordId)
+        prevRecords.filter(record => record.Health_Record_ID !== recordId)
       );
       console.log(`Record ${recordId} deleted`);
       
@@ -161,8 +150,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
   /* ==================== TABLE VIEW ==================== */
   
   return (
-
-      <div className="p-4">
+    <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="fw-bold">Patient Records</h3>
         <button 
@@ -215,7 +203,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                         <div>
                           <svg 
                             className="mb-3" 
-                            width="48" 
+                            width="48"
                             height="48" 
                             fill="currentColor" 
                             viewBox="0 0 16 16"
@@ -229,13 +217,13 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                     </tr>
                   ) : (
                     records.map((record) => (
-                      <tr key={record.id}>
-                        <td className="fw-medium">{record.residentName}</td>
-                        <td>{record.age}</td>
-                        <td>{record.sex}</td>
+                      <tr key={record.Health_Record_ID}>
+                        <td className="fw-medium">{record.Resident_Name}</td>
+                        <td>{record.Age}</td>
+                        <td>{record.Sex}</td>
                         <td>
-                          {record.dateVisited ? 
-                            new Date(record.dateVisited).toLocaleDateString() : 
+                          {record.Date_Visited ? 
+                            new Date(record.Date_Visited).toLocaleDateString() : 
                             'N/A'
                           }
                         </td>
@@ -256,7 +244,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                           </button>
                           <button 
                             className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleDeleteRecord(record.id)}
+                            onClick={() => handleDeleteRecord(record.Health_Record_ID)}
                             title="Delete record"
                           >
                             Delete
