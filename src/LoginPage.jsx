@@ -1,26 +1,47 @@
 import { useState } from 'react'
 import logo from './assets/logo.png'
 import login from './assets/Login.jpg'
-import './style/LoginPage.css'  // new scoped styles, does not touch other pages
+import './style/LoginPage.css'
 
 function LoginPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  function handleSubmit(e) {
+  // We add 'async' here so we can use 'await' for the database call
+  async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+
     if (!username || !password) {
       setError('Please enter both username and password')
       return
     }
-    // Mock auth: accept admin / password
-    if (username === 'admin' && password === 'password') {
-      localStorage.setItem('authToken', 'demo-token')
-      onLoginSuccess && onLoginSuccess()
-    } else {
-      setError('Invalid username or password')
+
+    try {
+      // 1. Send data to your Node.js backend
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      // 2. Check if the backend says the login is valid
+      if (response.ok && data.success) {
+        localStorage.setItem('authToken', 'real-token-from-db'); // In real apps, use a JWT token
+        onLoginSuccess && onLoginSuccess();
+      } else {
+        // This catches the 401 "Invalid credentials" error
+        setError(data.message || 'Invalid username or password');
+      }
+    } catch (err) {
+      // This catches errors if the server is offline
+      setError('Cannot connect to server. Is your backend running?');
+      console.error("Login error:", err);
     }
   }
 
@@ -44,7 +65,7 @@ function LoginPage({ onLoginSuccess }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                placeholder="admin"
+                placeholder="Enter Username"
               />
             </div>
 
@@ -56,21 +77,22 @@ function LoginPage({ onLoginSuccess }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
-                placeholder="password"
+                placeholder="Enter Password"
               />
             </div>
 
             <button type="submit" className="btn btn-login w-100 mt-2">Log in</button>
 
+            {/* Changed tip to reflect real DB usage */}
             <p className="text-muted text-center mt-3 small tip">
-              Tip: try <strong>admin</strong> / <strong>password</strong>
+              Use your <strong>SQL database</strong> credentials.
             </p>
 
             {error && <div className="alert alert-danger mt-3 py-2 text-center">{error}</div>}
           </form>
         </div>
 
-        <div className="login-right" class="login-right"
+        <div className="login-right"
             style={{ "--login-right-image": `url(${login})` }}>
         </div>
       </div>
@@ -78,4 +100,4 @@ function LoginPage({ onLoginSuccess }) {
   );
 }
 
-export default LoginPage
+export default LoginPage;
