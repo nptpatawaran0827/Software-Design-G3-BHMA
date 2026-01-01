@@ -12,7 +12,7 @@ app.use(express.json()); // Allows the server to read JSON data from req.body
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '@Jianvench18',
+  password: 'CodeMultiverse27',
   database: 'admin_db'
 });
 
