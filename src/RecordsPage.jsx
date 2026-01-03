@@ -1,140 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import HealthForm from './HealthForm';
 
-
 const RecordsPage = ({ autoOpenForm = false }) => {
   
   /* ==================== STATE MANAGEMENT ==================== */
-  
   const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
 
+  /* ==================== DATA FETCHING ==================== */
+  const fetchRecords = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('http://localhost:5000/api/health-records');
+      if (!res.ok) throw new Error('Failed to fetch data');
+      const data = await res.json();
+      setRecords(data);
+      setLoading(false);
+    } catch (err) {
+      setError('Could not connect to the server. Please check if the backend is running.');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecords();
+  }, []);
+
   /* ==================== AUTO-OPEN FORM LOGIC ==================== */
-  
   useEffect(() => {
     if (autoOpenForm) {
       handleAddNewRecord();
     }
   }, [autoOpenForm]);
 
-  /* ==================== DATA FETCHING ==================== */
-  
-  useEffect(() => {
-    // TODO: Replace with actual API call to fetch records
-    const simulateLoading = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    
-    return () => clearTimeout(simulateLoading);
-  }, []);
-
   /* ==================== CRUD OPERATIONS ==================== */
-  
-  /**
-   * Handle Add New Record Button
-   * Opens form in "create" mode
-   */
   const handleAddNewRecord = () => {
     setEditingRecord(null);
     setShowForm(true);
   };
 
-  /**
-   * Handle Edit Record Button
-   * Opens form in "edit" mode with pre-filled data
-   */
   const handleEditRecord = (record) => {
     setEditingRecord(record);
     setShowForm(true);
   };
 
-  /**
-   * Handle Cancel Form
-   * Returns to table view and clears editing state
-   */
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingRecord(null);
   };
 
   const handleSubmitForm = async (formData) => {
+    const url = editingRecord 
+      ? `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`
+      : 'http://localhost:5000/api/health-records';
+    
     try {
-      if (editingRecord) {
-        // UPDATE MODE
-        const updatedRecord = {
-          ...formData,
-          Health_Record_ID: editingRecord.Health_Record_ID,
-          status: editingRecord.status 
-        };
-        
-        setRecords(prevRecords =>
-          prevRecords.map(record =>
-            record.Health_Record_ID === editingRecord.Health_Record_ID ? updatedRecord : record 
-          )
-        );
-        console.log('Record updated:', updatedRecord);
+      const res = await fetch(url, {
+        method: editingRecord ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      
+      if (res.ok) {
+        setShowForm(false);
+        setEditingRecord(null);
+        fetchRecords(); // Refresh table from DB
       } else {
-        // CREATE MODE
-        const newRecord = {
-          ...formData,
-          Health_Record_ID: Date.now(), // Generate temporary ID (replace with actual DB ID after API call)
-          status: 'Active'
-        };
-        setRecords(prevRecords => [...prevRecords, newRecord]);
-        console.log('Record created:', newRecord);
+        throw new Error('Server responded with an error');
       }
-      
-      setShowForm(false);
-      setEditingRecord(null);
-      
     } catch (err) {
       console.error('Error submitting form:', err);
-      setError('Failed to save record. Please try again.');
+      setError('Failed to save record to database.');
     }
   };
 
-  const handleToggleStatus = async (recordId, newStatus) => {
+  const handleToggleStatus = async (recordId, currentStatus) => {
+    const newStatus = currentStatus === 'Active' ? 'Not Active' : 'Active';
     try {
-      setRecords(prevRecords =>
-        prevRecords.map(record =>
-          record.Health_Record_ID === recordId ? { ...record, status: newStatus } : record
-        )
-      );
-      
-      if (editingRecord && editingRecord.Health_Record_ID === recordId) {
-        setEditingRecord(prev => ({ ...prev, status: newStatus }));
-      }
-      
-      console.log(`✓ Record ${recordId} status changed to: ${newStatus}`); 
-      
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) fetchRecords();
     } catch (err) {
-      console.error('Error updating status:', err);
-      setError('Failed to update status. Please try again.');
+      setError('Failed to update status in database.');
     }
   };
 
   const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm('Are you sure you want to delete this record?')) {
-      return;
-    }
-    
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
     try {
-      setRecords(prevRecords =>
-        prevRecords.filter(record => record.Health_Record_ID !== recordId)
-      );
-      console.log(`Record ${recordId} deleted`);
-      
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}`, { 
+        method: 'DELETE' 
+      });
+      if (res.ok) fetchRecords();
     } catch (err) {
-      console.error('Error deleting record:', err);
-      setError('Failed to delete record. Please try again.');
+      setError('Failed to delete record from database.');
     }
   };
 
   /* ==================== CONDITIONAL RENDERING ==================== */
-  
   if (showForm) {
     return (
       <HealthForm 
@@ -142,13 +111,12 @@ const RecordsPage = ({ autoOpenForm = false }) => {
         onSubmit={handleSubmitForm}
         editMode={!!editingRecord}
         initialData={editingRecord}
-        onToggleStatus={handleToggleStatus}
+        onToggleStatus={(id) => handleToggleStatus(id, editingRecord.status)}
       />
     );
   }
 
-  /* ==================== TABLE VIEW ==================== */
-  
+  /* ==================== TABLE VIEW (CSS RESTORED) ==================== */
   return (
     <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -169,7 +137,6 @@ const RecordsPage = ({ autoOpenForm = false }) => {
             type="button" 
             className="btn-close" 
             onClick={() => setError(null)}
-            aria-label="Close"
           />
         </div>
       )}
@@ -201,13 +168,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                     <tr>
                       <td colSpan="6" className="text-center py-5 text-muted">
                         <div>
-                          <svg 
-                            className="mb-3" 
-                            width="48"
-                            height="48" 
-                            fill="currentColor" 
-                            viewBox="0 0 16 16"
-                          >
+                          <svg className="mb-3" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
                           </svg>
                           <p className="mb-0">No health records found.</p>
@@ -238,14 +199,12 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                           <button 
                             className="btn btn-sm btn-outline-primary me-1"
                             onClick={() => handleEditRecord(record)}
-                            title="Edit record"
                           >
                             Edit
                           </button>
                           <button 
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDeleteRecord(record.Health_Record_ID)}
-                            title="Delete record"
                           >
                             Delete
                           </button>
