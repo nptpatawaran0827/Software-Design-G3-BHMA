@@ -1,7 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import logoImage from './assets/logo.png'; 
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      // Auto-collapse on mobile, auto-expand on desktop
+      if (!mobile) {
+        setIsCollapsed(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const menuItems = [
     { name: 'Home', icon: '🏠' },
     { name: 'Records', icon: '📋' },
@@ -9,24 +26,36 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { name: 'Scan & Upload', icon: '📥' },
   ];
 
+  // On mobile, sidebar collapses automatically; on desktop, always show full width
+  const sidebarWidth = isMobile && isCollapsed ? '80px' : '240px';
+
   return (
-    <div className="sidebar bg-white border-end vh-100 shadow-sm" style={{ width: '240px' }}>
-      <div className="p-4 text-center border-bottom">
-        <img src={logoImage} alt="Logo" style={{ width: '100px' }} />
+    <div 
+      className={`sidebar bg-white border-end vh-100 shadow-sm ${isCollapsed && isMobile ? 'collapsed' : 'expanded'}`}
+      style={{ 
+        width: sidebarWidth,
+        transition: 'width 0.3s ease-in-out'
+      }}
+    >
+      {/* Header with Logo and Toggle Button */}
+      <div className="sidebar-header p-3 d-flex align-items-center justify-content-between border-bottom">
+        {!isCollapsed && <img src={logoImage} alt="Logo" style={{ width: '60px' }} />}
       </div>
       
-      <div className="nav flex-column nav-pills p-3 gap-2">
+      {/* Navigation Menu */}
+      <div className="nav flex-column nav-pills p-2 gap-2">
         {menuItems.map((item) => (
           <button 
             key={item.name} 
-            onClick={() => setActiveTab(item.name)} // Change page on click
-            className={`nav-link text-start d-flex align-items-center gap-3 border-0 w-100 ${
+            onClick={() => setActiveTab(item.name)}
+            className={`nav-link text-start d-flex align-items-center gap-3 border-0 ${
               activeTab === item.name ? 'active bg-teal' : 'text-dark bg-transparent'
             }`}
             style={activeTab === item.name ? { backgroundColor: '#00695c', color: 'white' } : {}}
+            title={isCollapsed ? item.name : ''}
           >
-            <span style={{ fontSize: '1.2rem' }}>{item.icon}</span> 
-            <span className="fw-semibold">{item.name}</span>
+            <span style={{ fontSize: '1.2rem', minWidth: '24px' }}>{item.icon}</span> 
+            {!isCollapsed && <span className="fw-semibold">{item.name}</span>}
           </button>
         ))}
       </div>
