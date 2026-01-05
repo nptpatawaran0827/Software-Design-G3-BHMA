@@ -31,10 +31,17 @@ const RecordsPage = ({ autoOpenForm = false }) => {
 
   /* ==================== AUTO-OPEN FORM LOGIC ==================== */
   useEffect(() => {
-    if (autoOpenForm) {
-      handleAddNewRecord();
-    }
-  }, [autoOpenForm]);
+  if (autoOpenForm) {
+    fetch('http://localhost:5000/api/health-records')
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) {
+          setEditingRecord(data[0]);
+          setShowForm(true);
+        }
+      });
+  }
+}, [autoOpenForm]);
 
   /* ==================== CRUD OPERATIONS ==================== */
   const handleAddNewRecord = () => {
