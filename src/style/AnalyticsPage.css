@@ -1,0 +1,176 @@
+/* AnalyticsPage.css - Scoped styling to avoid affecting other pages */
+
+.analytics-page-root {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.analytics-header {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.analytics-header h2 {
+  margin: 0;
+  color: #1a1a1a;
+}
+
+/* Stat Cards - Updated */
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.stat-details {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.gender-badge {
+  font-size: 0.7rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 3px;
+  color: white;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.male-badge {
+  background-color: #4A90E2;
+}
+
+.female-badge {
+  background-color: #F56969;
+}
+
+.stat-percentage {
+  font-size: 0.8rem;
+  color: #999;
+  font-weight: 500;
+}
+
+.alert-value {
+  color: #F56969 !important;
+  font-size: 2.5rem !important;
+}
+
+.condition-value {
+  color: #43E9A6;
+  font-size: 2rem !important;
+}
+
+/* Chart Cards */
+.chart-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.chart-card h6 {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Section headings */
+.analytics-page-root h5 {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .stat-card {
+    margin-bottom: 0.5rem;
+  }
+
+  .chart-card {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-header {
+    padding: 1rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .alert-value {
+    font-size: 2rem !important;
+  }
+
+  .condition-value {
+    font-size: 1.5rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .stat-details {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gender-badge {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .stat-percentage {
+    font-size: 0.75rem;
+  }
+
+  .chart-card {
+    padding: 1rem;
+  }
+
+  .chart-card h6 {
+    font-size: 0.9rem;
+  }
+}
