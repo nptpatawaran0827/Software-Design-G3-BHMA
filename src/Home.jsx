@@ -1,71 +1,134 @@
 import React, { useState, useEffect } from 'react';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import Sidebar from './Sidebar';
 import RecordsPage from './RecordsPage';
 import AnalyticsPage from './AnalyticsPage';
 
-const SimplePieChart = ({ data }) => {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  let currentAngle = 0;
-  
-  return (
-    <div style={{ position: 'relative', width: '180px', height: '180px', margin: '0 auto' }}>
-      <svg width="180" height="180" viewBox="0 0 180 180">
-        {data.map((item, index) => {
-          const percentage = (item.value / total) * 100;
-          const angle = (percentage / 100) * 360;
-          const startAngle = currentAngle;
-          const endAngle = currentAngle + angle;
-          
-          const startRad = (startAngle - 90) * (Math.PI / 180);
-          const endRad = (endAngle - 90) * (Math.PI / 180);
-          
-          const radius = 80;
-          const x1 = 90 + radius * Math.cos(startRad);
-          const y1 = 90 + radius * Math.sin(startRad);
-          const x2 = 90 + radius * Math.cos(endRad);
-          const y2 = 90 + radius * Math.sin(endRad);
-          
-          const largeArc = angle > 180 ? 1 : 0;
-          const path = `M 90 90 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-          
-          currentAngle = endAngle;
-          
-          return (
-            <path
-              key={index}
-              d={path}
-              fill={item.color}
-              stroke="#fff"
-              strokeWidth="2"
-            />
-          );
-        })}
-      </svg>
-    </div>
-  );
-};
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 function Home({ onLogout }) {
   const [activeTab, setActiveTab] = useState('Home');
   const [filter, setFilter] = useState('All Activities');
   const [activities, setActivities] = useState([]);
-  
   const [shouldAutoOpenForm, setShouldAutoOpenForm] = useState(false);
+  const [healthRecords, setHealthRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const dbStats = {
+  // Initialize with default values
+  const [dbStats, setDbStats] = useState({
     totalPatients: 0,
     newPatients: 0,
     patientsWithDisability: 0,
     totalReports: 0,
     maleCount: 0,
     femaleCount: 0
-  };
+  });
 
-  const chartData = [
-    { label: 'Tonsilitis', value: 30, color: '#FFB3A7' },
-    { label: 'UTI', value: 20, color: '#86EFAC' },
-    { label: 'Ulcer', value: 50, color: '#67E8F9' }
-  ];
+  const [diagnosisChartData, setDiagnosisChartData] = useState(null);
+  const [genderChartData, setGenderChartData] = useState(null);
+
+  // Fetch health records from database
+  useEffect(() => {
+    const fetchHealthRecords = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/health-records');
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          setHealthRecords(data);
+          calculateStatistics(data);
+        }
+      } catch (error) {
+        console.error('Error fetching health records:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHealthRecords();
+  }, []);
+
+  // Calculate all statistics from health records
+  const calculateStatistics = (records) => {
+    if (!records || records.length === 0) {
+      setDbStats({
+        totalPatients: 0,
+        newPatients: 0,
+        patientsWithDisability: 0,
+        totalReports: 0,
+        maleCount: 0,
+        femaleCount: 0
+      });
+      return;
+    }
+
+    // Total patients (unique resident IDs)
+    const uniquePatients = new Set(records.map(r => r.Resident_ID));
+    const totalPatients = uniquePatients.size;
+
+    // Count males and females
+    const maleCount = records.filter(r => r.Sex && r.Sex.toLowerCase() === 'male').length;
+    const femaleCount = records.filter(r => r.Sex && r.Sex.toLowerCase() === 'female').length;
+
+    // Count diagnoses for pie chart
+    const diagnosisCounts = {};
+    records.forEach(record => {
+      if (record.Diagnosis) {
+        const diagnosis = record.Diagnosis.toLowerCase().trim();
+        diagnosisCounts[diagnosis] = (diagnosisCounts[diagnosis] || 0) + 1;
+      }
+    });
+
+    // Sort diagnoses by count and get top 5
+    const sortedDiagnoses = Object.entries(diagnosisCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    // Create diagnosis chart data
+    const diagnosisLabels = sortedDiagnoses.map(([diagnosis]) => 
+      diagnosis.charAt(0).toUpperCase() + diagnosis.slice(1)
+    );
+    const diagnosisValues = sortedDiagnoses.map(([, count]) => count);
+
+    const colors = ['#FFB3A7', '#86EFAC', '#67E8F9', '#FFD700', '#DDA0DD'];
+
+    setDiagnosisChartData({
+      labels: diagnosisLabels,
+      datasets: [
+        {
+          data: diagnosisValues,
+          backgroundColor: colors.slice(0, diagnosisLabels.length),
+          borderColor: '#fff',
+          borderWidth: 2
+        }
+      ]
+    });
+
+    // Create gender chart data
+    setGenderChartData({
+      labels: ['Male', 'Female'],
+      datasets: [
+        {
+          label: 'Patient Count',
+          data: [maleCount, femaleCount],
+          backgroundColor: ['#4A90E2', '#F5A623'],
+          borderColor: '#fff',
+          borderWidth: 2
+        }
+      ]
+    });
+
+    setDbStats({
+      totalPatients: totalPatients,
+      newPatients: records.length,
+      patientsWithDisability: 0,
+      totalReports: records.length,
+      maleCount: maleCount,
+      femaleCount: femaleCount
+    });
+  };
 
   const handleAddPatient = () => {
     setShouldAutoOpenForm(true);
@@ -77,7 +140,6 @@ function Home({ onLogout }) {
       setShouldAutoOpenForm(false);
     }
   }, [activeTab]);
-
 
   const getActivityIcon = (type) => {
     switch(type) {
@@ -94,7 +156,6 @@ function Home({ onLogout }) {
     }
   };
 
-
   const getActivityIconColor = (type) => {
     switch(type) {
       case 'New Patient':
@@ -110,7 +171,6 @@ function Home({ onLogout }) {
     }
   };
 
-  // ACTIVITY SECTION //
   const formatActivityMessage = (activity) => {
     switch(activity.type) {
       case 'New Patient':
@@ -131,6 +191,16 @@ function Home({ onLogout }) {
         );
       default:
         return <span>Activity recorded at {activity.time}.</span>;
+    }
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        position: 'bottom'
+      }
     }
   };
 
@@ -207,6 +277,7 @@ function Home({ onLogout }) {
               </button>
 
               <div className="row g-3">
+                {/* Statistics Cards */}
                 <div className="col-lg-5">
                   <div className="row g-3">
                     <div className="col-6">
@@ -240,35 +311,32 @@ function Home({ onLogout }) {
                   </div>
                 </div>
 
+                {/* Gender Distribution Doughnut Chart */}
                 <div className="col-lg-4">
                   <div className="border rounded-4 overflow-hidden h-100 d-flex flex-column">
                     <div className="text-white text-center py-2 fw-bold" style={{backgroundColor: '#6CB4EE'}}>
                       Patient Gender Distribution
                     </div>
-                    <div className="d-flex flex-grow-1 align-items-center text-center">
-                      <div className="flex-fill border-end py-4">
-                        <small className="text-muted d-block mb-2">Male</small>
-                        <h1 className="display-4 fw-bold">{dbStats.maleCount}</h1>
-                      </div>
-                      <div className="flex-fill py-4">
-                        <small className="text-muted d-block mb-2">Female</small>
-                        <h1 className="display-4 fw-bold">{dbStats.femaleCount}</h1>
-                      </div>
+                    <div className="d-flex flex-grow-1 align-items-center justify-content-center p-3">
+                      {genderChartData ? (
+                        <Doughnut data={genderChartData} options={chartOptions} />
+                      ) : (
+                        <p className="text-muted">Loading...</p>
+                      )}
                     </div>
                   </div>
                 </div>
 
+                {/* Top Diagnosis Pie Chart */}
                 <div className="col-lg-3">
-                  <div className="border rounded-4 p-3 h-100">
+                  <div className="border rounded-4 p-3 h-100 d-flex flex-column">
                     <h6 className="fw-bold text-center mb-3">Common Diagnosis</h6>
-                    <SimplePieChart data={chartData} />
-                    <div className="mt-3 small text-muted">
-                      <div className="d-flex justify-content-between mb-1"><span className="fw-bold">Legend:</span></div>
-                      {chartData.map((item, index) => (
-                        <div key={index}>
-                          <i className="bi bi-square-fill me-1" style={{color: item.color}}></i> {item.label} ({item.value}%)
-                        </div>
-                      ))}
+                    <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+                      {diagnosisChartData ? (
+                        <Pie data={diagnosisChartData} options={chartOptions} />
+                      ) : (
+                        <p className="text-muted">Loading...</p>
+                      )}
                     </div>
                   </div>
                 </div>
