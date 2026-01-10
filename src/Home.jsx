@@ -206,35 +206,39 @@ function Home({ onLogout }) {
     return () => clearInterval(interval);
   }, []);
 
-  // ==================== ACCEPT / REMOVE ====================
-      const handleAccept = async (res) => {
-      try {
-        // Move to health_records + delete from pending
-        await fetch(`http://localhost:5000/api/pending-residents/accept/${res.id}`, {
-          method: 'POST'
-        });
+  const handleAccept = async (resident) => {
+  try {
+    const acceptRes = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, {
+      method: 'POST'
+    });
+    
+    const result = await acceptRes.json();
 
-        // Open Records page with pre-filled data
-        setPreFillData(res);
-        setActiveTab('Records');
-        setShouldAutoOpenForm(true);
-
-        setShowNotification(false);
-        fetchPending(); // refresh bell count
-      } catch (err) {
-        console.error('Accept failed:', err);
-      }
+    // Create a record object with the new Health_Record_ID
+    const newRecord = {
+      ...resident,
+      Health_Record_ID: result.Health_Record_ID
     };
 
+    setPreFillData(newRecord);
+    setActiveTab('Records');
+    setShouldAutoOpenForm(true);
 
-  const handleRemove = async (id) => {
-    try {
-      await fetch(`http://localhost:5000/api/pending-residents/${id}`, { method: 'DELETE' });
-      fetchPending(); // refresh pending list
-    } catch (err) {
-      console.error('Error removing resident:', err);
-    }
-  };
+    setShowNotification(false);
+    fetchPending();
+  } catch (err) {
+    console.error('Accept failed:', err);
+  }
+};
+
+const handleRemove = async (id) => {
+  try {
+    await fetch(`http://localhost:5000/api/pending-residents/${id}`, { method: 'DELETE' });
+    fetchPending(); // ✅ This refreshes the pending list
+  } catch (err) {
+    console.error('Error removing resident:', err);
+  }
+};
 
   // ==================== RECENT ACTIVITY ICONS ====================
   const getActivityIcon = (type) => {
@@ -334,9 +338,9 @@ function Home({ onLogout }) {
                   <h6 className="mb-2">Pending Residents</h6>
                   <ul className="list-group list-group-flush">
                     {pendingResidents.length > 0 ? (
-                      pendingResidents.map(res => (
-                      <li
-                      key={res.id}
+                  pendingResidents.map(res => (
+                    <li
+                      key={res.Pending_HR_ID}
                       className="list-group-item"
                       style={{
                         display: 'grid',
@@ -365,17 +369,16 @@ function Home({ onLogout }) {
                         </button>
                         <button
                           className="btn btn-danger btn-sm px-3"
-                          onClick={() => handleRemove(res.id)}
+                          onClick={() => handleRemove(res.Pending_HR_ID)}
                         >
                           Remove
                         </button>
                       </div>
                     </li>
-
-                      ))
-                    ) : (
-                      <li className="list-group-item py-2 text-center text-muted">No pending residents</li>
-                    )}
+                  ))
+                ) : (
+                  <li className="list-group-item py-2 text-center text-muted">No pending residents</li>
+                )}
                   </ul>
                 </div>
               )}
