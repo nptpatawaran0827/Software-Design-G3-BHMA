@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HealthForm from './HealthForm';
 
-const RecordsPage = ({ autoOpenForm = false }) => {
+const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   
   /* ==================== STATE MANAGEMENT ==================== */
   const [showForm, setShowForm] = useState(false);
@@ -29,19 +29,26 @@ const RecordsPage = ({ autoOpenForm = false }) => {
     fetchRecords();
   }, []);
 
-  /* ==================== AUTO-OPEN FORM LOGIC ==================== */
-  useEffect(() => {
+ /* ==================== AUTO-OPEN FORM LOGIC WITH PREFILL ==================== */
+useEffect(() => {
   if (autoOpenForm) {
-    fetch('http://localhost:5000/api/health-records')
-      .then(res => res.json())
-      .then(data => {
-        if (data.length > 0) {
-          setEditingRecord(data[0]);
-          setShowForm(true);
-        }
-      });
+    if (preFillData) {
+      // Check if this is a newly accepted record (has Health_Record_ID)
+      setEditingRecord(preFillData);
+      setShowForm(true);
+    } else {
+      // Otherwise fetch the last record
+      fetch('http://localhost:5000/api/health-records')
+        .then(res => res.json())
+        .then(data => {
+          if (data.length > 0) {
+            setEditingRecord(data[0]);
+            setShowForm(true);
+          }
+        });
+    }
   }
-}, [autoOpenForm]);
+}, [autoOpenForm, preFillData]);
 
   /* ==================== CRUD OPERATIONS ==================== */
   const handleAddNewRecord = () => {
@@ -60,29 +67,62 @@ const RecordsPage = ({ autoOpenForm = false }) => {
   };
 
   const handleSubmitForm = async (formData) => {
+  try {
+    // Get admin_id from localStorage (set during login) and convert to number
+    const adminId = parseInt(localStorage.getItem('adminId'), 10);
+    
+    if (!adminId) {
+      setError('Admin ID not found. Please log in again.');
+      return;
+    }
+    
+    // First, update the resident table with contact info AND birthdate
+    const residentUpdateRes = await fetch(`http://localhost:5000/api/residents/${formData.Resident_ID}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        First_Name: formData.First_Name,
+        Middle_Name: formData.Middle_Name,
+        Last_Name: formData.Last_Name,
+        Sex: formData.Sex,
+        Civil_Status: formData.Civil_Status,
+        Birthdate: formData.Birthdate,
+        Contact_Number: formData.Contact_Number,
+        Street: formData.Street,
+        Barangay: formData.Barangay
+      })
+    });
+
+    if (!residentUpdateRes.ok) {
+      throw new Error('Failed to update resident info');
+    }
+
+    // Then, save/update health record with admin_id
     const url = editingRecord 
       ? `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`
       : 'http://localhost:5000/api/health-records';
     
-    try {
-      const res = await fetch(url, {
-        method: editingRecord ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      
-      if (res.ok) {
-        setShowForm(false);
-        setEditingRecord(null);
-        fetchRecords(); // Refresh table from DB
-      } else {
-        throw new Error('Server responded with an error');
-      }
-    } catch (err) {
-      console.error('Error submitting form:', err);
-      setError('Failed to save record to database.');
+    const res = await fetch(url, {
+      method: editingRecord ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...formData,
+        Recorded_By: adminId  // ← SEND ADMIN ID AS NUMBER
+      })
+    });
+    
+    if (res.ok) {
+      setShowForm(false);
+      setEditingRecord(null);
+      fetchRecords(); // Refresh table from DB
+    } else {
+      throw new Error('Server responded with an error');
     }
-  };
+  } catch (err) {
+    console.error('Error submitting form:', err);
+    setError('Failed to save record to database.');
+  }
+};
 
   const handleToggleStatus = async (recordId, currentStatus) => {
     const newStatus = currentStatus === 'Active' ? 'Not Active' : 'Active';
@@ -112,16 +152,17 @@ const RecordsPage = ({ autoOpenForm = false }) => {
 
   /* ==================== CONDITIONAL RENDERING ==================== */
   if (showForm) {
-    return (
-      <HealthForm 
-        onCancel={handleCancelForm} 
-        onSubmit={handleSubmitForm}
-        editMode={!!editingRecord}
-        initialData={editingRecord}
-        onToggleStatus={(id) => handleToggleStatus(id, editingRecord.status)}
-      />
-    );
-  }
+  return (
+    <HealthForm 
+      onCancel={handleCancelForm} 
+      onSubmit={handleSubmitForm}
+      editMode={!!editingRecord?.Health_Record_ID}
+      initialData={editingRecord}
+      onToggleStatus={(id) => handleToggleStatus(id, editingRecord?.status)}
+    />
+  );
+}
+
 
   /* ==================== TABLE VIEW (CSS RESTORED) ==================== */
   return (
@@ -166,6 +207,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                     <th>Age</th>
                     <th>Gender</th>
                     <th>Last Visit</th>
+                    <th>Recorded By</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -173,7 +215,7 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                 <tbody>
                   {records.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="text-center py-5 text-muted">
+                      <td colSpan="7" className="text-center py-5 text-muted">
                         <div>
                           <svg className="mb-3" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
@@ -194,6 +236,11 @@ const RecordsPage = ({ autoOpenForm = false }) => {
                             new Date(record.Date_Visited).toLocaleDateString() : 
                             'N/A'
                           }
+                        </td>
+                        <td>
+                          <span className="badge bg-info">
+                            {record.Recorded_By_Name}
+                          </span>
                         </td>
                         <td>
                           <span className={`badge ${

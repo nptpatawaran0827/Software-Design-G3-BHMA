@@ -2,174 +2,154 @@ import React, { useState, useEffect } from 'react';
 import './style/ResidentPage.css';
 
 const initialState = {
-  Resident_Name: '',
-  Resident_ID: '',
+  First_Name: '',
+  Middle_Name: '',
+  Last_Name: '',
+  Sex: '',
   Height: '',
   Weight: '',
   BMI: '',
   Health_Condition: '',
-  Allergies: '',
-  Submitted_At: '',
-  Status: 'Pending'
+  Allergies: ''
 };
 
-export default function ResidentPage({ onCancel, onSubmitSuccess }) { // ✅ Added onSubmitSuccess
+export default function ResidentPage({ onCancel, onSubmitSuccess }) {
   const [formData, setFormData] = useState(initialState);
   const [message, setMessage] = useState(null);
-
-  useEffect(() => {
-    console.log('ResidentPage mounted');
-  }, []);
-
-
-  
+  const [residentId, setResidentId] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === 'Resident_ID') {
-      const numericValue = value.replace(/\D/g, '');
-      setFormData(prev => ({ ...prev, [name]: numericValue }));
-    } else {
-      setFormData(prev => {
-        const updated = { ...prev, [name]: value };
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
 
-        // Auto-calculate BMI
-        if (name === 'Height' || name === 'Weight') {
-          const heightM = parseFloat(updated.Height) / 100;
-          const weightKg = parseFloat(updated.Weight);
+      // Calculate BMI if Height or Weight changes
+      if (name === 'Height' || name === 'Weight') {
+        const h = parseFloat(updated.Height) / 100;
+        const w = parseFloat(updated.Weight);
+        updated.BMI = h > 0 && w > 0 ? (w / (h * h)).toFixed(2) : '';
+      }
 
-          if (heightM > 0 && weightKg > 0) {
-            updated.BMI = (weightKg / (heightM * heightM)).toFixed(2);
-          } else {
-            updated.BMI = '';
-          }
-        }
-
-        return updated;
-      });
-    }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // prevent default form submission
+    e.preventDefault();
     setMessage(null);
 
-    const payload = {
-      ...formData,
-      Submitted_At: new Date().toISOString().slice(0, 19).replace('T', ' '), // MySQL DATETIME format
-      Status: 'Pending'
-    };
-
-    console.log('Submitting:', payload); // debug log
-
     try {
-      const response = await fetch('http://localhost:5000/api/pending-residents', {
+      // ================= CREATE RESIDENT =================
+      const residentRes = await fetch('http://localhost:5000/api/residents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          First_Name: formData.First_Name,
+          Middle_Name: formData.Middle_Name,
+          Last_Name: formData.Last_Name,
+          Sex: formData.Sex,
+          Civil_Status: ''
+        })
       });
 
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Form submitted and awaiting approval.' });
-        setFormData({ ...initialState }); // Reset form
+      if (!residentRes.ok) throw new Error('Resident creation failed');
+      
+      const residentData = await residentRes.json();
+      const newResidentId = residentData.Resident_ID;
+      setResidentId(newResidentId);
 
-        // ✅ Trigger Home to refresh pending residents
-        if (onSubmitSuccess) onSubmitSuccess();
+      // ================= CREATE PENDING HEALTH =================
+      const pendingRes = await fetch('http://localhost:5000/api/pending-resident', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          Resident_ID: newResidentId,
+          Height: formData.Height || null,
+          Weight: formData.Weight || null,
+          BMI: formData.BMI || null,
+          Health_Condition: formData.Health_Condition || null,
+          Allergies: formData.Allergies || null,
+          Submitted_At: new Date().toISOString().slice(0, 19).replace('T', ' ')
+        })
+      });
 
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        const text = await response.text();
-        console.error('Submission failed:', text);
-        setMessage({ type: 'error', text: 'Failed to submit form. Please try again.' });
-      }
-    } catch (err) {
-      console.error('Error submitting form:', err);
-      setMessage({ type: 'error', text: 'Failed to submit form. Please try again.' });
+      if (!pendingRes.ok) throw new Error('Health submission failed');
+
+      setMessage({ type: 'success', text: `Submitted successfully. Resident ID: ${newResidentId}` });
+      setFormData(initialState);
+      onSubmitSuccess && onSubmitSuccess();
+
+    } catch (error) {
+      console.error('Error:', error);
+      setMessage({ type: 'error', text: 'Submission failed. Please try again.' });
     }
   };
 
   return (
     <div className="resident-page-root">
       <div className="resident-form-wrapper">
-        <div className="resident-card card border-0 shadow-sm">
+        <div className="card shadow-sm">
           <div className="card-body p-4">
-            <h3 className="fw-bold mb-4">Resident Health Submission</h3>
+            <h3 className="fw-bold mb-4">Resident Registration & Health Submission</h3>
 
             {message && (
-              <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
+              <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'}`}>
                 {message.text}
+              </div>
+            )}
+
+            {residentId && (
+              <div className="alert alert-info">
+                <strong>Resident ID:</strong> {residentId}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label">Resident Name</label>
-                  <input
-                    type="text"
-                    name="Resident_Name"
-                    className="form-control"
-                    value={formData.Resident_Name}
-                    onChange={handleChange}
-                    required
-                  />
+
+                <div className="col-md-4">
+                  <label className="form-label">First Name</label>
+                  <input className="form-control" name="First_Name" value={formData.First_Name} onChange={handleChange} required />
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label">Resident ID</label>
-                  <input
-                    type="text"
-                    name="Resident_ID"
-                    className="form-control"
-                    value={formData.Resident_ID}
-                    onChange={handleChange}
-                    required
-                  />
+                <div className="col-md-4">
+                  <label className="form-label">Middle Name</label>
+                  <input className="form-control" name="Middle_Name" value={formData.Middle_Name} onChange={handleChange} />
+                </div>
+
+                <div className="col-md-4">
+                  <label className="form-label">Last Name</label>
+                  <input className="form-control" name="Last_Name" value={formData.Last_Name} onChange={handleChange} required />
+                </div>
+
+                <div className="col-md-3">
+                  <label className="form-label">Sex</label>
+                  <select className="form-select" name="Sex" value={formData.Sex} onChange={handleChange} required>
+                    <option value="">Select...</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
                 </div>
 
                 <div className="col-md-3">
                   <label className="form-label">Height (cm)</label>
-                  <input
-                    type="number"
-                    name="Height"
-                    className="form-control"
-                    value={formData.Height}
-                    onChange={handleChange}
-                    min="0"
-                  />
+                  <input type="number" className="form-control" name="Height" value={formData.Height} onChange={handleChange} />
                 </div>
 
                 <div className="col-md-3">
                   <label className="form-label">Weight (kg)</label>
-                  <input
-                    type="number"
-                    name="Weight"
-                    className="form-control"
-                    value={formData.Weight}
-                    onChange={handleChange}
-                    min="0"
-                  />
+                  <input type="number" className="form-control" name="Weight" value={formData.Weight} onChange={handleChange} />
                 </div>
 
                 <div className="col-md-3">
                   <label className="form-label">BMI</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.BMI}
-                    readOnly
-                  />
+                  <input className="form-control" value={formData.BMI} readOnly />
                 </div>
 
                 <div className="col-md-6">
                   <label className="form-label">Health Condition</label>
-                  <select
-                    name="Health_Condition"
-                    className="form-select"
-                    value={formData.Health_Condition}
-                    onChange={handleChange}
-                  >
+                  <select className="form-select" name="Health_Condition" value={formData.Health_Condition} onChange={handleChange}>
                     <option value="">Select...</option>
                     <option value="Good">Good</option>
                     <option value="Fair">Fair</option>
@@ -179,49 +159,16 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) { // ✅ Add
 
                 <div className="col-md-6">
                   <label className="form-label">Allergies</label>
-                  <input
-                    type="text"
-                    name="Allergies"
-                    className="form-control"
-                    value={formData.Allergies}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Submitted At</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.Submitted_At}
-                    readOnly
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Status</label>
-                  <select className="form-select" value={formData.Status} disabled>
-                    <option value="Pending">Pending</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Reject">Reject</option>
-                  </select>
+                  <input className="form-control" name="Allergies" value={formData.Allergies} onChange={handleChange} />
                 </div>
 
                 <div className="col-12 d-flex justify-content-end gap-2 mt-3">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => onCancel && onCancel()}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Submit
-                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Submit</button>
                 </div>
+
               </div>
             </form>
-
           </div>
         </div>
       </div>

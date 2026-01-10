@@ -32,7 +32,9 @@ function LoginPage({ onLoginSuccess }) {
 
       // 2. Check if the backend says the login is valid
       if (response.ok && data.success) {
-        localStorage.setItem('authToken', 'real-token-from-db'); // In real apps, use a JWT token
+        localStorage.setItem('authToken', 'real-token-from-db');
+        localStorage.setItem('adminId', data.adminId);  // ← ADD THIS
+        localStorage.setItem('username', data.username);  // ← ADD THIS
         onLoginSuccess && onLoginSuccess();
       } else {
         // This catches the 401 "Invalid credentials" error
