@@ -10,9 +10,9 @@ function App() {
     Boolean(localStorage.getItem('authToken'))
   )
 
-  // NEW: controls what screen is shown
+  
   const [page, setPage] = useState('landing') 
-  // landing | login | home
+
 
   function handleLoginSuccess() {
     localStorage.setItem('authToken', 'sample-token')
@@ -43,7 +43,10 @@ function App() {
         )}
 
         {page === 'login' && (
-          <LoginPage onLoginSuccess={handleLoginSuccess} />
+          <LoginPage 
+            onLoginSuccess={handleLoginSuccess}
+            onReturnToLanding={() => setPage('landing')}
+          />
         )}
 
         {page === 'home' && isAuthed && (
