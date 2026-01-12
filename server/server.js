@@ -20,28 +20,30 @@ db.connect(err => {
   console.log('✅ Connected to admin_db');
 });
 
-/* ================= RESIDENT ================= */
+/* ================= RESIDENT (UPDATED) ================= */
 app.post('/api/residents', (req, res) => {
   const sql = `
     INSERT INTO residents 
-    (First_Name, Middle_Name, Last_Name, Sex, Civil_Status, Contact_Number, Street, Barangay)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (Resident_ID, First_Name, Middle_Name, Last_Name, Sex, Civil_Status, Birthdate, Contact_Number, Street, Barangay)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const d = req.body;
 
   db.query(sql, [
+    d.Resident_ID,
     d.First_Name,
     d.Middle_Name || null,
     d.Last_Name,
     d.Sex,
     d.Civil_Status || null,
+    d.Birthdate || null,
     d.Contact_Number || null,
     d.Street || null,
     d.Barangay || null
   ], (err, result) => {
     if (err) return res.status(500).json(err);
-    res.json({ Resident_ID: result.insertId });
+    res.json({ Resident_ID: d.Resident_ID, success: true });
   });
 });
 
@@ -94,7 +96,7 @@ app.post('/api/pending-resident', (req, res) => {
   });
 });
 
-/* ================= APPROVE ================= */
+/* ================= APPROVE (Original Method 1) ================= */
 app.post('/api/pending-resident/approve/:id', (req, res) => {
   const id = req.params.id;
 
@@ -107,8 +109,8 @@ app.post('/api/pending-resident/approve/:id', (req, res) => {
 
       db.query(
         `INSERT INTO health_records 
-         (Resident_ID, Weight, Height, BMI, Health_Condition, Allergies)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+          (Resident_ID, Weight, Height, BMI, Health_Condition, Allergies)
+          VALUES (?, ?, ?, ?, ?, ?)`,
         [p.Resident_ID, p.Weight, p.Height, p.BMI, p.Health_Condition, p.Allergies],
         () => {
           db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id]);
@@ -163,7 +165,7 @@ app.post('/api/health-records', (req, res) => {
     d.Allergies || null,
     d.Date_Visited || null,
     d.Remarks_Notes || d.Remarks || null,
-    d.Recorded_By || null  // ← ADD THIS
+    d.Recorded_By || null  
   ], (err, result) => {
     if (err) return res.status(500).json(err);
     res.json({ Health_Record_ID: result.insertId, success: true });
@@ -191,7 +193,7 @@ app.put('/api/health-records/:id', (req, res) => {
     d.Allergies || null,
     d.Date_Visited || null,
     d.Remarks_Notes || d.Remarks || null,
-    d.Recorded_By || null,  // ← ADD THIS
+    d.Recorded_By || null,  
     id
   ], (err, result) => {
     if (err) return res.status(500).json(err);
@@ -203,7 +205,6 @@ app.put('/api/health-records/:id', (req, res) => {
 app.delete('/api/health-records/:id', (req, res) => {
   const healthRecordId = req.params.id;
   
-  // First, get the Resident_ID associated with this health record
   db.query(
     'SELECT Resident_ID FROM health_records WHERE Health_Record_ID = ?',
     [healthRecordId],
@@ -213,21 +214,18 @@ app.delete('/api/health-records/:id', (req, res) => {
       
       const residentId = rows[0].Resident_ID;
       
-      // Delete the health record
       db.query(
         'DELETE FROM health_records WHERE Health_Record_ID = ?',
         [healthRecordId],
         (err) => {
           if (err) return res.status(500).json(err);
           
-          // Also delete any pending records for this resident
           db.query(
             'DELETE FROM pending_resident WHERE Resident_ID = ?',
             [residentId],
             (err) => {
               if (err) return res.status(500).json(err);
               
-              // Finally, delete the resident from the residents table
               db.query(
                 'DELETE FROM residents WHERE Resident_ID = ?',
                 [residentId],
@@ -261,7 +259,7 @@ app.get('/api/pending-residents', (req, res) => {
   });
 });
 
-/* ================= APPROVE PENDING RESIDENT ================= */
+/* ================= APPROVE PENDING RESIDENT (Method 2) ================= */
 app.post('/api/pending-residents/accept/:id', (req, res) => {
   const id = req.params.id;
 
@@ -274,8 +272,8 @@ app.post('/api/pending-residents/accept/:id', (req, res) => {
 
       db.query(
         `INSERT INTO health_records 
-         (Resident_ID, Height, Weight, BMI, Health_Condition, Allergies)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+          (Resident_ID, Height, Weight, BMI, Health_Condition, Allergies)
+          VALUES (?, ?, ?, ?, ?, ?)`,
         [p.Resident_ID, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies],
         (err, result) => {
           if (err) return res.status(500).json(err);
@@ -299,6 +297,47 @@ app.delete('/api/pending-residents/:id', (req, res) => {
   });
 });
 
+/* ================= REMOVE PENDING + RESIDENT ================= */
+app.delete('/api/pending-residents/remove/:id', (req, res) => {
+  const pendingId = req.params.id;
+
+  db.query(
+    'SELECT Resident_ID FROM pending_resident WHERE Pending_HR_ID = ?',
+    [pendingId],
+    (err, rows) => {
+      if (err) return res.status(500).json(err);
+      if (rows.length === 0) return res.sendStatus(404);
+
+      const residentId = rows[0].Resident_ID;
+
+      db.query(
+        'DELETE FROM pending_resident WHERE Pending_HR_ID = ?',
+        [pendingId],
+        (err) => {
+          if (err) return res.status(500).json(err);
+
+          db.query(
+            'DELETE FROM health_records WHERE Resident_ID = ?',
+            [residentId],
+            (err) => {
+              if (err) return res.status(500).json(err);
+
+              db.query(
+                'DELETE FROM residents WHERE Resident_ID = ?',
+                [residentId],
+                (err) => {
+                  if (err) return res.status(500).json(err);
+                  res.json({ success: true });
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
 /* ================= LOGIN ================= */
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -317,8 +356,6 @@ app.post('/api/login', (req, res) => {
     }
 
     const admin = rows[0];
-    
-    // Hash the input password with SHA2 and compare with DB
     const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
     
     if (admin.password === hashedPassword) {

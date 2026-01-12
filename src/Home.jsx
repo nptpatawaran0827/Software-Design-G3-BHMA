@@ -4,7 +4,6 @@ import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import Sidebar from './Sidebar';
 import RecordsPage from './RecordsPage';
 import AnalyticsPage from './AnalyticsPage';
-import ResidentPage from './ResidentPage'; // ✅ import ResidentPage
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -61,7 +60,7 @@ function Home({ onLogout }) {
   const [pendingResidents, setPendingResidents] = useState([]); 
   const [showNotification, setShowNotification] = useState(false); 
   const [preFillData, setPreFillData] = useState(null); 
-  const [showResidentForm, setShowResidentForm] = useState(false); // ✅ open ResidentPage modal
+  const [showResidentForm, setShowResidentForm] = useState(false); //  open ResidentPage modal
 
   // Initialize with default values
   const [dbStats, setDbStats] = useState({
@@ -233,12 +232,16 @@ function Home({ onLogout }) {
 
 const handleRemove = async (id) => {
   try {
-    await fetch(`http://localhost:5000/api/pending-residents/${id}`, { method: 'DELETE' });
-    fetchPending(); // ✅ This refreshes the pending list
+    await fetch(
+      `http://localhost:5000/api/pending-residents/remove/${id}`,
+      { method: 'DELETE' }
+    );
+    fetchPending();
   } catch (err) {
     console.error('Error removing resident:', err);
   }
 };
+
 
   // ==================== RECENT ACTIVITY ICONS ====================
   const getActivityIcon = (type) => {
@@ -312,7 +315,7 @@ const handleRemove = async (id) => {
           <RecordsPage
             autoOpenForm={shouldAutoOpenForm}
             preFillData={preFillData}
-            onSubmitSuccess={fetchPending} // refresh pending after submission
+            onSubmitSuccess={fetchPending} 
           />
         );
       case 'Analytics':

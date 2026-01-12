@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './style/ResidentPage.css';
 
 const initialState = {
@@ -13,6 +13,13 @@ const initialState = {
   Allergies: ''
 };
 
+// Helper function to generate ID: RES-*******-****
+const generateResidentId = () => {
+  const part1 = Math.floor(1000000 + Math.random() * 9000000); // 7 digits
+  const part2 = Math.floor(1000 + Math.random() * 9000);       // 4 digits
+  return `RES-${part1}-${part2}`;
+};
+
 export default function ResidentPage({ onCancel, onSubmitSuccess }) {
   const [formData, setFormData] = useState(initialState);
   const [message, setMessage] = useState(null);
@@ -24,7 +31,6 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
 
-      // Calculate BMI if Height or Weight changes
       if (name === 'Height' || name === 'Weight') {
         const h = parseFloat(updated.Height) / 100;
         const w = parseFloat(updated.Weight);
@@ -39,32 +45,32 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
     e.preventDefault();
     setMessage(null);
 
+    // Generate the custom ID first
+    const newCustomId = generateResidentId();
+
     try {
-      // ================= CREATE RESIDENT =================
+      // Create Resident (Sending the Custom ID)
       const residentRes = await fetch('http://localhost:5000/api/residents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          Resident_ID: newCustomId, 
           First_Name: formData.First_Name,
           Middle_Name: formData.Middle_Name,
           Last_Name: formData.Last_Name,
           Sex: formData.Sex,
-          Civil_Status: ''
+          Civil_Status: '' 
         })
       });
 
       if (!residentRes.ok) throw new Error('Resident creation failed');
       
-      const residentData = await residentRes.json();
-      const newResidentId = residentData.Resident_ID;
-      setResidentId(newResidentId);
-
-      // ================= CREATE PENDING HEALTH =================
+      // Create Pending Health (Using the SAME Custom ID)
       const pendingRes = await fetch('http://localhost:5000/api/pending-resident', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          Resident_ID: newResidentId,
+          Resident_ID: newCustomId, 
           Height: formData.Height || null,
           Weight: formData.Weight || null,
           BMI: formData.BMI || null,
@@ -76,9 +82,12 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
       if (!pendingRes.ok) throw new Error('Health submission failed');
 
-      setMessage({ type: 'success', text: `Submitted successfully. Resident ID: ${newResidentId}` });
+      // Update UI
+      setResidentId(newCustomId);
+      setMessage({ type: 'success', text: `Submitted successfully. Resident ID: ${newCustomId}` });
       setFormData(initialState);
-      onSubmitSuccess && onSubmitSuccess();
+      
+      if (onSubmitSuccess) onSubmitSuccess();
 
     } catch (error) {
       console.error('Error:', error);
@@ -101,13 +110,12 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
             {residentId && (
               <div className="alert alert-info">
-                <strong>Resident ID:</strong> {residentId}
+                <strong>Current Resident ID:</strong> {residentId}
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
               <div className="row g-3">
-
                 <div className="col-md-4">
                   <label className="form-label">First Name</label>
                   <input className="form-control" name="First_Name" value={formData.First_Name} onChange={handleChange} required />
@@ -166,7 +174,6 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
                   <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
                   <button type="submit" className="btn btn-primary">Submit</button>
                 </div>
-
               </div>
             </form>
           </div>
