@@ -11,10 +11,10 @@ app.use(express.json());
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '@Jianvench18',
-  database: 'admin_db'
+  password: '',
+  database: 'admin_db',
+  port: 3306 
 });
-
 db.connect(err => {
   if (err) return console.error(err);
   console.log('✅ Connected to admin_db');
