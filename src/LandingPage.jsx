@@ -10,9 +10,12 @@ const CLOUD_BACKGROUND = cloudBackground;
 const BHC_LOGO = logo;
 const DOCTOR_IMAGE = doctorImage;
 
-function LandingPage({ onHealthWorkerClick, onResidentClick }) {
+function LandingPage({ onHealthWorkerClick, onResidentClick, submissionStatus }) {
   const [clickedRole, setClickedRole] = useState(null);
   const [scrollY, setScrollY] = useState(0);
+  // Control visibility of the notification
+  const [showStatus, setShowStatus] = useState(false);
+  
   const aboutSectionRef = useRef(null);
   const wrapperRef = useRef(null);
 
@@ -22,7 +25,6 @@ function LandingPage({ onHealthWorkerClick, onResidentClick }) {
         setScrollY(wrapperRef.current.scrollTop);
       }
     };
-
     const wrapper = wrapperRef.current;
     if (wrapper) {
       wrapper.addEventListener('scroll', handleScroll);
@@ -30,17 +32,24 @@ function LandingPage({ onHealthWorkerClick, onResidentClick }) {
     }
   }, []);
 
+  // Update showStatus when a new submissionStatus arrives from App.js
+  useEffect(() => {
+    if (submissionStatus) {
+      setShowStatus(true);
+      // Auto-hide the alert after 15 seconds
+      const timer = setTimeout(() => setShowStatus(false), 15000);
+      return () => clearTimeout(timer);
+    }
+  }, [submissionStatus]);
+
   const handleRoleSelection = (role) => {
     setClickedRole(role);
-    
     if (role === 'health-worker') {
       setTimeout(() => {
         if (onHealthWorkerClick) onHealthWorkerClick();
       }, 150);
     } else if (role === 'resident') {
-      if (onResidentClick) {
-        onResidentClick();
-      }
+      if (onResidentClick) onResidentClick();
     }
   };
 
@@ -58,12 +67,24 @@ function LandingPage({ onHealthWorkerClick, onResidentClick }) {
 
   return (
     <div className="landing-page-wrapper" ref={wrapperRef}>
-      {/* SECTION 1: Landing Page */}
-      <div 
-        className={`landing-page ${CLOUD_BACKGROUND ? 'with-bg-image' : ''}`}
-        style={heroParallaxStyle}
-      >
+      <div className={`landing-page ${CLOUD_BACKGROUND ? 'with-bg-image' : ''}`} style={heroParallaxStyle}>
         <div className="main-container">
+          
+          {/* SUCCESS NOTIFICATION OVERLAY */}
+          {showStatus && submissionStatus && (
+            <div className="submission-alert-overlay">
+              <div className="submission-alert-content">
+                <div className="alert-icon">✓</div>
+                <div className="alert-text">
+                  <strong>Form Submitted!</strong>
+                  <p>Your Resident ID: <span className="id-highlight">{submissionStatus}</span></p>
+                  <small>Please keep this ID for your records.</small>
+                </div>
+                <button className="close-alert" onClick={() => setShowStatus(false)}>×</button>
+              </div>
+            </div>
+          )}
+
           <div className="header-logo">
             <img src={BHC_LOGO} alt="BHC Logo" className="logo-image" />
             <div>
@@ -76,41 +97,20 @@ function LandingPage({ onHealthWorkerClick, onResidentClick }) {
 
           <div className="content-grid">
             <div className="left-content">
-              <h1 className="welcome-title">
-                Welcome to the Barangay Health Center
-              </h1>
+              <h1 className="welcome-title">Welcome to the Barangay Health Center</h1>
               <p className="welcome-subtitle">
                 Providing quality healthcare services and monitoring<br />
                 for our local community.
               </p>
-
-              <button className="get-started-btn" onClick={scrollToAbout}>
-                About →
-              </button>
-
+              <button className="get-started-btn" onClick={scrollToAbout}>About →</button>
               <div className="role-card">
-                <p className="role-question">
-                  Are you a resident or health worker?
-                </p>
-                
+                <p className="role-question">Are you a resident or health worker?</p>
                 <div className="role-buttons">
-                  <button
-                    className={`role-btn resident-btn ${clickedRole === 'resident' ? 'active' : ''}`}
-                    onClick={() => handleRoleSelection('resident')}
-                  >
-                    RESIDENT
-                  </button>
-
-                  <button
-                    className={`role-btn health-btn ${clickedRole === 'health-worker' ? 'active' : ''}`}
-                    onClick={() => handleRoleSelection('health-worker')}
-                  >
-                    HEALTH WORKER
-                  </button>
+                  <button className={`role-btn resident-btn ${clickedRole === 'resident' ? 'active' : ''}`} onClick={() => handleRoleSelection('resident')}>RESIDENT</button>
+                  <button className={`role-btn health-btn ${clickedRole === 'health-worker' ? 'active' : ''}`} onClick={() => handleRoleSelection('health-worker')}>HEALTH WORKER</button>
                 </div>
               </div>
             </div>
-
             <div className="right-content">
               <div className="doctor-placeholder">
                 <img src={DOCTOR_IMAGE} alt="Healthcare Professional" className="doctor-image" />
@@ -119,11 +119,7 @@ function LandingPage({ onHealthWorkerClick, onResidentClick }) {
           </div>
         </div>
       </div>
-
-      {/* SECTION 2: About System */}
       <AboutSection ref={aboutSectionRef} scrollY={scrollY} />
-
-      {/* SECTION 3: Developers */}
       <DevelopersSection scrollY={scrollY} />
     </div>
   );

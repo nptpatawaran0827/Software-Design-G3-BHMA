@@ -50,7 +50,7 @@ DROP TABLE IF EXISTS `health_records`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `health_records` (
   `Health_Record_ID` int NOT NULL AUTO_INCREMENT,
-  `Resident_ID` int NOT NULL,
+  `Resident_ID` varchar(20) NOT NULL,
   `Blood_Pressure` varchar(20) DEFAULT NULL,
   `Weight` decimal(5,2) DEFAULT NULL,
   `Height` decimal(5,2) DEFAULT NULL,
@@ -65,10 +65,8 @@ CREATE TABLE `health_records` (
   `Recorded_By` int DEFAULT NULL,
   PRIMARY KEY (`Health_Record_ID`),
   KEY `Resident_ID` (`Resident_ID`),
-  KEY `Recorded_By` (`Recorded_By`),
-  CONSTRAINT `health_records_ibfk_1` FOREIGN KEY (`Resident_ID`) REFERENCES `residents` (`Resident_ID`) ON DELETE CASCADE,
-  CONSTRAINT `health_records_ibfk_2` FOREIGN KEY (`Recorded_By`) REFERENCES `admins` (`admin_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `health_records_ibfk_1` FOREIGN KEY (`Resident_ID`) REFERENCES `residents` (`Resident_ID`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,7 +75,7 @@ CREATE TABLE `health_records` (
 
 LOCK TABLES `health_records` WRITE;
 /*!40000 ALTER TABLE `health_records` DISABLE KEYS */;
-INSERT INTO `health_records` VALUES (1,3,'120/80',65.00,170.00,22.49,'Normal','Good','wala','matcha','Matcha lobers since 2004','2026-01-07','2026-01-11 00:06:32',3),(2,1,NULL,63.00,157.00,25.56,'Overweight','Good','na','balew','balew sa kanto','2026-01-10','2026-01-11 00:20:02',3);
+INSERT INTO `health_records` VALUES (1,'RES-1102343-1199',NULL,45.00,170.00,15.57,NULL,'Fair','wala',NULL,NULL,NULL,'2026-01-12 20:49:12',NULL),(2,'RES-6215921-2596',NULL,55.00,165.00,20.20,'Normal','Good','wala','Goods sya','All goods','2026-01-12','2026-01-12 20:53:45',3),(3,'RES-4856102-6008','120/80',50.00,170.00,17.30,'Underweight','Good','wala','All goods','All goods din','2026-01-12','2026-01-12 20:54:55',3),(9,'RES-2350340-6807',NULL,75.00,165.00,27.55,'Overweight','Good','wala','Wala','Gym rat','2026-01-12','2026-01-12 21:05:40',3),(10,'RES-1282010-2623','120/80',60.00,170.00,20.76,'Normal','Good','wala','Gym rat','Gymratt','2026-01-12','2026-01-12 21:07:51',3),(11,'RES-9894535-7661','120/80',50.00,150.00,22.22,'Normal','Good','sdfdf','wfsdv','s ef erh tr','2026-01-12','2026-01-12 21:10:04',3),(12,'RES-8135672-4842','120/80',74.00,170.00,25.61,'Overweight','Good','wala','wala','guudshit','2026-01-12','2026-01-12 21:13:10',3);
 /*!40000 ALTER TABLE `health_records` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -90,7 +88,7 @@ DROP TABLE IF EXISTS `pending_resident`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `pending_resident` (
   `Pending_HR_ID` int NOT NULL AUTO_INCREMENT,
-  `Resident_ID` int NOT NULL,
+  `Resident_ID` varchar(20) NOT NULL,
   `Height` decimal(5,2) DEFAULT NULL,
   `Weight` decimal(5,2) DEFAULT NULL,
   `BMI` decimal(5,2) DEFAULT NULL,
@@ -101,10 +99,8 @@ CREATE TABLE `pending_resident` (
   `Verified_By` int DEFAULT NULL,
   PRIMARY KEY (`Pending_HR_ID`),
   KEY `Resident_ID` (`Resident_ID`),
-  KEY `Verified_By` (`Verified_By`),
-  CONSTRAINT `pending_resident_ibfk_1` FOREIGN KEY (`Resident_ID`) REFERENCES `residents` (`Resident_ID`),
-  CONSTRAINT `pending_resident_ibfk_2` FOREIGN KEY (`Verified_By`) REFERENCES `admins` (`admin_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `pending_resident_ibfk_1` FOREIGN KEY (`Resident_ID`) REFERENCES `residents` (`Resident_ID`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -113,7 +109,7 @@ CREATE TABLE `pending_resident` (
 
 LOCK TABLES `pending_resident` WRITE;
 /*!40000 ALTER TABLE `pending_resident` DISABLE KEYS */;
-INSERT INTO `pending_resident` VALUES (2,2,160.00,63.00,24.61,'Good','na','2026-01-10 15:53:50','Pending',NULL),(5,5,170.00,45.00,15.57,'Good','wala','2026-01-10 16:27:10','Pending',NULL);
+INSERT INTO `pending_resident` VALUES (3,'RES-1322020-9062',165.00,60.00,22.04,'Good','tulog','2026-01-12 12:50:10','Pending',NULL),(4,'RES-6242744-3945',170.00,65.00,22.49,'Good','gulay','2026-01-12 12:50:32','Pending',NULL),(5,'RES-6055241-5667',157.00,63.00,25.56,'Good','wala','2026-01-12 12:51:43','Pending',NULL);
 /*!40000 ALTER TABLE `pending_resident` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -125,7 +121,7 @@ DROP TABLE IF EXISTS `residents`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `residents` (
-  `Resident_ID` int NOT NULL AUTO_INCREMENT,
+  `Resident_ID` varchar(20) NOT NULL,
   `First_Name` varchar(100) NOT NULL,
   `Middle_Name` varchar(100) DEFAULT NULL,
   `Last_Name` varchar(100) NOT NULL,
@@ -136,7 +132,7 @@ CREATE TABLE `residents` (
   `Street` varchar(255) DEFAULT NULL,
   `Barangay` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`Resident_ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -145,7 +141,7 @@ CREATE TABLE `residents` (
 
 LOCK TABLES `residents` WRITE;
 /*!40000 ALTER TABLE `residents` DISABLE KEYS */;
-INSERT INTO `residents` VALUES (1,'Ikki Dominique','.','Modar','Female','2004-02-23','Single','09618962101','2nd st.','Sta.Lucia'),(2,'Johanna Lucia','Villarama','Hizon','Female',NULL,NULL,NULL,NULL,NULL),(3,'Jian Vench','Virgo','Patawaran','Male','2004-01-14','Single','789456','katips','Katipunan'),(4,'Nheil Patrick','Tito','Patawaran','Male','2003-08-24','Single','1233654','dunno','Marikina Heights'),(5,'Nheil Patrick','Tito','Patawaran','Male',NULL,NULL,NULL,NULL,NULL);
+INSERT INTO `residents` VALUES ('RES-1102343-1199','Nheil Patrick','Tito','Patawaran','Male',NULL,NULL,NULL,NULL,NULL),('RES-1282010-2623','Xander','de','Alfaro','Male',NULL,'Single','12344','Pureza','Sta. Mesa'),('RES-1322020-9062','Johanna Lucia','Villarama','Hizon','Female',NULL,NULL,NULL,NULL,NULL),('RES-2350340-6807','Xander','De','Alfaro','Male',NULL,'Single','1234566','Purea','Katipunan'),('RES-4856102-6008','Xian Kylle','.','Pelon','Male',NULL,'Single','23456','Pureza','Sta.Mesa'),('RES-6055241-5667','Ikki Dominique','.','Modar','Female',NULL,NULL,NULL,NULL,NULL),('RES-6215921-2596','Carl','.','Desalles','Male','2004-10-13','Single','1234455','Pureza','Sta. mesa'),('RES-6242744-3945','Jian Vench','Virgo','Palculan','Male',NULL,NULL,NULL,NULL,NULL),('RES-8135672-4842','Simeon','Modar','Camasis','Male','2026-01-12','Single','12','Pureza','Sta.Pasig'),('RES-9894535-7661','o','o','o','Male','2025-02-12','Single','12243','fsfsdfs','sdfdsg sg');
 /*!40000 ALTER TABLE `residents` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -158,4 +154,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-11  0:31:39
+-- Dump completed on 2026-01-12 21:24:39

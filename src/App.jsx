@@ -10,9 +10,9 @@ function App() {
     Boolean(localStorage.getItem('authToken'))
   )
 
-  
   const [page, setPage] = useState('landing') 
-
+  // State to hold the ID from ResidentPage
+  const [submittedId, setSubmittedId] = useState(null)
 
   function handleLoginSuccess() {
     localStorage.setItem('authToken', 'sample-token')
@@ -26,6 +26,12 @@ function App() {
     setPage('landing')
   }
 
+  // Function to handle the ID returned from the ResidentPage
+  function handleResidentSuccess(newId) {
+    setSubmittedId(newId);
+    setPage('landing');
+  }
+
   return (
     <div className="app-root">
       <div className="app-content">
@@ -33,13 +39,23 @@ function App() {
 
         {page === 'landing' && (
           <LandingPage 
-            onHealthWorkerClick={() => setPage('login')}
-            onResidentClick={() => setPage('resident')}
+            onHealthWorkerClick={() => {
+              setSubmittedId(null); // Clear notification when moving to login
+              setPage('login');
+            }}
+            onResidentClick={() => {
+              setSubmittedId(null); // Clear notification when starting new form
+              setPage('resident');
+            }}
+            submissionStatus={submittedId} // Pass ID to LandingPage
           />
         )}
 
         {page === 'resident' && (
-          <ResidentPage onCancel={() => setPage('landing')} />
+          <ResidentPage 
+            onCancel={() => setPage('landing')} 
+            onSubmitSuccess={handleResidentSuccess} 
+          />
         )}
 
         {page === 'login' && (

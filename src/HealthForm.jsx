@@ -26,10 +26,12 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
     status: 'Active'
   });
 
+  /* ==================== UPDATED ID GENERATOR ==================== */
+  // Matches format: RES-*******-**** (7 digits then 4 digits)
   const generateResidentID = () => {
-    const timestamp = Date.now();
-    const randomNum = Math.floor(Math.random() * 900 + 100);
-    return `RES-${timestamp}-${randomNum}`;
+    const part1 = Math.floor(1000000 + Math.random() * 9000000); // 7 digits
+    const part2 = Math.floor(1000 + Math.random() * 9000);       // 4 digits
+    return `RES-${part1}-${part2}`;
   };
 
   // Calculate Nutrition Status based on BMI
@@ -61,20 +63,14 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
     if (!editMode && !initialData) {
       setFormData(prev => ({ ...prev, Resident_ID: generateResidentID() }));
     }
-  }, [editMode]);
+  }, [editMode, initialData]);
 
-  // Populate form with data - FIXED to preserve all fields
+  // Populate form with data
   useEffect(() => {
     if (editMode && initialData) {
-      // Editing existing health record - preserve ALL data from database
-      const formattedDate = initialData.Date_Visited
-        ? initialData.Date_Visited.split('T')[0]
-        : '';
-      const formattedBirthdate = initialData.Birthdate
-        ? initialData.Birthdate.split('T')[0]
-        : '';
+      const formattedDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : '';
+      const formattedBirthdate = initialData.Birthdate ? initialData.Birthdate.split('T')[0] : '';
       
-      // Create a new object starting with all current form data
       const updatedFormData = {
         First_Name: initialData.First_Name || '',
         Middle_Name: initialData.Middle_Name || '',
@@ -102,12 +98,11 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
       };
       
       setFormData(updatedFormData);
-    } else if (!editMode && initialData && initialData.Pending_HR_ID) {
-      // Accepting pending resident - prefill with their data
-      const formattedBirthdate = initialData.Birthdate
-        ? initialData.Birthdate.split('T')[0]
-        : '';
-      setFormData({
+    } else if (!editMode && initialData && (initialData.Pending_HR_ID || initialData.Resident_ID)) {
+      // Accepting pending resident or pre-filling from previous page
+      const formattedBirthdate = initialData.Birthdate ? initialData.Birthdate.split('T')[0] : '';
+      setFormData(prev => ({
+        ...prev,
         First_Name: initialData.First_Name || '',
         Middle_Name: initialData.Middle_Name || '',
         Last_Name: initialData.Last_Name || '',
@@ -116,25 +111,16 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
         Age: initialData.Age || calculateAge(formattedBirthdate),
         Sex: initialData.Sex || '',
         Civil_Status: initialData.Civil_Status || '',
-        Blood_Pressure: '',
         Weight: initialData.Weight ? String(initialData.Weight) : '',
         Height: initialData.Height ? String(initialData.Height) : '',
         BMI: initialData.BMI ? String(initialData.BMI) : '',
         Health_Condition: initialData.Health_Condition || '',
         Nutrition_Status: calculateNutritionStatus(initialData.BMI),
-        Diagnosis: '',
         Allergies: initialData.Allergies || '',
         Contact_Number: initialData.Contact_Number || '',
         Street: initialData.Street || '',
         Barangay: initialData.Barangay || '',
-        Date_Visited: '',
-        Remarks: '',
-        status: 'Active',
-        Health_Record_ID: initialData.Health_Record_ID || null
-      });
-    } else if (!editMode && !initialData) {
-      // Creating new record from scratch
-      setFormData(prev => ({ ...prev, Resident_ID: generateResidentID() }));
+      }));
     }
   }, [editMode, initialData]);
 
@@ -142,18 +128,15 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
     const { name, value } = e.target;
     let updatedData = { ...formData, [name]: value };
 
-    // Auto-calculate Age when Birthdate changes
     if (name === 'Birthdate') {
       updatedData.Age = calculateAge(value);
     }
 
-    // Auto-calculate BMI when Height or Weight changes
     if ((name === 'Weight' || name === 'Height') && updatedData.Weight && updatedData.Height) {
       const heightInMeters = parseFloat(updatedData.Height) / 100;
       if (heightInMeters > 0) {
         const calculatedBMI = (parseFloat(updatedData.Weight) / (heightInMeters * heightInMeters)).toFixed(2);
         updatedData.BMI = calculatedBMI;
-        // Auto-generate Nutrition Status based on BMI
         updatedData.Nutrition_Status = calculateNutritionStatus(calculatedBMI);
       }
     }
@@ -194,7 +177,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
               </div>
               <div className="col-md-6">
                 <label className="form-label fw-semibold">Resident ID</label>
-                <input className="form-control" name="Resident_ID" value={formData.Resident_ID} disabled />
+                <input className="form-control fw-bold text-primary" name="Resident_ID" value={formData.Resident_ID} disabled />
               </div>
               <div className="col-md-3">
                 <label className="form-label fw-semibold">Birthdate</label>
