@@ -13,10 +13,9 @@ const initialState = {
   Allergies: ''
 };
 
-// Helper function to generate ID: RES-*******-****
 const generateResidentId = () => {
-  const part1 = Math.floor(1000000 + Math.random() * 9000000); // 7 digits
-  const part2 = Math.floor(1000 + Math.random() * 9000);       // 4 digits
+  const part1 = Math.floor(1000000 + Math.random() * 9000000); 
+  const part2 = Math.floor(1000 + Math.random() * 9000);       
   return `RES-${part1}-${part2}`;
 };
 
@@ -27,16 +26,13 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
-
       if (name === 'Height' || name === 'Weight') {
         const h = parseFloat(updated.Height) / 100;
         const w = parseFloat(updated.Weight);
         updated.BMI = h > 0 && w > 0 ? (w / (h * h)).toFixed(2) : '';
       }
-
       return updated;
     });
   };
@@ -45,11 +41,9 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
     e.preventDefault();
     setMessage(null);
 
-    // Generate the custom ID first
     const newCustomId = generateResidentId();
 
     try {
-      // Create Resident (Sending the Custom ID)
       const residentRes = await fetch('http://localhost:5000/api/residents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,7 +59,6 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
       if (!residentRes.ok) throw new Error('Resident creation failed');
       
-      // Create Pending Health (Using the SAME Custom ID)
       const pendingRes = await fetch('http://localhost:5000/api/pending-resident', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,12 +75,16 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
       if (!pendingRes.ok) throw new Error('Health submission failed');
 
-      // Update UI
       setResidentId(newCustomId);
       setMessage({ type: 'success', text: `Submitted successfully. Resident ID: ${newCustomId}` });
       setFormData(initialState);
       
-      if (onSubmitSuccess) onSubmitSuccess();
+      // Critical: Pass the ID to the parent handler
+      if (onSubmitSuccess) {
+        setTimeout(() => {
+          onSubmitSuccess(newCustomId);
+        }, 1500);
+      }
 
     } catch (error) {
       console.error('Error:', error);
@@ -108,29 +105,20 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
               </div>
             )}
 
-            {residentId && (
-              <div className="alert alert-info">
-                <strong>Current Resident ID:</strong> {residentId}
-              </div>
-            )}
-
             <form onSubmit={handleSubmit}>
               <div className="row g-3">
                 <div className="col-md-4">
                   <label className="form-label">First Name</label>
                   <input className="form-control" name="First_Name" value={formData.First_Name} onChange={handleChange} required />
                 </div>
-
                 <div className="col-md-4">
                   <label className="form-label">Middle Name</label>
                   <input className="form-control" name="Middle_Name" value={formData.Middle_Name} onChange={handleChange} />
                 </div>
-
                 <div className="col-md-4">
                   <label className="form-label">Last Name</label>
                   <input className="form-control" name="Last_Name" value={formData.Last_Name} onChange={handleChange} required />
                 </div>
-
                 <div className="col-md-3">
                   <label className="form-label">Sex</label>
                   <select className="form-select" name="Sex" value={formData.Sex} onChange={handleChange} required>
@@ -139,22 +127,18 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
                     <option value="Female">Female</option>
                   </select>
                 </div>
-
                 <div className="col-md-3">
                   <label className="form-label">Height (cm)</label>
                   <input type="number" className="form-control" name="Height" value={formData.Height} onChange={handleChange} />
                 </div>
-
                 <div className="col-md-3">
                   <label className="form-label">Weight (kg)</label>
                   <input type="number" className="form-control" name="Weight" value={formData.Weight} onChange={handleChange} />
                 </div>
-
                 <div className="col-md-3">
                   <label className="form-label">BMI</label>
                   <input className="form-control" value={formData.BMI} readOnly />
                 </div>
-
                 <div className="col-md-6">
                   <label className="form-label">Health Condition</label>
                   <select className="form-select" name="Health_Condition" value={formData.Health_Condition} onChange={handleChange}>
@@ -164,12 +148,10 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
                     <option value="Poor">Poor</option>
                   </select>
                 </div>
-
                 <div className="col-md-6">
                   <label className="form-label">Allergies</label>
                   <input className="form-control" name="Allergies" value={formData.Allergies} onChange={handleChange} />
                 </div>
-
                 <div className="col-12 d-flex justify-content-end gap-2 mt-3">
                   <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
                   <button type="submit" className="btn btn-primary">Submit</button>

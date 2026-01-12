@@ -379,3 +379,60 @@
     height: 400px;
   }
 }
+
+/* ===== SUBMISSION NOTIFICATION ===== */
+
+.submission-alert-overlay {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  animation: slideIn 0.5s ease-out;
+}
+
+.submission-alert-content {
+  background: white;
+  border-left: 5px solid #28a745;
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+}
+
+.alert-icon {
+  background: #28a745;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.id-highlight {
+  color: #007bff;
+  font-family: monospace;
+  font-size: 1.1rem;
+  background: #f0f7ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.close-alert {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #888;
+  margin-left: 10px;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
