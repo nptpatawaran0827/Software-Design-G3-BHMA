@@ -225,60 +225,72 @@ const RecordsPage = () => {
       <AnimatePresence>
         {isModalOpen && (
           <div className="modal-backdrop">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-content-custom">
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h4 className="fw-bold m-0">{editingPatient ? 'Update Patient' : 'Add New Patient'}</h4>
-                <button className="btn-close" onClick={() => setIsModalOpen(false)}></button>
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }} 
+              animate={{ y: 0, opacity: 1 }} 
+              className="modal-content-box" // Matches the fixed-width CSS class
+            >
+              <div className="modal-header">
+                <h2>{editingPatient ? 'Update Patient' : 'Add New Patient'}</h2>
+                <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>
+                  <X size={20} />
+                </button>
               </div>
               
               <form onSubmit={handleSave}>
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label small fw-bold">RESIDENT ID</label>
-                    <input type="text" className="form-control" value={formData.Resident_ID} onChange={(e) => setFormData({...formData, Resident_ID: e.target.value})} required disabled={!!editingPatient} />
+                <div className="form-row">
+                  <div className="form-input-group">
+                    <label>RESIDENT ID</label>
+                    <input type="text" value={formData.Resident_ID} onChange={(e) => setFormData({...formData, Resident_ID: e.target.value})} required disabled={!!editingPatient} />
                   </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-bold">DATE VISITED</label>
-                    <input type="date" className="form-control border-info" value={formData.Date_Visited} onChange={(e) => setFormData({...formData, Date_Visited: e.target.value})} required />
+                  <div className="form-input-group">
+                    <label>DATE VISITED</label>
+                    <input type="date" value={formData.Date_Visited} onChange={(e) => setFormData({...formData, Date_Visited: e.target.value})} required />
                   </div>
-                  <div className="col-12">
-                    <label className="form-label small fw-bold">FULL NAME</label>
-                    <input type="text" className="form-control" value={formData.Full_Name} onChange={(e) => setFormData({...formData, Full_Name: e.target.value})} required />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label small fw-bold text-primary">DIAGNOSIS</label>
-                    <input type="text" className="form-control border-primary" value={formData.Diagnosis} onChange={(e) => setFormData({...formData, Diagnosis: e.target.value})} />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-bold">SEX</label>
-                    <select className="form-select" value={formData.Sex} onChange={(e) => setFormData({...formData, Sex: e.target.value})}>
+                </div>
+
+                <div className="form-input-group">
+                  <label>FULL NAME</label>
+                  <input type="text" value={formData.Full_Name} onChange={(e) => setFormData({...formData, Full_Name: e.target.value})} required />
+                </div>
+
+                <div className="form-input-group">
+                  <label className="text-primary">DIAGNOSIS</label>
+                  <input type="text" className="blue-border-input" value={formData.Diagnosis} onChange={(e) => setFormData({...formData, Diagnosis: e.target.value})} />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-input-group">
+                    <label>SEX</label>
+                    <select value={formData.Sex} onChange={(e) => setFormData({...formData, Sex: e.target.value})}>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                     </select>
                   </div>
-                  <div className="col-md-6">
-                    <label className="form-label small fw-bold">CONDITION</label>
-                    <select className="form-select" value={formData.Health_Condition} onChange={(e) => setFormData({...formData, Health_Condition: e.target.value})}>
+                  <div className="form-input-group">
+                    <label>CONDITION</label>
+                    <select value={formData.Health_Condition} onChange={(e) => setFormData({...formData, Health_Condition: e.target.value})}>
                       <option value="Good">Good</option>
                       <option value="Fair">Fair</option>
                       <option value="Poor">Poor</option>
                     </select>
                   </div>
-                  <div className="col-md-4"><label className="small fw-bold">WEIGHT (kg)</label><input type="number" step="0.1" className="form-control" value={formData.Weight} onChange={(e) => setFormData({...formData, Weight: e.target.value})} /></div>
-                  <div className="col-md-4"><label className="small fw-bold">HEIGHT (cm)</label><input type="number" step="0.1" className="form-control" value={formData.Height} onChange={(e) => setFormData({...formData, Height: e.target.value})} /></div>
-                  <div className="col-md-4"><label className="small fw-bold">BMI</label><input type="text" className="form-control bg-light" value={formData.BMI} readOnly /></div>
-                  
-                  <div className="col-12">
-                    <label className="form-label small fw-bold">REMARKS / ADDITIONAL NOTES</label>
-                    <textarea rows="2" className="form-control" value={formData.Remarks_Notes} onChange={(e) => setFormData({...formData, Remarks_Notes: e.target.value})}></textarea>
-                  </div>
                 </div>
 
-                <div className="mt-4">
-                  <button type="submit" className="btn btn-primary w-100 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
-                    <Save size={18} /> {editingPatient ? 'Update Changes' : 'Save Record'}
-                  </button>
+                <div className="form-row-three">
+                  <div className="form-input-group"><label>WT (kg)</label><input type="number" step="0.1" value={formData.Weight} onChange={(e) => setFormData({...formData, Weight: e.target.value})} /></div>
+                  <div className="form-input-group"><label>HT (cm)</label><input type="number" step="0.1" value={formData.Height} onChange={(e) => setFormData({...formData, Height: e.target.value})} /></div>
+                  <div className="form-input-group"><label>BMI</label><input type="text" className="bmi-readonly" value={formData.BMI} readOnly /></div>
                 </div>
+                
+                <div className="form-input-group">
+                  <label>REMARKS / ADDITIONAL NOTES</label>
+                  <textarea rows="2" value={formData.Remarks_Notes} onChange={(e) => setFormData({...formData, Remarks_Notes: e.target.value})}></textarea>
+                </div>
+
+                <button type="submit" className="modal-submit-btn">
+                  <Save size={18} /> {editingPatient ? 'Update Changes' : 'Save Record'}
+                </button>
               </form>
             </motion.div>
           </div>
