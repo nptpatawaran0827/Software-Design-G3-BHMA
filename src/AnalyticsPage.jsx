@@ -1,10 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, 
   LinearScale, BarElement, Title, PointElement, LineElement, Filler 
 } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
+<<<<<<< HEAD
 import { Activity, UserPlus, AlertTriangle, TrendingUp } from 'lucide-react';
+=======
+import { Activity, UserPlus, AlertTriangle, Search, TrendingUp } from 'lucide-react';
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
 import { motion } from 'framer-motion';
 import './style/AnalyticsPage.css';
 
@@ -38,6 +43,10 @@ const AnalyticsPage = () => {
     const now = new Date();
     const currentMonth = now.getMonth();
 
+<<<<<<< HEAD
+=======
+    // 1. Calculate Real Stats from Database
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
     const total = records.length;
     const newThisMonth = records.filter(r => {
         const regDate = new Date(r.Date_Registered || r.CreatedAt);
@@ -51,6 +60,10 @@ const AnalyticsPage = () => {
 
     setStats({ total, newThisMonth, critical, recovery: 94 });
 
+<<<<<<< HEAD
+=======
+    // 2. Process Age Groups (Fixed Logic)
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
     const ageGroups = { '0-18': 0, '19-35': 0, '36-50': 0, '51-65': 0, '65+': 0 };
     records.forEach(r => {
       const birthYear = new Date(r.Birthdate).getFullYear();
@@ -62,6 +75,10 @@ const AnalyticsPage = () => {
       else ageGroups['65+']++;
     });
 
+<<<<<<< HEAD
+=======
+    // 3. Process Health Conditions
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
     const conditionMap = {};
     records.forEach(r => {
       const cond = r.Diagnosis || r.Health_Condition || 'Others';
@@ -111,10 +128,23 @@ const AnalyticsPage = () => {
 
   return (
     <div className="analytics-container p-4">
+<<<<<<< HEAD
       {/* Updated Header - Search Box Removed */}
       <motion.div {...animationProps} className="mb-4">
         <h2 className="fw-bold mb-0">Health Analytics</h2>
         <p className="text-muted small">Live insights from patient database</p>
+=======
+      {/* Header */}
+      <motion.div {...animationProps} className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="fw-bold mb-0">Health Analytics</h2>
+          <p className="text-muted small">Live insights from patient database</p>
+        </div>
+        <div className="search-box">
+          <Search size={18} className="text-muted" />
+          <input type="text" placeholder="Filter by Street" />
+        </div>
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
       </motion.div>
 
       {/* Top Stat Cards */}
@@ -142,6 +172,10 @@ const AnalyticsPage = () => {
 
       {/* Charts Middle Row */}
       <div className="row g-4 mb-4">
+<<<<<<< HEAD
+=======
+        {/* Pie Chart */}
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
         <motion.div {...animationProps} transition={{ delay: 0.4 }} className="col-md-5">
           <div className="chart-card shadow-sm h-100">
             <h6 className="fw-bold">Common Health Conditions</h6>
@@ -159,6 +193,10 @@ const AnalyticsPage = () => {
           </div>
         </motion.div>
 
+<<<<<<< HEAD
+=======
+        {/* Bar Chart */}
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
         <motion.div {...animationProps} transition={{ delay: 0.5 }} className="col-md-7">
           <div className="chart-card shadow-sm h-100">
             <h6 className="fw-bold">Patients by Age Group</h6>
@@ -211,4 +249,7 @@ const AnalyticsPage = () => {
 };
 
 export default AnalyticsPage;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4e52e10f4494618d86a38e7a5f3f6d901f3c3721
