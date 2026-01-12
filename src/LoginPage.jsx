@@ -3,7 +3,7 @@ import logo from './assets/logo.png'
 import login from './assets/Login.jpg'
 import './style/LoginPage.css'
 
-function LoginPage({ onLoginSuccess }) {
+function LoginPage({ onLoginSuccess, onReturnToLanding  }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -51,6 +51,11 @@ function LoginPage({ onLoginSuccess }) {
     <div className="login-portal">
       <div className="login-card-split" role="main">
         <div className="login-left">
+
+             <button className="return-btn" onClick={onReturnToLanding}>
+            ← Return
+          </button>
+          
           <div className="logo-wrap">
             <div className="logo-placeholder" aria-hidden="true">
                 <img src={logo} alt="Logo" />

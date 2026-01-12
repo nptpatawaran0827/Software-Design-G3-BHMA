@@ -1,0 +1,182 @@
+/* ===== DEVELOPERS SECTION ===== */
+.developers-system-section {
+  position: relative;
+  background-color: #0f766e;
+  min-height: 100vh;
+  padding: 80px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  background-attachment: fixed; 
+}
+
+.developers-system-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 118, 84, 0.63);
+  z-index: 0;
+}
+
+.developers-system-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  width: 100%;
+}
+
+.section-title {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 40px;
+  text-align: center;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  color: white;
+}
+
+.section-subtitle {
+  font-size: 20px;
+  text-align: center;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 60px;
+}
+
+.developers-row-top {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.developers-row-bottom {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.developers-row-bottom .developer-card {
+  width: calc((100% - 120px) / 4);
+  max-width: 350px;
+}
+
+.developer-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.2);
+  color: white;
+}
+
+.developer-card:hover {
+  transform: translateY(-10px);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.developer-image-wrapper {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 20px;
+  border: 4px solid white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.developer-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.developer-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.developer-role {
+  font-size: 16px;
+  color: rgba(255,255,255,0.8);
+  font-style: italic;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .developers-row-top {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .developers-row-bottom .developer-card {
+    width: calc((100% - 40px) / 2);
+  }
+  
+  .section-title {
+    font-size: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .developers-system-section {
+    padding: 60px 20px;
+    background-attachment: scroll; 
+  }
+  
+  .section-title {
+    font-size: 32px;
+    margin-bottom: 30px;
+  }
+  
+  .section-subtitle {
+    font-size: 18px;
+    margin-bottom: 40px;
+  }
+  
+  .developers-row-top {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .developers-row-bottom {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .developers-row-bottom .developer-card {
+    width: 100%;
+  }
+  
+  .developer-card {
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-title {
+    font-size: 28px;
+  }
+  
+  .developer-image-wrapper {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .developer-name {
+    font-size: 20px;
+  }
+  
+  .developer-role {
+    font-size: 14px;
+  }
+}
