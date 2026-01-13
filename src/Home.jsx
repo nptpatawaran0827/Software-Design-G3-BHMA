@@ -8,7 +8,11 @@ import AnalyticsPage from './AnalyticsPage';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 function Home({ onLogout }) {
-  const [activeTab, setActiveTab] = useState('Home');
+  // UPDATED: Initialize from localStorage so it remembers the tab on reload
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('activeDashboardTab') || 'Home';
+  });
+
   const [filter, setFilter] = useState('All Activities');
   const [activities, setActivities] = useState([]);
   const [shouldAutoOpenForm, setShouldAutoOpenForm] = useState(false);
@@ -31,6 +35,11 @@ function Home({ onLogout }) {
 
   const [diagnosisChartData, setDiagnosisChartData] = useState(null);
   const [genderChartData, setGenderChartData] = useState(null);
+
+  // NEW: Save the activeTab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('activeDashboardTab', activeTab);
+  }, [activeTab]);
 
   // ==================== FETCH DATA (OPTIMIZED) ====================
   const fetchHealthRecords = async () => {
@@ -62,7 +71,6 @@ function Home({ onLogout }) {
     fetchHealthRecords();
     fetchPending();
     
-    // FAST UPDATE: Syncs PWD counts and Notifications every 5 seconds
     const interval = setInterval(() => {
       fetchPending();
       fetchHealthRecords(); 
@@ -71,7 +79,6 @@ function Home({ onLogout }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
@@ -137,7 +144,7 @@ function Home({ onLogout }) {
       setActiveTab('Records');
       setShouldAutoOpenForm(true);
       setShowNotification(false);
-      fetchHealthRecords(); // Immediate refresh after accept
+      fetchHealthRecords(); 
     } catch (err) { console.error(err); }
   };
 
@@ -154,7 +161,6 @@ function Home({ onLogout }) {
 
     return (
       <div className="p-4">
-        {/* Top Navbar with Fixed Dropdown */}
         <div className="d-flex justify-content-end align-items-center mb-4 gap-2 position-relative">
           <div ref={notificationRef}>
             <button className="btn btn-outline-dark position-relative" onClick={() => setShowNotification(!showNotification)}>
@@ -196,7 +202,6 @@ function Home({ onLogout }) {
 
         <h2 className="fw-bold mb-4 text-uppercase">WELCOME BACK, ADMIN!</h2>
 
-        {/* Recent Activity Section */}
         <div className="card border-0 shadow-sm rounded-4 mb-4">
           <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
             <h5 className="mb-0 fw-bold">Recent Activity</h5>
@@ -226,13 +231,8 @@ function Home({ onLogout }) {
           </div>
         </div>
 
-        {/* DASHBOARD STATS */}
         <h2 className="text-success fw-bold mb-3">Dashboard</h2>
         <div className="bg-white p-4 rounded-4 shadow-sm border">
-          {/* <button className="btn btn-success fw-bold px-4 mb-4 rounded-3 shadow-sm" onClick={() => { setActiveTab('Records'); setShouldAutoOpenForm(true); }}>
-            <i className="bi bi-plus-lg me-2"></i>Add Patient Record
-          </button> */}
-
           <div className="row g-3">
             <div className="col-lg-5">
               <div className="row g-3">
@@ -250,7 +250,6 @@ function Home({ onLogout }) {
                     <small className="text-muted fw-semibold">Health Records</small>
                   </div>
                 </div>
-                {/* PWD CARD - HIGH PRIORITY */}
                 <div className="col-6">
                   <div className="border rounded-4 p-3 text-center h-100 shadow-sm bg-light border-primary border-opacity-25">
                     <i className="bi bi-person-wheelchair text-primary fs-1"></i>

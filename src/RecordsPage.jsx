@@ -1,18 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, Save, Edit, Trash2 } from 'lucide-react'; // Modern icons
-import { motion, AnimatePresence } from 'framer-motion'; // Smooth animations
-import HealthForm from './HealthForm'; // Using your existing form component
+import { Search, Plus, X, Save, Edit, Trash2 } from 'lucide-react'; 
+import { motion, AnimatePresence } from 'framer-motion'; 
+import HealthForm from './HealthForm'; 
 import './style/RecordsPage.css';
 
 const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   
   /* ==================== STATE MANAGEMENT ==================== */
-  const [showForm, setShowForm] = useState(false);
+  // UPDATED: Initialize from localStorage to survive reloads
+  const [showForm, setShowForm] = useState(() => {
+    return localStorage.getItem('isHealthFormOpen') === 'true';
+  });
+
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editingRecord, setEditingRecord] = useState(null);
+
+  // UPDATED: Initialize editingRecord from localStorage if it exists
+  const [editingRecord, setEditingRecord] = useState(() => {
+    const saved = localStorage.getItem('currentlyEditingRecord');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  /* ==================== MEMORY PERSISTENCE ==================== */
+  // NEW: Save states to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('isHealthFormOpen', showForm);
+    if (editingRecord) {
+      localStorage.setItem('currentlyEditingRecord', JSON.stringify(editingRecord));
+    } else {
+      localStorage.removeItem('currentlyEditingRecord');
+    }
+  }, [showForm, editingRecord]);
 
   /* ==================== HELPER: CALCULATE AGE ==================== */
   const calculateAge = (birthDate) => {
@@ -73,6 +93,9 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingRecord(null);
+    // NEW: Explicitly clear memory on cancel
+    localStorage.removeItem('isHealthFormOpen');
+    localStorage.removeItem('currentlyEditingRecord');
   };
 
   const handleSubmitForm = async (formData) => {
@@ -85,7 +108,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       
       const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
       
-      // Save Resident Info
       const residentUrl = isNewRecord 
         ? `http://localhost:5000/api/residents`
         : `http://localhost:5000/api/residents/${formData.Resident_ID}`;
@@ -98,7 +120,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
 
       if (!resUpdate.ok) throw new Error('Failed to save resident info');
 
-      // Save Health Record
       const healthUrl = isNewRecord
         ? 'http://localhost:5000/api/health-records'
         : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
@@ -112,6 +133,9 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       if (res.ok) {
         setShowForm(false);
         setEditingRecord(null);
+        // NEW: Clear memory on success
+        localStorage.removeItem('isHealthFormOpen');
+        localStorage.removeItem('currentlyEditingRecord');
         fetchRecords(); 
       }
     } catch (err) {
@@ -132,8 +156,8 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   /* ==================== SEARCH FILTER ==================== */
   const filteredRecords = records.filter(record => 
     (record.Resident_Name || `${record.First_Name} ${record.Last_Name}`)
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
   );
 
   /* ==================== RENDER FORM VIEW ==================== */
@@ -151,7 +175,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   /* ==================== RENDER TABLE VIEW ==================== */
   return (
     <div className="records-container p-4">
-      {/* HEADER SECTION */}
       <div className="d-flex justify-content-between align-items-center mb-4 px-3">
         <div>
           <h2 className="fw-bold mb-1">Patient Records</h2>
@@ -162,7 +185,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         </button>
       </div>
 
-      {/* SEARCH BAR */}
       <div className="px-3 mb-4">
         <div className="search-wrapper shadow-sm">
           <Search className="search-icon" size={20} />
@@ -179,7 +201,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         <div className="alert alert-danger mx-3" role="alert">{error}</div>
       )}
 
-      {/* TABLE SECTION */}
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mx-3">
         <div className="card-body p-0">
           {loading ? (
