@@ -69,7 +69,7 @@ CREATE TABLE `health_records` (
   PRIMARY KEY (`Health_Record_ID`),
   KEY `Resident_ID` (`Resident_ID`),
   CONSTRAINT `health_records_ibfk_1` FOREIGN KEY (`Resident_ID`) REFERENCES `residents` (`Resident_ID`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -78,7 +78,7 @@ CREATE TABLE `health_records` (
 
 LOCK TABLES `health_records` WRITE;
 /*!40000 ALTER TABLE `health_records` DISABLE KEYS */;
-INSERT INTO `health_records` VALUES (1,'RES-5164913-2641','120/80',65.00,160.00,25.39,'Overweight','Good',0,'N/A','N/A','N/A','2026-01-09','2026-01-13 02:07:28',1),(2,'RES-7117283-7298','120/80',45.00,120.00,31.25,'Obese','Good',1,'N/A','N/A','N/A','2026-01-08','2026-01-13 02:08:28',1),(3,'RES-7812295-6888',NULL,45.00,160.00,17.58,'Underweight','Good',1,'N/A','ubo',NULL,'2026-01-09','2026-01-13 03:27:19',1),(4,'RES-7875757-9987',NULL,65.00,150.00,28.89,'Overweight','Good',0,'manok','tonsils','no sweets\n','2026-01-09','2026-01-13 03:37:34',1),(5,'RES-6268655-3341',NULL,NULL,NULL,NULL,NULL,'Good',1,'N/A','Ubo',NULL,'2026-01-13','2026-01-13 14:21:47',2),(6,'RES-6312409-3003',NULL,60.00,160.00,23.44,'Normal','Good',0,'N/A',NULL,NULL,'2026-01-13','2026-01-13 15:22:32',2),(7,'RES-2508437-6448',NULL,65.00,160.00,25.39,'Overweight','Good',1,'N/A','N/A',NULL,'2026-01-10','2026-01-13 16:00:23',1),(8,'RES-1137174-8400',NULL,10.00,20.00,250.00,'Obese','Good',1,'n/a',NULL,NULL,'2026-01-13','2026-01-13 16:04:11',1),(9,'RES-2100275-2527',NULL,65.00,160.00,25.39,'Overweight','Good',1,'N/A',NULL,NULL,'2026-01-13','2026-01-13 16:07:51',1),(10,'RES-5693361-9591',NULL,65.00,160.00,25.39,'Overweight','Good',0,NULL,NULL,NULL,'2026-01-13','2026-01-13 16:10:16',1);
+INSERT INTO `health_records` VALUES (1,'RES-5164913-2641','120/80',65.00,160.00,25.39,'Overweight','Good',0,'N/A','N/A','N/A','2026-01-09','2026-01-13 02:07:28',1),(2,'RES-7117283-7298','120/80',45.00,120.00,31.25,'Obese','Good',1,'N/A','N/A','N/A','2026-01-08','2026-01-13 02:08:28',1),(3,'RES-7812295-6888',NULL,45.00,160.00,17.58,'Underweight','Good',1,'N/A','ubo',NULL,'2026-01-09','2026-01-13 03:27:19',1),(4,'RES-7875757-9987',NULL,65.00,150.00,28.89,'Overweight','Good',0,'manok','tonsils','no sweets\n','2026-01-09','2026-01-13 03:37:34',1),(5,'RES-6268655-3341',NULL,NULL,NULL,NULL,NULL,'Good',1,'N/A','Ubo',NULL,'2026-01-13','2026-01-13 14:21:47',2),(6,'RES-6312409-3003',NULL,60.00,160.00,23.44,'Normal','Good',0,'N/A',NULL,NULL,'2026-01-13','2026-01-13 15:22:32',2),(7,'RES-2508437-6448',NULL,65.00,160.00,25.39,'Overweight','Good',1,'N/A','N/A',NULL,'2026-01-10','2026-01-13 16:00:23',1),(8,'RES-1137174-8400',NULL,10.00,20.00,250.00,'Obese','Good',1,'n/a',NULL,NULL,'2026-01-13','2026-01-13 16:04:11',1),(9,'RES-2100275-2527',NULL,65.00,160.00,25.39,'Overweight','Good',1,'N/A',NULL,NULL,'2026-01-13','2026-01-13 16:07:51',1),(10,'RES-5693361-9591',NULL,65.00,160.00,25.39,'Overweight','Good',0,NULL,NULL,NULL,'2026-01-13','2026-01-13 16:10:16',1),(11,'RES-9842073-3976',NULL,65.00,160.00,25.39,'Overweight','Good',0,NULL,NULL,NULL,'2026-01-13','2026-01-13 17:57:55',1),(12,'RES-2695654-2358','20',45.00,44.00,232.44,'Obese','Good',1,'N/A','ubo',NULL,'2026-01-11','2026-01-13 18:15:28',1),(13,'RES-2880067-8077','120/80',50.00,135.00,27.43,'Overweight','Fair',0,'N/A','Heart sakit',NULL,'2026-01-13','2026-01-13 18:17:26',1),(14,'RES-7457755-7044',NULL,64.00,160.00,25.00,'Overweight','Good',0,'N/A',NULL,NULL,'2026-01-13','2026-01-13 18:20:53',1);
 /*!40000 ALTER TABLE `health_records` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -104,7 +104,7 @@ CREATE TABLE `pending_resident` (
   PRIMARY KEY (`Pending_HR_ID`),
   KEY `Resident_ID` (`Resident_ID`),
   CONSTRAINT `pending_resident_ibfk_1` FOREIGN KEY (`Resident_ID`) REFERENCES `residents` (`Resident_ID`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -144,7 +144,7 @@ CREATE TABLE `residents` (
 
 LOCK TABLES `residents` WRITE;
 /*!40000 ALTER TABLE `residents` DISABLE KEYS */;
-INSERT INTO `residents` VALUES ('RES-1137174-8400','marie',NULL,'posa','Female','2026-01-13','Single',NULL,'P. Valenzuela Street',NULL),('RES-2100275-2527','wakin',NULL,'bardagul','Male','2026-01-13',NULL,NULL,'P. Valenzuela Street',NULL),('RES-2508437-6448','Jose','Marie','Chan','Male','2015-12-24','Married',NULL,'Liwasang Kalayaan Street','Pansol'),('RES-2605334-4746','Jian Vench',NULL,'Palculan','Male',NULL,NULL,NULL,'Blk6','pansol'),('RES-4714930-7151','Jian Vench','Virgo','Palculan','Male','2012-01-17','Single','09156866402','secret','pansol'),('RES-5164913-2641','Jian Vench','Virgo','Palculan','Male','2004-01-14','Single','09156866402','Narra Street','pansol'),('RES-5693361-9591','hehe',NULL,'jose','Male','2007-01-13','Single',NULL,'P. Valenzuela Street',NULL),('RES-6268655-3341','Xian Kyle',NULL,'Pelon','Male','2010-01-04','Single',NULL,'P. Valenzuela Street','Pansol'),('RES-6312409-3003','Carl',NULL,'Desales','Male','2026-01-12',NULL,NULL,'Champagnat Street',NULL),('RES-7117283-7298','hannah','Villarama','hizon','Female','2019-12-23','Single','0111','Champaca Street','pansol'),('RES-7812295-6888','Nheil patrick','Tito','patawaran','Male','2012-01-04',NULL,NULL,'Champaca Street','pansol'),('RES-7875757-9987','Ikki Dominique',NULL,'Modar','Female','1996-12-29','Single',NULL,'Apitong Street','pansol'),('RES-9647119-1245','Jian Vench ','Virgo','Palculan','Male',NULL,NULL,NULL,'Blk5','Pansol');
+INSERT INTO `residents` VALUES ('RES-1137174-8400','marie',NULL,'posa','Female','2026-01-13','Single',NULL,'P. Valenzuela Street',NULL),('RES-2100275-2527','wakin',NULL,'bardagul','Male','2026-01-13',NULL,NULL,'P. Valenzuela Street',NULL),('RES-2508437-6448','Jose','Marie','Chan','Male','2015-12-24','Married',NULL,'Liwasang Kalayaan Street','Pansol'),('RES-2605334-4746','Jian Vench',NULL,'Palculan','Male',NULL,NULL,NULL,'Blk6','pansol'),('RES-2695654-2358','bebe',NULL,'ko','Male','1985-01-07','Single','001','P. Valenzuela Street','Pansol'),('RES-2880067-8077','yana',NULL,'portes','Female','2008-12-29','Single','09998882211','P. Valenzuela Street','pasnol'),('RES-4714930-7151','Jian Vench','Virgo','Palculan','Male','2012-01-17','Single','09156866402','secret','pansol'),('RES-5164913-2641','Jian Vench','Virgo','Palculan','Male','2004-01-14','Single','09156866402','Narra Street','pansol'),('RES-5693361-9591','hehe',NULL,'jose','Male','2007-01-13','Single',NULL,'P. Valenzuela Street',NULL),('RES-6268655-3341','Xian Kyle',NULL,'Pelon','Male','2010-01-04','Single',NULL,'P. Valenzuela Street','Pansol'),('RES-6312409-3003','Carl',NULL,'Desales','Male','2026-01-12',NULL,NULL,'Champagnat Street',NULL),('RES-7117283-7298','hannah','Villarama','hizon','Female','2019-12-23','Single','0111','Champaca Street','pansol'),('RES-7457755-7044','nek',NULL,'nek','Female','2026-01-13',NULL,NULL,'P. Valenzuela Street',NULL),('RES-7812295-6888','Nheil patrick','Tito','patawaran','Male','2012-01-04',NULL,NULL,'Champaca Street','pansol'),('RES-7875757-9987','Ikki Dominique',NULL,'Modar','Female','1996-12-29','Single',NULL,'Apitong Street','pansol'),('RES-9647119-1245','Jian Vench ','Virgo','Palculan','Male',NULL,NULL,NULL,'Blk5','Pansol'),('RES-9842073-3976','juju',NULL,'jiji','Male','2026-01-13','Single',NULL,'Apitong Street',NULL);
 /*!40000 ALTER TABLE `residents` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -157,4 +157,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-13 16:18:11
+-- Dump completed on 2026-01-13 18:25:01
