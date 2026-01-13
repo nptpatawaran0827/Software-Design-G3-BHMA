@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import logo from './assets/logo.png'
-import login from './assets/Login.jpg'
+import login from './assets/Login.png'
+import cloudBackground from './assets/bg-cloud.jpg'
 import './style/LoginPage.css'
 
 function LoginPage({ onLoginSuccess, onReturnToLanding  }) {
@@ -49,8 +50,12 @@ function LoginPage({ onLoginSuccess, onReturnToLanding  }) {
     }
   }
 
+  const pageStyle = cloudBackground ? {
+    '--login-bg-image': `url(${cloudBackground})`
+  } : {};
+
   return (
-    <div className="login-portal">
+    <div className="login-portal" style={pageStyle}>
       <div className="login-card-split" role="main">
         <div className="login-left">
 

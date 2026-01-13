@@ -13,7 +13,6 @@ const db = mysql.createConnection({
   password: '@Group3-BHMA',
   database: 'admin_db'
 });
-
 db.connect(err => {
   if (err) return console.error(err);
   console.log('✅ Connected to admin_db');

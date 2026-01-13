@@ -1,14 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import HealthForm from './HealthForm';
+import { Search, Plus, User, Phone, MapPin, Edit, X, Save, Activity, FileText, ClipboardList, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import './style/RecordsPage.css';
 
-const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
-  
-  /* ==================== STATE MANAGEMENT ==================== */
-  const [showForm, setShowForm] = useState(false);
-  const [records, setRecords] = useState([]);
+const RecordsPage = () => {
+  const [patients, setPatients] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editingRecord, setEditingRecord] = useState(null);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPatient, setEditingPatient] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    Resident_ID: '',
+    Full_Name: '',
+    Sex: 'Male',
+    Weight: '',
+    Height: '',
+    BMI: '',
+    Diagnosis: '',
+    Health_Condition: 'Good',
+    Street: '',
+    Contact_Number: '',
+    Remarks_Notes: '',
+    Date_Visited: '' // Added
+  });
+
+  useEffect(() => { fetchPatients(); }, []);
 
   /* ==================== HELPER: CALCULATE AGE ==================== */
   const calculateAge = (birthDate) => {
@@ -27,15 +45,13 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   /* ==================== DATA FETCHING ==================== */
   const fetchRecords = async () => {
     try {
-      setLoading(true);
-      const res = await fetch('http://localhost:5000/api/health-records');
-      if (!res.ok) throw new Error('Failed to fetch data');
-      const data = await res.json();
-      setRecords(data);
-      setLoading(false);
-    } catch (err) {
-      setError('Could not connect to the server. Please check if the backend is running.');
-      setLoading(false);
+      const response = await fetch('http://localhost:5000/api/health-records');
+      const data = await response.json();
+      setPatients(data);
+    } catch (error) { 
+      console.error("Fetch error:", error); 
+    } finally { 
+      setLoading(false); 
     }
   };
 
@@ -60,25 +76,50 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
           });
       }
     }
-  }, [autoOpenForm, preFillData]);
+  }, [formData.Weight, formData.Height, formData.BMI]);
 
-  /* ==================== CRUD OPERATIONS ==================== */
-  const handleAddNewRecord = () => {
-    setEditingRecord(null);
-    setShowForm(true);
+  const handleOpenModal = (patient = null) => {
+    if (patient) {
+      setEditingPatient(patient);
+      // Format date for the <input type="date" /> (YYYY-MM-DD)
+      const formattedDate = patient.Date_Visited ? new Date(patient.Date_Visited).toISOString().split('T')[0] : '';
+      
+      setFormData({
+        Resident_ID: patient.Resident_ID || '',
+        Full_Name: patient.Resident_Name || `${patient.First_Name} ${patient.Last_Name}`,
+        Sex: patient.Sex || 'Male',
+        Weight: patient.Weight || '',
+        Height: patient.Height || '',
+        BMI: patient.BMI || '',
+        Diagnosis: patient.Diagnosis || '',
+        Health_Condition: patient.Health_Condition || 'Good',
+        Street: patient.Street || '',
+        Contact_Number: patient.Contact_Number || '',
+        Remarks_Notes: patient.Remarks_Notes || '',
+        Date_Visited: formattedDate
+      });
+    } else {
+      setEditingPatient(null);
+      setFormData({
+        Resident_ID: '', 
+        Full_Name: '', 
+        Sex: 'Male', 
+        Weight: '', 
+        Height: '', 
+        BMI: '', 
+        Diagnosis: '', 
+        Health_Condition: 'Good', 
+        Street: '', 
+        Contact_Number: '', 
+        Remarks_Notes: '',
+        Date_Visited: new Date().toISOString().split('T')[0] // Default to today
+      });
+    }
+    setIsModalOpen(true);
   };
 
-  const handleEditRecord = (record) => {
-    setEditingRecord(record);
-    setShowForm(true);
-  };
-
-  const handleCancelForm = () => {
-    setShowForm(false);
-    setEditingRecord(null);
-  };
-
-  const handleSubmitForm = async (formData) => {
+  const handleSave = async (e) => {
+    e.preventDefault();
     try {
       const adminId = parseInt(localStorage.getItem('adminId'), 10);
       
@@ -96,7 +137,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       const residentUpdateRes = await fetch(residentUrl, {
         method: isNewRecord ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(resPayload),
       });
 
       if (!residentUpdateRes.ok) throw new Error('Failed to save resident info');
@@ -133,55 +174,44 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       const res = await fetch(`http://localhost:5000/api/health-records/${recordId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(recordPayload),
       });
-      if (res.ok) fetchRecords();
+
+      if (response.ok) {
+        setIsModalOpen(false);
+        fetchPatients();
+        alert("Record updated successfully!");
+      }
     } catch (err) {
-      setError('Failed to update status in database.');
+      console.error("Save failed:", err);
+      alert("Failed to connect to server.");
     }
   };
 
-  const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm('Are you sure you want to delete this record?')) return;
-    try {
-      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}`, { 
-        method: 'DELETE' 
-      });
-      if (res.ok) fetchRecords();
-    } catch (err) {
-      setError('Failed to delete record from database.');
-    }
-  };
-
-  if (showForm) {
-    return (
-      <HealthForm 
-        onCancel={handleCancelForm} 
-        onSubmit={handleSubmitForm}
-        editMode={!!editingRecord?.Health_Record_ID}
-        initialData={editingRecord}
-        onToggleStatus={(id) => handleToggleStatus(id, editingRecord?.status)}
-      />
-    );
-  }
+  const filteredPatients = patients.filter(p => 
+    p.Resident_Name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="fw-bold">Patient Records</h3>
-        <button 
-          className="btn btn-success fw-bold px-4 rounded-3" 
-          onClick={handleAddNewRecord}
-          disabled={loading}
-        >
-          <i className="bi bi-plus-lg me-2"></i>Add New Record
+    <div className="records-container p-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 px-3">
+        <div>
+          <h2 className="fw-bold mb-1">Patient Records</h2>
+          <p className="text-muted small">Manage resident medical check-ups</p>
+        </div>
+        <button onClick={() => handleOpenModal()} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
+          <Plus size={18} /> Add Patient
         </button>
       </div>
-      
-      {error && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <strong>Error:</strong> {error}
-          <button type="button" className="btn-close" onClick={() => setError(null)} />
+
+      <div className="px-3 mb-4">
+        <div className="search-wrapper shadow-sm">
+          <Search className="search-icon" size={20} />
+          <input 
+            type="text" className="form-control custom-search" 
+            placeholder="Search resident..."
+            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       )}
       
@@ -255,8 +285,84 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="modal-backdrop">
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }} 
+              animate={{ y: 0, opacity: 1 }} 
+              className="modal-content-box" // Matches the fixed-width CSS class
+            >
+              <div className="modal-header">
+                <h2>{editingPatient ? 'Update Patient' : 'Add New Patient'}</h2>
+                <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <form onSubmit={handleSave}>
+                <div className="form-row">
+                  <div className="form-input-group">
+                    <label>RESIDENT ID</label>
+                    <input type="text" value={formData.Resident_ID} onChange={(e) => setFormData({...formData, Resident_ID: e.target.value})} required disabled={!!editingPatient} />
+                  </div>
+                  <div className="form-input-group">
+                    <label>DATE VISITED</label>
+                    <input type="date" value={formData.Date_Visited} onChange={(e) => setFormData({...formData, Date_Visited: e.target.value})} required />
+                  </div>
+                </div>
+
+                <div className="form-input-group">
+                  <label>FULL NAME</label>
+                  <input type="text" value={formData.Full_Name} onChange={(e) => setFormData({...formData, Full_Name: e.target.value})} required />
+                </div>
+
+                <div className="form-input-group">
+                  <label className="text-primary">DIAGNOSIS</label>
+                  <input type="text" className="blue-border-input" value={formData.Diagnosis} onChange={(e) => setFormData({...formData, Diagnosis: e.target.value})} />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-input-group">
+                    <label>SEX</label>
+                    <select value={formData.Sex} onChange={(e) => setFormData({...formData, Sex: e.target.value})}>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                  <div className="form-input-group">
+                    <label>CONDITION</label>
+                    <select value={formData.Health_Condition} onChange={(e) => setFormData({...formData, Health_Condition: e.target.value})}>
+                      <option value="Good">Good</option>
+                      <option value="Fair">Fair</option>
+                      <option value="Poor">Poor</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row-three">
+                  <div className="form-input-group"><label>WT (kg)</label><input type="number" step="0.1" value={formData.Weight} onChange={(e) => setFormData({...formData, Weight: e.target.value})} /></div>
+                  <div className="form-input-group"><label>HT (cm)</label><input type="number" step="0.1" value={formData.Height} onChange={(e) => setFormData({...formData, Height: e.target.value})} /></div>
+                  <div className="form-input-group"><label>BMI</label><input type="text" className="bmi-readonly" value={formData.BMI} readOnly /></div>
+                </div>
+                
+                <div className="form-input-group">
+                  <label>REMARKS / ADDITIONAL NOTES</label>
+                  <textarea rows="2" value={formData.Remarks_Notes} onChange={(e) => setFormData({...formData, Remarks_Notes: e.target.value})}></textarea>
+                </div>
+
+                <button type="submit" className="modal-submit-btn">
+                  <Save size={18} /> {editingPatient ? 'Update Changes' : 'Save Record'}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default RecordsPage;
+
