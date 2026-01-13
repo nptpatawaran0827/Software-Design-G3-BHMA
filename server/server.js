@@ -80,7 +80,7 @@ app.post('/api/pending-resident', (req, res) => {
   `;
   db.query(sql, [
     d.Resident_ID,
-    d.Is_PWD ? 1 : 0, // Convert boolean to TINYINT
+    d.Is_PWD ? 1 : 0, 
     d.Height || null,
     d.Weight || null,
     d.BMI || null,
@@ -93,15 +93,17 @@ app.post('/api/pending-resident', (req, res) => {
   });
 });
 
-/* ================= RECORDS (GET) ================= */
+/* ================= RECORDS (GET) - REVISED WITH ADMIN JOIN ================= */
 app.get('/api/health-records', (req, res) => {
   const sql = `
     SELECT hr.*, 
       r.First_Name, r.Middle_Name, r.Last_Name,
       CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name,
-      r.Sex, r.Birthdate, r.Civil_Status, r.Contact_Number, r.Street, r.Barangay
+      r.Sex, r.Birthdate, r.Civil_Status, r.Contact_Number, r.Street, r.Barangay,
+      a.username AS Recorded_By_Name
     FROM health_records hr
     JOIN residents r ON hr.Resident_ID = r.Resident_ID
+    LEFT JOIN admins a ON hr.Recorded_By = a.admin_id
     ORDER BY hr.Date_Registered DESC
   `;
   db.query(sql, (err, rows) => {
@@ -110,7 +112,7 @@ app.get('/api/health-records', (req, res) => {
   });
 });
 
-/* ================= CREATE HEALTH RECORD (UPDATED WITH Is_PWD) ================= */
+/* ================= CREATE HEALTH RECORD (REVISED TO ENSURE Recorded_By) ================= */
 app.post('/api/health-records', (req, res) => {
   const d = req.body;
   const sql = `
@@ -120,7 +122,7 @@ app.post('/api/health-records', (req, res) => {
   `;
   db.query(sql, [
     d.Resident_ID,
-    d.Is_PWD ? 1 : 0, // Save PWD Status
+    d.Is_PWD ? 1 : 0,
     d.Blood_Pressure || null,
     d.Weight || null,
     d.Height || null,
@@ -131,14 +133,14 @@ app.post('/api/health-records', (req, res) => {
     d.Allergies || null,
     d.Date_Visited || null,
     d.Remarks_Notes || d.Remarks || null,
-    d.Recorded_By || null  
+    d.Recorded_By || d.adminId || null  
   ], (err, result) => {
     if (err) return res.status(500).json(err);
     res.json({ Health_Record_ID: result.insertId, success: true });
   });
 });
 
-/* ================= UPDATE HEALTH RECORD (UPDATED WITH Is_PWD) ================= */
+/* ================= UPDATE HEALTH RECORD (REVISED TO ENSURE Recorded_By) ================= */
 app.put('/api/health-records/:id', (req, res) => {
   const id = req.params.id;
   const d = req.body;
@@ -149,7 +151,7 @@ app.put('/api/health-records/:id', (req, res) => {
     WHERE Health_Record_ID = ?
   `;
   db.query(sql, [
-    d.Is_PWD ? 1 : 0, // Update PWD Status
+    d.Is_PWD ? 1 : 0,
     d.Blood_Pressure || null,
     d.Weight || null,
     d.Height || null,
@@ -160,7 +162,7 @@ app.put('/api/health-records/:id', (req, res) => {
     d.Allergies || null,
     d.Date_Visited || null,
     d.Remarks_Notes || d.Remarks || null,
-    d.Recorded_By || null,  
+    d.Recorded_By || d.adminId || null,  
     id
   ], (err, result) => {
     if (err) return res.status(500).json(err);
@@ -168,7 +170,7 @@ app.put('/api/health-records/:id', (req, res) => {
   });
 });
 
-/* ================= APPROVE PENDING (UPDATED TO TRANSFER Is_PWD) ================= */
+/* ================= APPROVE PENDING (REVISED TO INCLUDE Verified_By) ================= */
 app.post('/api/pending-residents/accept/:id', (req, res) => {
   const id = req.params.id;
 
@@ -181,9 +183,9 @@ app.post('/api/pending-residents/accept/:id', (req, res) => {
 
       db.query(
         `INSERT INTO health_records 
-          (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [p.Resident_ID, p.Is_PWD || 0, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies],
+          (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Recorded_By)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [p.Resident_ID, p.Is_PWD || 0, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies, p.Verified_By],
         (err, result) => {
           if (err) return res.status(500).json(err);
           db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id], (err) => {

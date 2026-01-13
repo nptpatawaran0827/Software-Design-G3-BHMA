@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus }) => {
+const STREETS = [
+  "Apitong Street", "Champagnat Street", "Champaca Street", 
+  "Dao Street", "Ipil Street", "East Drive Street", 
+  "General Ordonez Street", "Liwasang Kalayaan Street", 
+  "Narra Street", "P. Valenzuela Street"
+];
+
+const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
   const [formData, setFormData] = useState({
     First_Name: '',
     Middle_Name: '',
@@ -24,7 +31,8 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
     Barangay: '',
     Date_Visited: '',
     Remarks: '',
-    status: 'Active'
+    status: 'Active',
+    Recorded_By_Name: '' // Added for admin tracking
   });
 
   const calculateAge = (birthdate) => {
@@ -56,6 +64,9 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
   };
 
   useEffect(() => {
+    // Capture the logged-in admin name
+    const currentAdmin = localStorage.getItem('username') || 'System';
+
     if (initialData) {
       const rawBirthDate = initialData.Birthdate || '';
       const formattedBirthdate = rawBirthDate ? rawBirthDate.split('T')[0] : '';
@@ -71,9 +82,14 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
         Height: initialData.Height ? String(initialData.Height) : '',
         BMI: initialData.BMI ? String(initialData.BMI) : '',
         Nutrition_Status: initialData.Nutrition_Status || calculateNutritionStatus(initialData.BMI),
+        Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin
       });
     } else {
-      setFormData(prev => ({ ...prev, Resident_ID: generateResidentID() }));
+      setFormData(prev => ({ 
+        ...prev, 
+        Resident_ID: generateResidentID(),
+        Recorded_By_Name: currentAdmin 
+      }));
     }
   }, [initialData]);
 
@@ -226,7 +242,18 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
             <div className="row g-3 mb-4">
               <div className="col-md-6">
                 <label className="form-label small fw-bold">Street</label>
-                <input className="form-control" name="Street" value={formData.Street} onChange={handleChange} />
+                <select 
+                  className="form-select rounded-3" 
+                  name="Street" 
+                  value={formData.Street} 
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Street...</option>
+                  {STREETS.map((street) => (
+                    <option key={street} value={street}>{street}</option>
+                  ))}
+                </select>
               </div>
               <div className="col-md-6">
                 <label className="form-label small fw-bold">Barangay</label>
@@ -235,6 +262,11 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData, onToggleStatus 
               <div className="col-md-6">
                 <label className="form-label small fw-bold text-danger">Date of Visit</label>
                 <input type="date" className="form-control border-danger border-opacity-50" name="Date_Visited" value={formData.Date_Visited} onChange={handleChange} required />
+              </div>
+              <div className="col-md-6 d-flex align-items-end">
+                <div className="p-2 bg-primary-subtle border border-primary-subtle rounded-3 w-100">
+                  <small className="fw-bold text-primary">Recording as: {formData.Recorded_By_Name}</small>
+                </div>
               </div>
               <div className="col-md-12">
                 <label className="form-label small fw-bold">Medical Remarks</label>

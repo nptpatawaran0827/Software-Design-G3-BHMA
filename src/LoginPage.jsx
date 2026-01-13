@@ -32,9 +32,11 @@ function LoginPage({ onLoginSuccess, onReturnToLanding  }) {
 
       // 2. Check if the backend says the login is valid
       if (response.ok && data.success) {
+        // We store the token and the Admin details provided by the backend
         localStorage.setItem('authToken', 'real-token-from-db');
-        localStorage.setItem('adminId', data.adminId);  // ← ADD THIS
-        localStorage.setItem('username', data.username);  // ← ADD THIS
+        localStorage.setItem('adminId', data.adminId);  // Stores ID (e.g., 1 or 2)
+        localStorage.setItem('username', data.username); // Stores Username (e.g., Admin_H1)
+        
         onLoginSuccess && onLoginSuccess();
       } else {
         // This catches the 401 "Invalid credentials" error

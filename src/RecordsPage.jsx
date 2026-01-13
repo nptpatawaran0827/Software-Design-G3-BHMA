@@ -11,7 +11,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   const [editingRecord, setEditingRecord] = useState(null);
 
   /* ==================== HELPER: CALCULATE AGE ==================== */
-  // This ensures the age is always accurate to the current date
   const calculateAge = (birthDate) => {
     if (!birthDate) return 'N/A';
     const today = new Date();
@@ -44,7 +43,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
     fetchRecords();
   }, []);
 
-  /* ==================== AUTO-OPEN FORM LOGIC WITH PREFILL ==================== */
+  /* ==================== AUTO-OPEN FORM LOGIC ==================== */
   useEffect(() => {
     if (autoOpenForm) {
       if (preFillData) {
@@ -88,30 +87,32 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         return;
       }
       
-      const isNewResident = !editingRecord || (!editingRecord.Health_Record_ID && !editingRecord.Resident_ID);
-      const residentMethod = (editingRecord && editingRecord.Health_Record_ID) ? 'PUT' : 'POST';
-      const residentUrl = (editingRecord && editingRecord.Health_Record_ID)
-        ? `http://localhost:5000/api/residents/${formData.Resident_ID}`
-        : `http://localhost:5000/api/residents`;
+      const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
+      
+      // 1. Update Resident Info
+      const residentUrl = isNewRecord 
+        ? `http://localhost:5000/api/residents`
+        : `http://localhost:5000/api/residents/${formData.Resident_ID}`;
 
       const residentUpdateRes = await fetch(residentUrl, {
-        method: residentMethod,
+        method: isNewRecord ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
       if (!residentUpdateRes.ok) throw new Error('Failed to save resident info');
 
-      const url = (editingRecord && editingRecord.Health_Record_ID)
-        ? `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`
-        : 'http://localhost:5000/api/health-records';
+      // 2. Update/Create Health Record
+      const healthUrl = isNewRecord
+        ? 'http://localhost:5000/api/health-records'
+        : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
       
-      const res = await fetch(url, {
-        method: (editingRecord && editingRecord.Health_Record_ID) ? 'PUT' : 'POST',
+      const res = await fetch(healthUrl, {
+        method: isNewRecord ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          Recorded_By: adminId
+          Recorded_By: adminId // This sends the ID to the database
         })
       });
       
@@ -214,8 +215,9 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
                   ) : (
                     records.map((record) => (
                       <tr key={record.Health_Record_ID} className="align-middle">
-                        <td className="ps-4 fw-bold text-dark">{record.Resident_Name}</td>
-                        {/* DISPLAYING CALCULATED AGE HERE */}
+                        <td className="ps-4 fw-bold text-dark">
+                          {record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}
+                        </td>
                         <td>
                           <span className="fw-semibold">
                             {record.Age || calculateAge(record.Birthdate)}
@@ -224,7 +226,13 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
                         </td>
                         <td>{record.Sex}</td>
                         <td>{record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString() : 'N/A'}</td>
-                        <td><span className="badge bg-light text-dark border">{record.Recorded_By_Name}</span></td>
+                        <td>
+                          {/* UPDATED: Displays the Admin Username from the JOIN */}
+                          <span className="badge bg-light text-primary border">
+                            <i className="bi bi-person-badge me-1"></i>
+                            {record.Recorded_By_Name || 'Unknown Admin'}
+                          </span>
+                        </td>
                         <td>
                           <span className={`badge rounded-pill ${record.status === 'Active' ? 'bg-success-subtle text-success border border-success' : 'bg-secondary-subtle text-secondary border border-secondary'}`}>
                             {record.status || 'Active'}
