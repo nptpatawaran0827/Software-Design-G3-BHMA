@@ -28,7 +28,22 @@ const RecordsPage = () => {
 
   useEffect(() => { fetchPatients(); }, []);
 
-  const fetchPatients = async () => {
+  /* ==================== HELPER: CALCULATE AGE ==================== */
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return 'N/A';
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  /* ==================== DATA FETCHING ==================== */
+  const fetchRecords = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/health-records');
       const data = await response.json();
@@ -41,12 +56,25 @@ const RecordsPage = () => {
   };
 
   useEffect(() => {
-    const weight = parseFloat(formData.Weight);
-    const height = parseFloat(formData.Height);
-    if (weight > 0 && height > 0) {
-      const hMeters = height / 100;
-      const bmi = (weight / (hMeters * hMeters)).toFixed(2);
-      if (formData.BMI !== bmi) setFormData(prev => ({ ...prev, BMI: bmi }));
+    fetchRecords();
+  }, []);
+
+  /* ==================== AUTO-OPEN FORM LOGIC ==================== */
+  useEffect(() => {
+    if (autoOpenForm) {
+      if (preFillData) {
+        setEditingRecord(preFillData);
+        setShowForm(true);
+      } else {
+        fetch('http://localhost:5000/api/health-records')
+          .then(res => res.json())
+          .then(data => {
+            if (data.length > 0) {
+              setEditingRecord(data[0]);
+              setShowForm(true);
+            }
+          });
+      }
     }
   }, [formData.Weight, formData.Height, formData.BMI]);
 
@@ -93,43 +121,58 @@ const RecordsPage = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const nameParts = formData.Full_Name.trim().split(' ');
-      const firstName = nameParts[0] || 'Unknown';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Resident';
+      const adminId = parseInt(localStorage.getItem('adminId'), 10);
+      
+      if (!adminId) {
+        setError('Admin ID not found. Please log in again.');
+        return;
+      }
+      
+      const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
+      
+      const residentUrl = isNewRecord 
+        ? `http://localhost:5000/api/residents`
+        : `http://localhost:5000/api/residents/${formData.Resident_ID}`;
 
-      const resPayload = {
-        Resident_ID: formData.Resident_ID,
-        First_Name: firstName,
-        Last_Name: lastName,
-        Sex: formData.Sex,
-        Street: formData.Street,
-        Contact_Number: formData.Contact_Number
-      };
-
-      await fetch(`http://localhost:5000/api/residents${editingPatient ? '/' + formData.Resident_ID : ''}`, {
-        method: editingPatient ? 'PUT' : 'POST',
+      const residentUpdateRes = await fetch(residentUrl, {
+        method: isNewRecord ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(resPayload),
       });
 
-      const recordPayload = {
-        Resident_ID: formData.Resident_ID,
-        Weight: formData.Weight,
-        Height: formData.Height,
-        BMI: formData.BMI,
-        Diagnosis: formData.Diagnosis,
-        Health_Condition: formData.Health_Condition,
-        Remarks_Notes: formData.Remarks_Notes,
-        Date_Visited: formData.Date_Visited // Included in save
-      };
+      if (!residentUpdateRes.ok) throw new Error('Failed to save resident info');
 
-      const recMethod = editingPatient ? 'PUT' : 'POST';
-      const recUrl = editingPatient 
-        ? `http://localhost:5000/api/health-records/${editingPatient.Health_Record_ID}`
-        : 'http://localhost:5000/api/health-records';
+      const healthUrl = isNewRecord
+        ? 'http://localhost:5000/api/health-records'
+        : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
+      
+      const res = await fetch(healthUrl, {
+        method: isNewRecord ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          Recorded_By: adminId 
+        })
+      });
+      
+      if (res.ok) {
+        setShowForm(false);
+        setEditingRecord(null);
+        fetchRecords(); 
+      } else {
+        throw new Error('Server responded with an error');
+      }
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      setError('Failed to save record to database.');
+    }
+  };
 
-      const response = await fetch(recUrl, {
-        method: recMethod,
+  const handleToggleStatus = async (recordId, currentStatus) => {
+    const newStatus = (currentStatus === 'Active' || !currentStatus) ? 'Not Active' : 'Active';
+    try {
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}/status`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(recordPayload),
       });
@@ -170,56 +213,77 @@ const RecordsPage = () => {
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-      </div>
-
-      <div className="row g-4 px-3">
-        {filteredPatients.map((patient, index) => (
-          <div key={patient.Health_Record_ID || index} className="col-xl-4 col-md-6">
-            <div className="patient-card shadow-sm border-0 p-4 position-relative">
-              <button 
-                onClick={() => handleOpenModal(patient)}
-                className="btn btn-outline-primary btn-sm position-absolute" 
-                style={{ top: '20px', right: '20px' }}
-              >
-                <Edit size={16} />
-              </button>
-
-              <div className="d-flex align-items-center gap-3 mb-3">
-                <div className="avatar-circle"><User size={24} className="text-primary" /></div>
-                <div>
-                  <h5 className="fw-bold mb-0 text-dark">{patient.Resident_Name}</h5>
-                  <small className="text-muted">ID: {patient.Resident_ID} • {patient.Sex}</small>
-                </div>
-              </div>
-              
-              <div className="patient-info-list mb-3">
-                <div className="info-item"><MapPin size={16} /> <span>{patient.Street || "No Address"}</span></div>
-                <div className="info-item text-primary fw-medium">
-                   <ClipboardList size={16} /> <span>{patient.Diagnosis || "No diagnosis set"}</span>
-                </div>
-                {/* DISPLAY DATE VISITED */}
-                <div className="info-item text-secondary small">
-                  <Calendar size={14} /> <span>Visited: {patient.Date_Visited ? new Date(patient.Date_Visited).toLocaleDateString() : 'N/A'}</span>
-                </div>
-              </div>
-
-              <div className="row pt-3 border-top g-0 text-center bg-light rounded-3 mt-3">
-                <div className="col-4 border-end py-2">
-                  <div className="stat-val text-primary">{patient.BMI || '--'}</div>
-                  <div className="stat-label">BMI</div>
-                </div>
-                <div className="col-4 border-end py-2">
-                  <div className="stat-val">{patient.Weight}kg</div>
-                  <div className="stat-label">Weight</div>
-                </div>
-                <div className="col-4 py-2">
-                  <div className="stat-val">{patient.Height}cm</div>
-                  <div className="stat-label">Height</div>
-                </div>
+      )}
+      
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div className="card-body p-0">
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
               </div>
             </div>
-          </div>
-        ))}
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover mb-0">
+                <thead className="table-light">
+                  <tr className="text-uppercase small fw-bold">
+                    <th className="ps-4">Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Last Visit</th>
+                    <th>Recorded By</th>
+                    <th>Status</th>
+                    <th className="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.length === 0 ? (
+                    <tr><td colSpan="7" className="text-center py-5 text-muted">No health records found.</td></tr>
+                  ) : (
+                    records.map((record) => (
+                      <tr key={record.Health_Record_ID} className="align-middle">
+                        <td className="ps-4 fw-bold text-dark">
+                          {record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}
+                        </td>
+                        <td>
+                          <span className="fw-semibold">
+                            {record.Age || calculateAge(record.Birthdate)}
+                          </span>
+                          <small className="text-muted ms-1">yrs</small>
+                        </td>
+                        <td>{record.Sex}</td>
+                        <td>{record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString() : 'N/A'}</td>
+                        <td>
+                          <span className="badge bg-light text-primary border">
+                            <i className="bi bi-person-badge me-1"></i>
+                            {record.Recorded_By_Name || 'Unknown Admin'}
+                          </span>
+                        </td>
+                        <td>
+                          {/* REVISED STATUS COLORS */}
+                          <span className={`badge rounded-pill ${(!record.status || record.status === 'Active') ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
+                            {record.status || 'Active'}
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <div className="btn-group">
+                            <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditRecord(record)}>
+                              <i className="bi bi-pencil"></i> Edit
+                            </button>
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteRecord(record.Health_Record_ID)}>
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
       <AnimatePresence>

@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "chart.js": "^4.5.1",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.0.0",
     "framer-motion": "^12.26.1",
     "lucide-react": "^0.562.0",
     "mysql2": "^3.16.0",
