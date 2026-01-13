@@ -1,0 +1,99 @@
+.records-container {
+  background-color: #f8fafc;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Search Box Styling */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  color: #94a3b8;
+}
+
+.custom-search {
+  padding-left: 45px !important;
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Card Styling */
+.patient-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #edf2f7 !important;
+  transition: all 0.2s ease;
+}
+
+.patient-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.avatar-circle {
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.patient-id {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Condition Badges */
+.badge-condition {
+  font-size: 0.75rem;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Color codes for conditions */
+.badge-condition.hypertension { background: #ecfeff; color: #0891b2; }
+.badge-condition.diabetes { background: #f0fdf4; color: #16a34a; }
+.badge-condition.fever { background: #fef2f2; color: #dc2626; }
+.badge-condition.critical { background: #fff1f2; color: #e11d48; }
+
+/* Info List */
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.stat-val {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    border: none;
+    font-weight: 600;
+}

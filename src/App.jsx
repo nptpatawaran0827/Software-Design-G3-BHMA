@@ -3,6 +3,8 @@ import LoginPage from './LoginPage.jsx'
 import Home from './Home.jsx'
 import LandingPage from './LandingPage.jsx'
 import ResidentPage from './ResidentPage.jsx'
+import AnalyticsPage from './AnalyticsPage.jsx' // New Import
+import RecordsPage from './RecordsPage.jsx'     // New Import
 import { useState } from 'react'
 
 function App() {
@@ -11,7 +13,6 @@ function App() {
   )
 
   const [page, setPage] = useState('landing') 
-  // State to hold the ID from ResidentPage
   const [submittedId, setSubmittedId] = useState(null)
 
   function handleLoginSuccess() {
@@ -26,7 +27,6 @@ function App() {
     setPage('landing')
   }
 
-  // Function to handle the ID returned from the ResidentPage
   function handleResidentSuccess(newId) {
     setSubmittedId(newId);
     setPage('landing');
@@ -35,19 +35,22 @@ function App() {
   return (
     <div className="app-root">
       <div className="app-content">
-        {isAuthed && page === 'home' && <Header />}
+        {/* Pass setPage to Header so you can click "Analytics" or "Records" in the sidebar/nav */}
+        {isAuthed && (page === 'home' || page === 'analytics' || page === 'records') && (
+          <Header onNavigate={(target) => setPage(target)} onLogout={handleLogout} />
+        )}
 
         {page === 'landing' && (
           <LandingPage 
             onHealthWorkerClick={() => {
-              setSubmittedId(null); // Clear notification when moving to login
+              setSubmittedId(null);
               setPage('login');
             }}
             onResidentClick={() => {
-              setSubmittedId(null); // Clear notification when starting new form
+              setSubmittedId(null);
               setPage('resident');
             }}
-            submissionStatus={submittedId} // Pass ID to LandingPage
+            submissionStatus={submittedId}
           />
         )}
 
@@ -65,8 +68,17 @@ function App() {
           />
         )}
 
+        {/* Dashboard Pages */}
         {page === 'home' && isAuthed && (
           <Home onLogout={handleLogout} />
+        )}
+
+        {page === 'analytics' && isAuthed && (
+          <AnalyticsPage />
+        )}
+
+        {page === 'records' && isAuthed && (
+          <RecordsPage />
         )}
       </div>
     </div>
@@ -74,3 +86,4 @@ function App() {
 }
 
 export default App
+
