@@ -10,6 +10,21 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   const [error, setError] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
 
+  /* ==================== HELPER: CALCULATE AGE ==================== */
+  // This ensures the age is always accurate to the current date
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return 'N/A';
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   /* ==================== DATA FETCHING ==================== */
   const fetchRecords = async () => {
     try {
@@ -73,9 +88,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         return;
       }
       
-      // We update the resident entry if editingRecord has a Health_Record_ID; otherwise, we create a new resident entry, including pending conversions.
       const isNewResident = !editingRecord || (!editingRecord.Health_Record_ID && !editingRecord.Resident_ID);
-      
       const residentMethod = (editingRecord && editingRecord.Health_Record_ID) ? 'PUT' : 'POST';
       const residentUrl = (editingRecord && editingRecord.Health_Record_ID)
         ? `http://localhost:5000/api/residents/${formData.Resident_ID}`
@@ -87,9 +100,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         body: JSON.stringify(formData)
       });
 
-      if (!residentUpdateRes.ok) {
-        throw new Error('Failed to save resident info');
-      }
+      if (!residentUpdateRes.ok) throw new Error('Failed to save resident info');
 
       const url = (editingRecord && editingRecord.Health_Record_ID)
         ? `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`
@@ -175,8 +186,8 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         </div>
       )}
       
-      <div className="card border-0 shadow-sm">
-        <div className="card-body">
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div className="card-body p-0">
           {loading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status">
@@ -185,10 +196,16 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover">
+              <table className="table table-hover mb-0">
                 <thead className="table-light">
-                  <tr>
-                    <th>Name</th><th>Age</th><th>Gender</th><th>Last Visit</th><th>Recorded By</th><th>Status</th><th>Actions</th>
+                  <tr className="text-uppercase small fw-bold">
+                    <th className="ps-4">Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Last Visit</th>
+                    <th>Recorded By</th>
+                    <th>Status</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -196,20 +213,32 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
                     <tr><td colSpan="7" className="text-center py-5 text-muted">No health records found.</td></tr>
                   ) : (
                     records.map((record) => (
-                      <tr key={record.Health_Record_ID}>
-                        <td className="fw-medium">{record.Resident_Name}</td>
-                        <td>{record.Age}</td>
+                      <tr key={record.Health_Record_ID} className="align-middle">
+                        <td className="ps-4 fw-bold text-dark">{record.Resident_Name}</td>
+                        {/* DISPLAYING CALCULATED AGE HERE */}
+                        <td>
+                          <span className="fw-semibold">
+                            {record.Age || calculateAge(record.Birthdate)}
+                          </span>
+                          <small className="text-muted ms-1">yrs</small>
+                        </td>
                         <td>{record.Sex}</td>
                         <td>{record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString() : 'N/A'}</td>
-                        <td><span className="badge bg-info">{record.Recorded_By_Name}</span></td>
+                        <td><span className="badge bg-light text-dark border">{record.Recorded_By_Name}</span></td>
                         <td>
-                          <span className={`badge ${record.status === 'Active' ? 'bg-success' : 'bg-secondary'}`}>
+                          <span className={`badge rounded-pill ${record.status === 'Active' ? 'bg-success-subtle text-success border border-success' : 'bg-secondary-subtle text-secondary border border-secondary'}`}>
                             {record.status || 'Active'}
                           </span>
                         </td>
-                        <td>
-                          <button className="btn btn-sm btn-outline-primary me-1" onClick={() => handleEditRecord(record)}>Edit</button>
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteRecord(record.Health_Record_ID)}>Delete</button>
+                        <td className="text-center">
+                          <div className="btn-group">
+                            <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditRecord(record)}>
+                              <i className="bi bi-pencil"></i> Edit
+                            </button>
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteRecord(record.Health_Record_ID)}>
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

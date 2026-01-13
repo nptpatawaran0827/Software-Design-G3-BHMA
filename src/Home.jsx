@@ -1,53 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import Sidebar from './Sidebar';
 import RecordsPage from './RecordsPage';
 import AnalyticsPage from './AnalyticsPage';
 
-// Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
-const SimplePieChart = ({ data }) => {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  let currentAngle = 0;
-
-  return (
-    <div style={{ position: 'relative', width: '180px', height: '180px', margin: '0 auto' }}>
-      <svg width="180" height="180" viewBox="0 0 180 180">
-        {data.map((item, index) => {
-          const percentage = (item.value / total) * 100;
-          const angle = (percentage / 100) * 360;
-          const startAngle = currentAngle;
-          const endAngle = currentAngle + angle;
-
-          const startRad = (startAngle - 90) * (Math.PI / 180);
-          const endRad = (endAngle - 90) * (Math.PI / 180);
-
-          const radius = 80;
-          const x1 = 90 + radius * Math.cos(startRad);
-          const y1 = 90 + radius * Math.sin(startRad);
-          const x2 = 90 + radius * Math.cos(endRad);
-          const y2 = 90 + radius * Math.sin(endRad);
-
-          const largeArc = angle > 180 ? 1 : 0;
-          const path = `M 90 90 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-
-          currentAngle = endAngle;
-
-          return (
-            <path
-              key={index}
-              d={path}
-              fill={item.color}
-              stroke="#fff"
-              strokeWidth="2"
-            />
-          );
-        })}
-      </svg>
-    </div>
-  );
-};
 
 function Home({ onLogout }) {
   const [activeTab, setActiveTab] = useState('Home');
@@ -60,9 +18,8 @@ function Home({ onLogout }) {
   const [pendingResidents, setPendingResidents] = useState([]); 
   const [showNotification, setShowNotification] = useState(false); 
   const [preFillData, setPreFillData] = useState(null); 
-  const [showResidentForm, setShowResidentForm] = useState(false); //  open ResidentPage modal
+  const notificationRef = useRef(null);
 
-  // Initialize with default values
   const [dbStats, setDbStats] = useState({
     totalPatients: 0,
     newPatients: 0,
@@ -75,120 +32,22 @@ function Home({ onLogout }) {
   const [diagnosisChartData, setDiagnosisChartData] = useState(null);
   const [genderChartData, setGenderChartData] = useState(null);
 
-  // Fetch health records from database
-  useEffect(() => {
-    const fetchHealthRecords = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/health-records');
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          setHealthRecords(data);
-          calculateStatistics(data);
-        }
-      } catch (error) {
-        console.error('Error fetching health records:', error);
-      } finally {
-        setLoading(false);
+  // ==================== FETCH DATA (OPTIMIZED) ====================
+  const fetchHealthRecords = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/health-records');
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setHealthRecords(data);
+        calculateStatistics(data);
       }
-    };
-
-    fetchHealthRecords();
-  }, []);
-
-  // Calculate all statistics from health records
-  const calculateStatistics = (records) => {
-    if (!records || records.length === 0) {
-      setDbStats({
-        totalPatients: 0,
-        newPatients: 0,
-        patientsWithDisability: 0,
-        totalReports: 0,
-        maleCount: 0,
-        femaleCount: 0
-      });
-      return;
+    } catch (error) {
+      console.error('Error fetching health records:', error);
+    } finally {
+      setLoading(false);
     }
-
-    // Total patients (unique resident IDs)
-    const uniquePatients = new Set(records.map(r => r.Resident_ID));
-    const totalPatients = uniquePatients.size;
-
-    // Count males and females
-    const maleCount = records.filter(r => r.Sex && r.Sex.toLowerCase() === 'male').length;
-    const femaleCount = records.filter(r => r.Sex && r.Sex.toLowerCase() === 'female').length;
-
-    // Count diagnoses for pie chart
-    const diagnosisCounts = {};
-    records.forEach(record => {
-      if (record.Diagnosis) {
-        const diagnosis = record.Diagnosis.toLowerCase().trim();
-        diagnosisCounts[diagnosis] = (diagnosisCounts[diagnosis] || 0) + 1;
-      }
-    });
-
-    // Sort diagnoses by count and get top 5
-    const sortedDiagnoses = Object.entries(diagnosisCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
-    // Create diagnosis chart data
-    const diagnosisLabels = sortedDiagnoses.map(([diagnosis]) => 
-      diagnosis.charAt(0).toUpperCase() + diagnosis.slice(1)
-    );
-    const diagnosisValues = sortedDiagnoses.map(([, count]) => count);
-
-    const colors = ['#FFB3A7', '#86EFAC', '#67E8F9', '#FFD700', '#DDA0DD'];
-
-    setDiagnosisChartData({
-      labels: diagnosisLabels,
-      datasets: [
-        {
-          data: diagnosisValues,
-          backgroundColor: colors.slice(0, diagnosisLabels.length),
-          borderColor: '#fff',
-          borderWidth: 2
-        }
-      ]
-    });
-
-    // Create gender chart data
-    setGenderChartData({
-      labels: ['Male', 'Female'],
-      datasets: [
-        {
-          label: 'Patient Count',
-          data: [maleCount, femaleCount],
-          backgroundColor: ['#4A90E2', '#F5A623'],
-          borderColor: '#fff',
-          borderWidth: 2
-        }
-      ]
-    });
-
-    setDbStats({
-      totalPatients: totalPatients,
-      newPatients: records.length,
-      patientsWithDisability: 0,
-      totalReports: records.length,
-      maleCount: maleCount,
-      femaleCount: femaleCount
-    });
   };
 
-  const handleAddPatient = () => {
-    setShouldAutoOpenForm(true);
-    setActiveTab('Records');
-  };
-
-  useEffect(() => {
-    if (activeTab !== 'Records') {
-      setShouldAutoOpenForm(false);
-      setPreFillData(null); 
-    }
-  }, [activeTab]);
-
-  // ==================== FETCH PENDING RESIDENTS ====================
   const fetchPending = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/pending-residents');
@@ -200,332 +59,241 @@ function Home({ onLogout }) {
   };
 
   useEffect(() => {
-    fetchPending(); // initial fetch
-    const interval = setInterval(fetchPending, 5000); // refresh every 5 sec
+    fetchHealthRecords();
+    fetchPending();
+    
+    // FAST UPDATE: Syncs PWD counts and Notifications every 5 seconds
+    const interval = setInterval(() => {
+      fetchPending();
+      fetchHealthRecords(); 
+    }, 5000);
+    
     return () => clearInterval(interval);
   }, []);
 
-  const handleAccept = async (resident) => {
-  try {
-    const acceptRes = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, {
-      method: 'POST'
-    });
-    
-    const result = await acceptRes.json();
-
-    // Create a record object with the new Health_Record_ID
-    const newRecord = {
-      ...resident,
-      Health_Record_ID: result.Health_Record_ID
-    };
-
-    setPreFillData(newRecord);
-    setActiveTab('Records');
-    setShouldAutoOpenForm(true);
-
-    setShowNotification(false);
-    fetchPending();
-  } catch (err) {
-    console.error('Accept failed:', err);
-  }
-};
-
-const handleRemove = async (id) => {
-  try {
-    await fetch(
-      `http://localhost:5000/api/pending-residents/remove/${id}`,
-      { method: 'DELETE' }
-    );
-    fetchPending();
-  } catch (err) {
-    console.error('Error removing resident:', err);
-  }
-};
-
-
-  // ==================== RECENT ACTIVITY ICONS ====================
-  const getActivityIcon = (type) => {
-    switch(type) {
-      case 'New Patient':
-        return 'bi-person-plus-fill';
-      case 'Updated Record':
-        return 'bi-pencil-square';
-      case 'Deleted Record':
-        return 'bi-trash-fill';
-      case 'Report Generated':
-        return 'bi-file-earmark-text-fill';
-      default:
-        return 'bi-circle-fill';
-    }
-  };
-
-  const getActivityIconColor = (type) => {
-    switch(type) {
-      case 'New Patient':
-        return 'text-success';
-      case 'Updated Record':
-        return 'text-primary';
-      case 'Deleted Record':
-        return 'text-danger';
-      case 'Report Generated':
-        return 'text-info';
-      default:
-        return 'text-secondary';
-    }
-  };
-
-  const formatActivityMessage = (activity) => {
-    switch(activity.type) {
-      case 'New Patient':
-        return (
-          <span>New Patient Added: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
-        );
-      case 'Updated Record':
-        return (
-          <span>Record Updated: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
-        );
-      case 'Deleted Record':
-        return (
-          <span>Record Deleted: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
-        );
-      case 'Report Generated':
-        return (
-          <span>Report Generated for: <strong>{activity.patientName}</strong> (ID {activity.id}) at {activity.time}.</span>
-        );
-      default:
-        return <span>Activity recorded at {activity.time}.</span>;
-    }
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: {
-        position: 'bottom'
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotification(false);
       }
-    }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ==================== STATISTICS LOGIC ====================
+  const calculateStatistics = (records) => {
+    if (!records || records.length === 0) return;
+
+    const uniquePatients = new Set(records.map(r => r.Resident_ID)).size;
+    const maleCount = records.filter(r => r.Sex?.toLowerCase() === 'male').length;
+    const femaleCount = records.filter(r => r.Sex?.toLowerCase() === 'female').length;
+    const pwdCount = records.filter(r => r.Is_PWD == 1 || r.Is_PWD === true).length;
+
+    const diagCounts = {};
+    records.forEach(r => {
+      if (r.Diagnosis) {
+        const d = r.Diagnosis.toLowerCase().trim();
+        diagCounts[d] = (diagCounts[d] || 0) + 1;
+      }
+    });
+
+    const sortedDiag = Object.entries(diagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    
+    setDiagnosisChartData({
+      labels: sortedDiag.map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)),
+      datasets: [{
+        data: sortedDiag.map(([, c]) => c),
+        backgroundColor: ['#FFB3A7', '#86EFAC', '#67E8F9', '#FFD700', '#DDA0DD'],
+        borderWidth: 1
+      }]
+    });
+
+    setGenderChartData({
+      labels: ['Male', 'Female'],
+      datasets: [{
+        data: [maleCount, femaleCount],
+        backgroundColor: ['#4A90E2', '#F5A623'],
+        borderWidth: 1
+      }]
+    });
+
+    setDbStats({
+      totalPatients: uniquePatients,
+      newPatients: records.length,
+      patientsWithDisability: pwdCount,
+      totalReports: records.length,
+      maleCount,
+      femaleCount
+    });
   };
 
-  // ==================== RENDER CONTENT ====================
+  const handleAccept = async (resident) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, { method: 'POST' });
+      const result = await res.json();
+      setPreFillData({ ...resident, Is_PWD: resident.Is_PWD == 1, Health_Record_ID: result.Health_Record_ID });
+      setActiveTab('Records');
+      setShouldAutoOpenForm(true);
+      setShowNotification(false);
+      fetchHealthRecords(); // Immediate refresh after accept
+    } catch (err) { console.error(err); }
+  };
+
+  const handleRemove = async (id) => {
+    await fetch(`http://localhost:5000/api/pending-residents/remove/${id}`, { method: 'DELETE' });
+    fetchPending();
+  };
+
   const renderContent = () => {
-    switch (activeTab) {
-      case 'Records':
-        return (
-          <RecordsPage
-            autoOpenForm={shouldAutoOpenForm}
-            preFillData={preFillData}
-            onSubmitSuccess={fetchPending} 
-          />
-        );
-      case 'Analytics':
-        return <AnalyticsPage />;
-      case 'Scan & Upload':
-        return <div className="p-4"><h3>Scan & Upload Page</h3></div>;
-      default:
-        return (
-          <div className="p-4">
-            <div className="position-relative d-flex justify-content-end align-items-center">
-              {/* Notification Bell */}
-              <button 
-                className="btn btn-outline-dark me-2" 
-                onClick={() => setShowNotification(!showNotification)}
-              >
-                <i className="bi bi-bell"></i>
-                {pendingResidents.length > 0 && <span className="badge bg-danger ms-1">{pendingResidents.length}</span>}
-              </button>
+    if (activeTab === 'Records') {
+      return <RecordsPage autoOpenForm={shouldAutoOpenForm} preFillData={preFillData} onSubmitSuccess={() => { fetchPending(); fetchHealthRecords(); }} />;
+    }
+    if (activeTab === 'Analytics') return <AnalyticsPage />;
 
-              {/* Dropdown */}
-              {showNotification && (
-                <div className="position-absolute top-100 end-0 mt-2 bg-white border rounded shadow p-2" style={{ zIndex: 1000, width: '300px' }}>
-                  <h6 className="mb-2">Pending Residents</h6>
-                  <ul className="list-group list-group-flush">
-                    {pendingResidents.length > 0 ? (
-                  pendingResidents.map(res => (
-                    <li
-                      key={res.Pending_HR_ID}
-                      className="list-group-item"
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto',
-                        gap: '12px',
-                        alignItems: 'center'
-                      }}
-                    >
-                      {/* Name + ID */}
-                      <div>
-                        <div className="fw-semibold" style={{ lineHeight: '1.2' }}>
-                          {res.Resident_Name}
-                        </div>
-                        <div className="text-muted small">
-                          ID: {res.Resident_ID}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="d-flex gap-1">
-                        <button
-                          className="btn btn-success btn-sm px-3"
-                          onClick={() => handleAccept(res)}
-                        >
-                          Accept
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm px-3"
-                          onClick={() => handleRemove(res.Pending_HR_ID)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </li>
-                  ))
-                ) : (
-                  <li className="list-group-item py-2 text-center text-muted">No pending residents</li>
-                )}
-                  </ul>
+    return (
+      <div className="p-4">
+        {/* Top Navbar with Fixed Dropdown */}
+        <div className="d-flex justify-content-end align-items-center mb-4 gap-2 position-relative">
+          <div ref={notificationRef}>
+            <button className="btn btn-outline-dark position-relative" onClick={() => setShowNotification(!showNotification)}>
+              <i className="bi bi-bell"></i>
+              {pendingResidents.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{pendingResidents.length}</span>}
+            </button>
+            
+            {showNotification && (
+              <div className="position-absolute end-0 mt-2 bg-white border rounded-4 shadow-lg p-0" style={{ zIndex: 1050, width: '320px', overflow: 'hidden' }}>
+                <div className="bg-light p-3 border-bottom d-flex justify-content-between align-items-center">
+                  <h6 className="m-0 fw-bold text-uppercase small">Pending Requests</h6>
+                  <span className="badge bg-primary">{pendingResidents.length}</span>
                 </div>
-              )}
-
-              <button className="btn btn-outline-dark" onClick={onLogout}>Logout</button>
-            </div>
-
-            {/* Recent Activity */}
-            <h2 className="fw-bold mb-4 text-uppercase">WELCOME BACK, ADMIN!</h2>
-            <div className="card border-0 shadow-sm rounded-4 mb-4">
-              <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-                <h5 className="mb-0 fw-bold">Recent Activity</h5>
-                <select 
-                  className="form-select form-select-sm w-auto" 
-                  value={filter} 
-                  onChange={(e) => setFilter(e.target.value)}
-                >
-                  <option value="All Activities">All Activities</option>
-                  <option value="New Patients">New Patients</option>
-                  <option value="Updated Records">Updated Records</option>
-                  <option value="Deleted Records">Deleted Records</option>
-                  <option value="Report Generated">Report Generated</option>
-                </select>
-              </div>
-              
-              <div className="card-body p-0">
-                <ul className="list-group list-group-flush">
-                  {activities.length > 0 ? (
-                    activities.map((item, index) => (
-                      <li key={index} className="list-group-item d-flex align-items-center py-3 border-0">
-                        <i className={`bi ${getActivityIcon(item.type)} ${getActivityIconColor(item.type)} me-3 fs-5`}></i>
-                        <div>{formatActivityMessage(item)}</div>
+                <ul className="list-group list-group-flush" style={{maxHeight: '300px', overflowY: 'auto'}}>
+                  {pendingResidents.length > 0 ? (
+                    pendingResidents.map(res => (
+                      <li key={res.Pending_HR_ID} className="list-group-item p-3 border-bottom">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div className="small">
+                            <div className="fw-bold text-dark">{res.Resident_Name}</div>
+                            <div className="text-muted" style={{fontSize: '0.75rem'}}>Resident ID: {res.Resident_ID}</div>
+                          </div>
+                          <div className="d-flex gap-1">
+                            <button className="btn btn-success btn-sm p-1 px-2" title="Accept" onClick={() => handleAccept(res)}><i className="bi bi-check-lg"></i></button>
+                            <button className="btn btn-outline-danger btn-sm p-1 px-2" title="Remove" onClick={() => handleRemove(res.Pending_HR_ID)}><i className="bi bi-x-lg"></i></button>
+                          </div>
+                        </div>
                       </li>
                     ))
                   ) : (
-                    <li className="list-group-item py-4 text-center text-muted border-0">
-                      No recent updates or activities found for "{filter}".
-                    </li>
+                    <li className="list-group-item py-4 text-center text-muted">No pending residents</li>
                   )}
                 </ul>
               </div>
-            </div>
+            )}
+          </div>
+          <button className="btn btn-outline-dark px-4" onClick={onLogout}>Logout</button>
+        </div>
 
-            {/* Dashboard */}
-            <h2 className="text-success fw-bold mb-3">Dashboard</h2>
-            <div className="bg-white p-4 rounded-4 shadow-sm border">
-              <button 
-                className="btn btn-success fw-bold px-4 mb-4 rounded-3"
-                onClick={handleAddPatient}
-              >
-                <i className="bi bi-plus-lg me-2"></i>Add Patient
-              </button>
+        <h2 className="fw-bold mb-4 text-uppercase">WELCOME BACK, ADMIN!</h2>
 
+        {/* Recent Activity Section */}
+        <div className="card border-0 shadow-sm rounded-4 mb-4">
+          <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+            <h5 className="mb-0 fw-bold">Recent Activity</h5>
+            <select className="form-select form-select-sm w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="All Activities">All Activities</option>
+              <option value="New Patients">New Patients</option>
+              <option value="Updated Records">Updated Records</option>
+              <option value="Deleted Records">Deleted Records</option>
+              <option value="Report Generated">Report Generated</option>
+            </select>
+          </div>
+          <div className="card-body p-0">
+            <ul className="list-group list-group-flush">
+              {activities.length > 0 ? (
+                activities.map((item, index) => (
+                  <li key={index} className="list-group-item d-flex align-items-center py-3 border-0 px-4">
+                    <i className={`bi bi-circle-fill text-primary me-3`} style={{fontSize: '0.5rem'}}></i>
+                    <div className="small">Activity log placeholder...</div>
+                  </li>
+                ))
+              ) : (
+                <li className="list-group-item py-4 text-center text-muted border-0">
+                  No recent updates found for "{filter}".
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+
+        {/* DASHBOARD STATS */}
+        <h2 className="text-success fw-bold mb-3">Dashboard</h2>
+        <div className="bg-white p-4 rounded-4 shadow-sm border">
+          {/* <button className="btn btn-success fw-bold px-4 mb-4 rounded-3 shadow-sm" onClick={() => { setActiveTab('Records'); setShouldAutoOpenForm(true); }}>
+            <i className="bi bi-plus-lg me-2"></i>Add Patient Record
+          </button> */}
+
+          <div className="row g-3">
+            <div className="col-lg-5">
               <div className="row g-3">
-                {/* Statistics Cards */}
-                <div className="col-lg-5">
-                  <div className="row g-3">
-                    <div className="col-6">
-                      <div className="border rounded-4 p-3 text-center d-flex flex-column align-items-center">
-                        <i className="bi bi-person text-success fs-1"></i>
-                        <h2 className="fw-bold mb-0">{dbStats.totalPatients}</h2>
-                        <small className="text-muted">Total Patients</small>
-                      </div>
-                    </div>
-                    <div className="col-6">
-                      <div className="border rounded-4 p-3 text-center d-flex flex-column align-items-center">
-                        <i className="bi bi-person-plus text-success fs-1"></i>
-                        <h2 className="fw-bold mb-0">{dbStats.newPatients}</h2>
-                        <small className="text-muted">New Patients</small>
-                      </div>
-                    </div>
-                    <div className="col-6">
-                      <div className="border rounded-4 p-3 text-center d-flex flex-column align-items-center">
-                        <i className="bi bi-person-wheelchair text-success fs-1"></i>
-                        <h2 className="fw-bold mb-0">{dbStats.patientsWithDisability}</h2>
-                        <small className="text-muted text-wrap" style={{fontSize: '0.75rem'}}>Patients With Disability</small>
-                      </div>
-                    </div>
-                    <div className="col-6">
-                      <div className="border rounded-4 p-3 text-center d-flex flex-column align-items-center">
-                        <i className="bi bi-file-earmark-text text-success fs-1"></i>
-                        <h2 className="fw-bold mb-0">{dbStats.totalReports}</h2>
-                        <small className="text-muted">Total Reports Generated</small>
-                      </div>
-                    </div>
+                <div className="col-6">
+                  <div className="border rounded-4 p-3 text-center h-100 shadow-sm bg-white">
+                    <i className="bi bi-people text-success fs-1"></i>
+                    <h2 className="fw-bold mb-0">{dbStats.totalPatients}</h2>
+                    <small className="text-muted fw-semibold">Total Residents</small>
                   </div>
                 </div>
-
-                {/* Gender Distribution Doughnut Chart */}
-                <div className="col-lg-4">
-                  <div className="border rounded-4 overflow-hidden h-100 d-flex flex-column">
-                    <div className="text-white text-center py-2 fw-bold" style={{backgroundColor: '#6CB4EE'}}>
-                      Patient Gender Distribution
-                    </div>
-                    <div className="d-flex flex-grow-1 align-items-center justify-content-center p-3">
-                      {genderChartData ? (
-                        <Doughnut data={genderChartData} options={chartOptions} />
-                      ) : (
-                        <p className="text-muted">Loading...</p>
-                      )}
-                    </div>
+                <div className="col-6">
+                  <div className="border rounded-4 p-3 text-center h-100 shadow-sm bg-white">
+                    <i className="bi bi-journal-medical text-success fs-1"></i>
+                    <h2 className="fw-bold mb-0">{dbStats.newPatients}</h2>
+                    <small className="text-muted fw-semibold">Health Records</small>
                   </div>
                 </div>
-
-                {/* Top Diagnosis Pie Chart */}
-                <div className="col-lg-3">
-                  <div className="border rounded-4 p-3 h-100 d-flex flex-column">
-                    <h6 className="fw-bold text-center mb-3">Common Diagnosis</h6>
-                    <div className="flex-grow-1 d-flex align-items-center justify-content-center">
-                      {diagnosisChartData ? (
-                        <Pie data={diagnosisChartData} options={chartOptions} />
-                      ) : (
-                        <p className="text-muted">Loading...</p>
-                      )}
-                    </div>
+                {/* PWD CARD - HIGH PRIORITY */}
+                <div className="col-6">
+                  <div className="border rounded-4 p-3 text-center h-100 shadow-sm bg-light border-primary border-opacity-25">
+                    <i className="bi bi-person-wheelchair text-primary fs-1"></i>
+                    <h2 className="fw-bold mb-0 text-primary">{dbStats.patientsWithDisability}</h2>
+                    <small className="text-muted d-block fw-bold" style={{fontSize: '0.7rem'}}>PWD PATIENTS</small>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="border rounded-4 p-3 text-center h-100 shadow-sm bg-white">
+                    <i className="bi bi-file-earmark-bar-graph text-success fs-1"></i>
+                    <h2 className="fw-bold mb-0">{dbStats.totalReports}</h2>
+                    <small className="text-muted fw-semibold">Total Reports</small>
                   </div>
                 </div>
               </div>
             </div>
+
+            <div className="col-lg-4">
+              <div className="border rounded-4 overflow-hidden h-100 shadow-sm bg-white">
+                <div className="text-white text-center py-2 fw-bold small" style={{backgroundColor: '#6CB4EE'}}>GENDER DISTRIBUTION</div>
+                <div className="p-4">
+                  {genderChartData && <Doughnut data={genderChartData} options={{plugins: {legend: {position: 'bottom'}}}} />}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-lg-3">
+              <div className="border rounded-4 p-3 h-100 shadow-sm bg-white text-center">
+                <h6 className="fw-bold mb-3 small text-uppercase text-muted">Common Diagnosis</h6>
+                {diagnosisChartData && <Pie data={diagnosisChartData} options={{plugins: {legend: {position: 'bottom'}}}} />}
+              </div>
+            </div>
           </div>
-        );
-    }
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="dashboard-container d-flex">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
       <div className="main-wrapper flex-grow-1 bg-light min-vh-100">
-        <main>
-          {renderContent()}
-
-          {/* ResidentPage modal */}
-          {showResidentForm && (
-            <ResidentPage
-              onCancel={() => setShowResidentForm(false)}
-              preFillData={preFillData}
-              onSubmitSuccess={() => {
-                setShowResidentForm(false);
-                fetchPending();
-              }}
-            />
-          )}
-        </main>
+        <main>{renderContent()}</main>
       </div>
     </div>
   );

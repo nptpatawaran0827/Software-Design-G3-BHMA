@@ -9,24 +9,20 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      // Auto-collapse on mobile, auto-expand on desktop
-      if (!mobile) {
-        setIsCollapsed(false);
-      }
+      if (!mobile) setIsCollapsed(false);
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Map the names to your actual logical tabs
   const menuItems = [
-    { name: 'Home', icon: '🏠' },
-    { name: 'Records', icon: '📋' },
-    { name: 'Analytics', icon: '📊' },
-    { name: 'Scan & Upload', icon: '📥' },
+    { name: 'Home', icon: '🏠', file: 'HomePage' },
+    { name: 'Records', icon: '📋', file: 'RecordsPage' },
+    { name: 'Analytics', icon: '📊', file: 'AnalyticsPage' },
   ];
 
-  // On mobile, sidebar collapses automatically; on desktop, always show full width
   const sidebarWidth = isMobile && isCollapsed ? '80px' : '240px';
 
   return (
@@ -34,28 +30,34 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       className={`sidebar bg-white border-end vh-100 shadow-sm ${isCollapsed && isMobile ? 'collapsed' : 'expanded'}`}
       style={{ 
         width: sidebarWidth,
-        transition: 'width 0.3s ease-in-out'
+        transition: 'width 0.3s ease-in-out',
+        position: 'sticky',
+        top: 0
       }}
     >
-      {/* Header with Logo and Toggle Button */}
       <div className="sidebar-header p-3 d-flex align-items-center justify-content-between border-bottom">
         {!isCollapsed && <img src={logoImage} alt="Logo" style={{ width: '60px' }} />}
       </div>
       
-      {/* Navigation Menu */}
       <div className="nav flex-column nav-pills p-2 gap-2">
         {menuItems.map((item) => (
           <button 
             key={item.name} 
-            onClick={() => setActiveTab(item.name)}
-            className={`nav-link text-start d-flex align-items-center gap-3 border-0 ${
-              activeTab === item.name ? 'active bg-teal' : 'text-dark bg-transparent'
+            onClick={() => setActiveTab(item.name)} // This triggers the renderContent() in Home.jsx
+            className={`nav-link text-start d-flex align-items-center gap-3 border-0 transition-all ${
+              activeTab === item.name ? 'active shadow-sm' : 'text-dark bg-transparent'
             }`}
             style={activeTab === item.name ? { backgroundColor: '#00695c', color: 'white' } : {}}
-            title={isCollapsed ? item.name : ''}
+            title={item.file} // Shows the filename when hovering
           >
             <span style={{ fontSize: '1.2rem', minWidth: '24px' }}>{item.icon}</span> 
-            {!isCollapsed && <span className="fw-semibold">{item.name}</span>}
+            {!isCollapsed && (
+              <div className="d-flex flex-column">
+                <span className="fw-semibold">{item.name}</span>
+                {/* Optional: subtile filename text */}
+                <small style={{ fontSize: '0.65rem', opacity: 0.7 }}>{item.file}</small>
+              </div>
+            )}
           </button>
         ))}
       </div>

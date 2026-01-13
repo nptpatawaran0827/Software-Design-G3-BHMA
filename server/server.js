@@ -7,11 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '@Jianvench18',
+  password: '@Group3-BHMA',
   database: 'admin_db'
 });
 
@@ -20,16 +19,14 @@ db.connect(err => {
   console.log('✅ Connected to admin_db');
 });
 
-/* ================= RESIDENT (UPDATED) ================= */
+/* ================= RESIDENT ================= */
 app.post('/api/residents', (req, res) => {
   const sql = `
     INSERT INTO residents 
     (Resident_ID, First_Name, Middle_Name, Last_Name, Sex, Civil_Status, Birthdate, Contact_Number, Street, Barangay)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
-
   const d = req.body;
-
   db.query(sql, [
     d.Resident_ID,
     d.First_Name,
@@ -47,7 +44,6 @@ app.post('/api/residents', (req, res) => {
   });
 });
 
-/* ================= UPDATE RESIDENT ================= */
 app.put('/api/residents/:id', (req, res) => {
   const id = req.params.id;
   const d = req.body;
@@ -74,16 +70,17 @@ app.put('/api/residents/:id', (req, res) => {
   });
 });
 
-/* ================= PENDING ================= */
+/* ================= PENDING (UPDATED WITH Is_PWD) ================= */
 app.post('/api/pending-resident', (req, res) => {
   const d = req.body;
   const sql = `
     INSERT INTO pending_resident 
-    (Resident_ID, Height, Weight, BMI, Health_Condition, Allergies, Submitted_At)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Submitted_At)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
   db.query(sql, [
     d.Resident_ID,
+    d.Is_PWD ? 1 : 0, // Convert boolean to TINYINT
     d.Height || null,
     d.Weight || null,
     d.BMI || null,
@@ -96,45 +93,13 @@ app.post('/api/pending-resident', (req, res) => {
   });
 });
 
-/* ================= APPROVE (Original Method 1) ================= */
-app.post('/api/pending-resident/approve/:id', (req, res) => {
-  const id = req.params.id;
-
-  db.query(
-    "SELECT * FROM pending_resident WHERE Pending_HR_ID = ?",
-    [id],
-    (err, rows) => {
-      if (err || rows.length === 0) return res.sendStatus(404);
-      const p = rows[0];
-
-      db.query(
-        `INSERT INTO health_records 
-          (Resident_ID, Weight, Height, BMI, Health_Condition, Allergies)
-          VALUES (?, ?, ?, ?, ?, ?)`,
-        [p.Resident_ID, p.Weight, p.Height, p.BMI, p.Health_Condition, p.Allergies],
-        () => {
-          db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id]);
-          res.json({ success: true });
-        }
-      );
-    }
-  );
-});
-
-/* ================= RECORDS ================= */
+/* ================= RECORDS (GET) ================= */
 app.get('/api/health-records', (req, res) => {
   const sql = `
     SELECT hr.*, 
-      r.First_Name,
-      r.Middle_Name,
-      r.Last_Name,
+      r.First_Name, r.Middle_Name, r.Last_Name,
       CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name,
-      r.Sex,
-      r.Birthdate,
-      r.Civil_Status,
-      r.Contact_Number,
-      r.Street,
-      r.Barangay
+      r.Sex, r.Birthdate, r.Civil_Status, r.Contact_Number, r.Street, r.Barangay
     FROM health_records hr
     JOIN residents r ON hr.Resident_ID = r.Resident_ID
     ORDER BY hr.Date_Registered DESC
@@ -145,16 +110,17 @@ app.get('/api/health-records', (req, res) => {
   });
 });
 
-/* ================= CREATE HEALTH RECORD ================= */
+/* ================= CREATE HEALTH RECORD (UPDATED WITH Is_PWD) ================= */
 app.post('/api/health-records', (req, res) => {
   const d = req.body;
   const sql = `
     INSERT INTO health_records 
-    (Resident_ID, Blood_Pressure, Weight, Height, BMI, Nutrition_Status, Health_Condition, Diagnosis, Allergies, Date_Visited, Remarks_Notes, Recorded_By)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (Resident_ID, Is_PWD, Blood_Pressure, Weight, Height, BMI, Nutrition_Status, Health_Condition, Diagnosis, Allergies, Date_Visited, Remarks_Notes, Recorded_By)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   db.query(sql, [
     d.Resident_ID,
+    d.Is_PWD ? 1 : 0, // Save PWD Status
     d.Blood_Pressure || null,
     d.Weight || null,
     d.Height || null,
@@ -172,17 +138,18 @@ app.post('/api/health-records', (req, res) => {
   });
 });
 
-/* ================= UPDATE HEALTH RECORD ================= */
+/* ================= UPDATE HEALTH RECORD (UPDATED WITH Is_PWD) ================= */
 app.put('/api/health-records/:id', (req, res) => {
   const id = req.params.id;
   const d = req.body;
   const sql = `
     UPDATE health_records 
-    SET Blood_Pressure = ?, Weight = ?, Height = ?, BMI = ?, Nutrition_Status = ?, Health_Condition = ?, 
-        Diagnosis = ?, Allergies = ?, Date_Visited = ?, Remarks_Notes = ?, Recorded_By = ?
+    SET Is_PWD = ?, Blood_Pressure = ?, Weight = ?, Height = ?, BMI = ?, Nutrition_Status = ?, 
+        Health_Condition = ?, Diagnosis = ?, Allergies = ?, Date_Visited = ?, Remarks_Notes = ?, Recorded_By = ?
     WHERE Health_Record_ID = ?
   `;
   db.query(sql, [
+    d.Is_PWD ? 1 : 0, // Update PWD Status
     d.Blood_Pressure || null,
     d.Weight || null,
     d.Height || null,
@@ -201,65 +168,7 @@ app.put('/api/health-records/:id', (req, res) => {
   });
 });
 
-/* ================= DELETE HEALTH RECORD (and related data) ================= */
-app.delete('/api/health-records/:id', (req, res) => {
-  const healthRecordId = req.params.id;
-  
-  db.query(
-    'SELECT Resident_ID FROM health_records WHERE Health_Record_ID = ?',
-    [healthRecordId],
-    (err, rows) => {
-      if (err) return res.status(500).json(err);
-      if (rows.length === 0) return res.status(404).json({ error: 'Record not found' });
-      
-      const residentId = rows[0].Resident_ID;
-      
-      db.query(
-        'DELETE FROM health_records WHERE Health_Record_ID = ?',
-        [healthRecordId],
-        (err) => {
-          if (err) return res.status(500).json(err);
-          
-          db.query(
-            'DELETE FROM pending_resident WHERE Resident_ID = ?',
-            [residentId],
-            (err) => {
-              if (err) return res.status(500).json(err);
-              
-              db.query(
-                'DELETE FROM residents WHERE Resident_ID = ?',
-                [residentId],
-                (err) => {
-                  if (err) return res.status(500).json(err);
-                  res.json({ success: true, message: 'Record and resident data deleted' });
-                }
-              );
-            }
-          );
-        }
-      );
-    }
-  );
-});
-
-/* ================= GET PENDING RESIDENTS ================= */
-app.get('/api/pending-residents', (req, res) => {
-  const sql = `
-    SELECT pr.*, 
-      r.First_Name, r.Middle_Name, r.Last_Name, r.Sex, r.Civil_Status, 
-      r.Contact_Number, r.Street, r.Barangay, r.Birthdate,
-      CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name
-    FROM pending_resident pr
-    JOIN residents r ON pr.Resident_ID = r.Resident_ID
-    ORDER BY pr.Submitted_At DESC
-  `;
-  db.query(sql, (err, rows) => {
-    if (err) return res.status(500).json(err);
-    res.json(rows);
-  });
-});
-
-/* ================= APPROVE PENDING RESIDENT (Method 2) ================= */
+/* ================= APPROVE PENDING (UPDATED TO TRANSFER Is_PWD) ================= */
 app.post('/api/pending-residents/accept/:id', (req, res) => {
   const id = req.params.id;
 
@@ -272,9 +181,9 @@ app.post('/api/pending-residents/accept/:id', (req, res) => {
 
       db.query(
         `INSERT INTO health_records 
-          (Resident_ID, Height, Weight, BMI, Health_Condition, Allergies)
-          VALUES (?, ?, ?, ?, ?, ?)`,
-        [p.Resident_ID, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies],
+          (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [p.Resident_ID, p.Is_PWD || 0, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies],
         (err, result) => {
           if (err) return res.status(500).json(err);
           db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id], (err) => {
@@ -287,88 +196,65 @@ app.post('/api/pending-residents/accept/:id', (req, res) => {
   );
 });
 
-/* ================= DELETE PENDING RESIDENT ================= */
-app.delete('/api/pending-residents/:id', (req, res) => {
-  const id = req.params.id;
-  const sql = `DELETE FROM pending_resident WHERE Pending_HR_ID = ?`;
-  db.query(sql, [id], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ success: true });
+/* ================= DELETE ROUTES ================= */
+app.delete('/api/health-records/:id', (req, res) => {
+  const healthRecordId = req.params.id;
+  db.query('SELECT Resident_ID FROM health_records WHERE Health_Record_ID = ?', [healthRecordId], (err, rows) => {
+    if (err || rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    const residentId = rows[0].Resident_ID;
+    db.query('DELETE FROM health_records WHERE Health_Record_ID = ?', [healthRecordId], () => {
+      db.query('DELETE FROM pending_resident WHERE Resident_ID = ?', [residentId], () => {
+        db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], () => {
+          res.json({ success: true });
+        });
+      });
+    });
   });
 });
 
-/* ================= REMOVE PENDING + RESIDENT ================= */
 app.delete('/api/pending-residents/remove/:id', (req, res) => {
   const pendingId = req.params.id;
-
-  db.query(
-    'SELECT Resident_ID FROM pending_resident WHERE Pending_HR_ID = ?',
-    [pendingId],
-    (err, rows) => {
-      if (err) return res.status(500).json(err);
-      if (rows.length === 0) return res.sendStatus(404);
-
-      const residentId = rows[0].Resident_ID;
-
-      db.query(
-        'DELETE FROM pending_resident WHERE Pending_HR_ID = ?',
-        [pendingId],
-        (err) => {
-          if (err) return res.status(500).json(err);
-
-          db.query(
-            'DELETE FROM health_records WHERE Resident_ID = ?',
-            [residentId],
-            (err) => {
-              if (err) return res.status(500).json(err);
-
-              db.query(
-                'DELETE FROM residents WHERE Resident_ID = ?',
-                [residentId],
-                (err) => {
-                  if (err) return res.status(500).json(err);
-                  res.json({ success: true });
-                }
-              );
-            }
-          );
-        }
-      );
-    }
-  );
+  db.query('SELECT Resident_ID FROM pending_resident WHERE Pending_HR_ID = ?', [pendingId], (err, rows) => {
+    if (err || rows.length === 0) return res.sendStatus(404);
+    const residentId = rows[0].Resident_ID;
+    db.query('DELETE FROM pending_resident WHERE Pending_HR_ID = ?', [pendingId], () => {
+      db.query('DELETE FROM health_records WHERE Resident_ID = ?', [residentId], () => {
+        db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], () => {
+          res.json({ success: true });
+        });
+      });
+    });
+  });
 });
 
-/* ================= LOGIN ================= */
+app.get('/api/pending-residents', (req, res) => {
+  const sql = `
+    SELECT pr.*, r.First_Name, r.Middle_Name, r.Last_Name, r.Sex, r.Birthdate,
+    CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name
+    FROM pending_resident pr
+    JOIN residents r ON pr.Resident_ID = r.Resident_ID
+    ORDER BY pr.Submitted_At DESC
+  `;
+  db.query(sql, (err, rows) => {
+    if (err) return res.status(500).json(err);
+    res.json(rows);
+  });
+});
+
+/* ================= AUTH ================= */
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({ success: false, message: 'Username and password required' });
-  }
-
   const sql = 'SELECT * FROM admins WHERE username = ?';
-  
   db.query(sql, [username], (err, rows) => {
-    if (err) return res.status(500).json({ success: false, message: 'Database error' });
-    
-    if (rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Invalid username or password' });
-    }
-
+    if (err || rows.length === 0) return res.status(401).json({ success: false });
     const admin = rows[0];
-    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
-    
-    if (admin.password === hashedPassword) {
-      return res.json({ 
-        success: true, 
-        message: 'Login successful',
-        adminId: admin.admin_id,
-        username: admin.username
-      });
+    const hashed = crypto.createHash('sha256').update(password).digest('hex');
+    if (admin.password === hashed) {
+      res.json({ success: true, adminId: admin.admin_id, username: admin.username });
     } else {
-      return res.status(401).json({ success: false, message: 'Invalid username or password' });
+      res.status(401).json({ success: false });
     }
   });
 });
 
-app.listen(5000, () => console.log('🚀 Server running'));
+app.listen(5000, () => console.log('🚀 Server running on port 5000'));
