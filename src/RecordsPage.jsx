@@ -89,7 +89,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       
       const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
       
-      // 1. Update Resident Info
       const residentUrl = isNewRecord 
         ? `http://localhost:5000/api/residents`
         : `http://localhost:5000/api/residents/${formData.Resident_ID}`;
@@ -102,7 +101,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
 
       if (!residentUpdateRes.ok) throw new Error('Failed to save resident info');
 
-      // 2. Update/Create Health Record
       const healthUrl = isNewRecord
         ? 'http://localhost:5000/api/health-records'
         : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
@@ -112,7 +110,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          Recorded_By: adminId // This sends the ID to the database
+          Recorded_By: adminId 
         })
       });
       
@@ -130,7 +128,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   };
 
   const handleToggleStatus = async (recordId, currentStatus) => {
-    const newStatus = currentStatus === 'Active' ? 'Not Active' : 'Active';
+    const newStatus = (currentStatus === 'Active' || !currentStatus) ? 'Not Active' : 'Active';
     try {
       const res = await fetch(`http://localhost:5000/api/health-records/${recordId}/status`, {
         method: 'PUT',
@@ -227,14 +225,14 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
                         <td>{record.Sex}</td>
                         <td>{record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString() : 'N/A'}</td>
                         <td>
-                          {/* UPDATED: Displays the Admin Username from the JOIN */}
                           <span className="badge bg-light text-primary border">
                             <i className="bi bi-person-badge me-1"></i>
                             {record.Recorded_By_Name || 'Unknown Admin'}
                           </span>
                         </td>
                         <td>
-                          <span className={`badge rounded-pill ${record.status === 'Active' ? 'bg-success-subtle text-success border border-success' : 'bg-secondary-subtle text-secondary border border-secondary'}`}>
+                          {/* REVISED STATUS COLORS */}
+                          <span className={`badge rounded-pill ${(!record.status || record.status === 'Active') ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
                             {record.status || 'Active'}
                           </span>
                         </td>
