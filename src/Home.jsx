@@ -4,6 +4,7 @@ import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import Sidebar from './Sidebar';
 import RecordsPage from './RecordsPage';
 import AnalyticsPage from './AnalyticsPage';
+import HeatmapPage from './HeatmapPage' 
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -60,7 +61,7 @@ function Home({ onLogout }) {
   const [pendingResidents, setPendingResidents] = useState([]); 
   const [showNotification, setShowNotification] = useState(false); 
   const [preFillData, setPreFillData] = useState(null); 
-  const [showResidentForm, setShowResidentForm] = useState(false); //  open ResidentPage modal
+  const [showResidentForm, setShowResidentForm] = useState(false);
 
   // Initialize with default values
   const [dbStats, setDbStats] = useState({
@@ -206,42 +207,41 @@ function Home({ onLogout }) {
   }, []);
 
   const handleAccept = async (resident) => {
-  try {
-    const acceptRes = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, {
-      method: 'POST'
-    });
-    
-    const result = await acceptRes.json();
+    try {
+      const acceptRes = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, {
+        method: 'POST'
+      });
+      
+      const result = await acceptRes.json();
 
-    // Create a record object with the new Health_Record_ID
-    const newRecord = {
-      ...resident,
-      Health_Record_ID: result.Health_Record_ID
-    };
+      // Create a record object with the new Health_Record_ID
+      const newRecord = {
+        ...resident,
+        Health_Record_ID: result.Health_Record_ID
+      };
 
-    setPreFillData(newRecord);
-    setActiveTab('Records');
-    setShouldAutoOpenForm(true);
+      setPreFillData(newRecord);
+      setActiveTab('Records');
+      setShouldAutoOpenForm(true);
 
-    setShowNotification(false);
-    fetchPending();
-  } catch (err) {
-    console.error('Accept failed:', err);
-  }
-};
+      setShowNotification(false);
+      fetchPending();
+    } catch (err) {
+      console.error('Accept failed:', err);
+    }
+  };
 
-const handleRemove = async (id) => {
-  try {
-    await fetch(
-      `http://localhost:5000/api/pending-residents/remove/${id}`,
-      { method: 'DELETE' }
-    );
-    fetchPending();
-  } catch (err) {
-    console.error('Error removing resident:', err);
-  }
-};
-
+  const handleRemove = async (id) => {
+    try {
+      await fetch(
+        `http://localhost:5000/api/pending-residents/remove/${id}`,
+        { method: 'DELETE' }
+      );
+      fetchPending();
+    } catch (err) {
+      console.error('Error removing resident:', err);
+    }
+  };
 
   // ==================== RECENT ACTIVITY ICONS ====================
   const getActivityIcon = (type) => {
@@ -309,8 +309,11 @@ const handleRemove = async (id) => {
 
   // ==================== RENDER CONTENT ====================
   const renderContent = () => {
+    console.log('🔄 renderContent called with activeTab:', activeTab)
+    
     switch (activeTab) {
       case 'Records':
+        console.log('📋 Rendering Records Page')
         return (
           <RecordsPage
             autoOpenForm={shouldAutoOpenForm}
@@ -318,11 +321,22 @@ const handleRemove = async (id) => {
             onSubmitSuccess={fetchPending} 
           />
         );
+      
       case 'Analytics':
+        console.log('📊 Rendering Analytics Page')
         return <AnalyticsPage />;
+
+      case 'Heatmap':
+        console.log('🔥 Rendering Heatmap Page')
+        return <HeatmapPage />;
+
       case 'Scan & Upload':
+        console.log('📥 Rendering Scan & Upload Page')
         return <div className="p-4"><h3>Scan & Upload Page</h3></div>;
+      
+      case 'Home':
       default:
+        console.log('🏠 Rendering Home Dashboard')
         return (
           <div className="p-4">
             <div className="position-relative d-flex justify-content-end align-items-center">
@@ -341,47 +355,47 @@ const handleRemove = async (id) => {
                   <h6 className="mb-2">Pending Residents</h6>
                   <ul className="list-group list-group-flush">
                     {pendingResidents.length > 0 ? (
-                  pendingResidents.map(res => (
-                    <li
-                      key={res.Pending_HR_ID}
-                      className="list-group-item"
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr auto',
-                        gap: '12px',
-                        alignItems: 'center'
-                      }}
-                    >
-                      {/* Name + ID */}
-                      <div>
-                        <div className="fw-semibold" style={{ lineHeight: '1.2' }}>
-                          {res.Resident_Name}
-                        </div>
-                        <div className="text-muted small">
-                          ID: {res.Resident_ID}
-                        </div>
-                      </div>
+                      pendingResidents.map(res => (
+                        <li
+                          key={res.Pending_HR_ID}
+                          className="list-group-item"
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: '12px',
+                            alignItems: 'center'
+                          }}
+                        >
+                          {/* Name + ID */}
+                          <div>
+                            <div className="fw-semibold" style={{ lineHeight: '1.2' }}>
+                              {res.Resident_Name}
+                            </div>
+                            <div className="text-muted small">
+                              ID: {res.Resident_ID}
+                            </div>
+                          </div>
 
-                      {/* Actions */}
-                      <div className="d-flex gap-1">
-                        <button
-                          className="btn btn-success btn-sm px-3"
-                          onClick={() => handleAccept(res)}
-                        >
-                          Accept
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm px-3"
-                          onClick={() => handleRemove(res.Pending_HR_ID)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </li>
-                  ))
-                ) : (
-                  <li className="list-group-item py-2 text-center text-muted">No pending residents</li>
-                )}
+                          {/* Actions */}
+                          <div className="d-flex gap-1">
+                            <button
+                              className="btn btn-success btn-sm px-3"
+                              onClick={() => handleAccept(res)}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm px-3"
+                              onClick={() => handleRemove(res.Pending_HR_ID)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="list-group-item py-2 text-center text-muted">No pending residents</li>
+                    )}
                   </ul>
                 </div>
               )}

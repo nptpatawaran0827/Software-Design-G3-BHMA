@@ -1,113 +1,31 @@
 :root {
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  /* Force Light Mode defaults for the Dashboard */
+  line-height: 1.5; /* [cite: 362] */
   color: #212529;
-  background-color: #f8f9fa; 
+  background-color: #f8f9fa;
 }
 
-body, html {
+body, html, #root {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
 }
 
-
-
-/* Main Content Wrapper */
-.main-wrapper {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0; /* Prevents flex items from overflowing */
-  padding: 20px;
-}
-
-/* Header/Banner Styling */
-.header-banner {
-  background-color: #4da3ff;
-  color: white;
-  padding: 1.5rem 2rem;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(77, 163, 255, 0.2);
-  margin-bottom: 2rem;
-  width: 100%; /* Occupies full width of main-wrapper */
-}
-
-/* Home Card Styling */
-.home-card {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  max-width: 500px; /* Limits width so it doesn't look stretched on wide screens */
+/* Leaflet Container Overrides [cite: 382-388] */
+.leaflet-container {
   width: 100%;
+  height: 100%;
+  background-color: #ddd;
+  outline: 0;
+  font-family: inherit;
+  z-index: 1;
 }
 
+.leaflet-popup-content-wrapper { border-radius: 6px; } /* [cite: 364] */
+.leaflet-popup-content { margin: 8px; font-size: 0.9rem; } /* [cite: 365] */
 
-/* Sidebar Responsive Styles */
-.sidebar {
-  position: relative;
-  flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.sidebar-header {
-  min-height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.sidebar.expanded {
-  width: 240px;
-}
-
-.sidebar.collapsed {
-  width: 80px;
-}
-
-/* Smooth transitions for sidebar items */
-.sidebar .nav-link {
-  white-space: nowrap;
-  padding: 12px 16px;
-  border-radius: 8px !important;
-  transition: all 0.2s ease-in-out;
-}
-
-.sidebar .nav-link:hover:not(.active) {
-  background-color: #f0f2f5 !important;
-  transform: translateX(3px);
-}
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .sidebar {
-    width: 80px !important;
-  }
-  
-  .sidebar-header {
-    padding: 10px !important;
-  }
-  
-  .sidebar .nav-link span:last-child {
-    display: none; /* Hide text labels on mobile */
-  }
-}
-
-@media (max-width: 480px) {
-  .sidebar {
-    width: 70px !important;
-  }
-  
-  .sidebar .nav-link {
-    padding: 10px 8px !important;
-  }
-}
-
-/* Dashboard Layout with flexible sidebar */
+/* Dashboard and Sidebar Styles (ORIGINAL) [cite: 370-381] */
 .dashboard-container {
   display: flex;
   height: 100vh;
@@ -119,5 +37,28 @@ body, html {
   flex-grow: 1;
   overflow-y: auto;
   background-color: #f8f9fa;
-  min-width: 0; /* Prevents flex items from overflowing */
+  min-width: 0;
+  padding: 20px;
+}
+
+.sidebar {
+  position: relative;
+  flex-shrink: 0;
+  overflow-y: auto;
+  transition: width 0.3s ease;
+}
+
+.sidebar.expanded { width: 240px; }
+.sidebar.collapsed { width: 80px; }
+
+/* Existing responsive sidebar [cite: 374-379] */
+@media (max-width: 768px) {
+  .sidebar { width: 80px !important; }
+  .sidebar .nav-link span:last-child { display: none; }
+}
+
+.map-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
 }

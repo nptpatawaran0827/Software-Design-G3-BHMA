@@ -7,17 +7,36 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
+// Database connection
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '@Jianvench18',
+  password: '@Group3-BHMA',
   database: 'admin_db'
 });
 
 db.connect(err => {
-  if (err) return console.error(err);
+  if (err) return console.error('❌ Database connection error:', err);
   console.log('✅ Connected to admin_db');
+});
+
+/* ================= HEATMAP DATA (REAL FROM DATABASE) ================= */
+app.get('/api/heatmap-data', (req, res) => {
+  const sql = `
+    SELECT 
+      r.Street,
+      r.Barangay,
+      hr.Health_Condition,
+      COUNT(*) as count
+    FROM health_records hr
+    JOIN residents r ON hr.Resident_ID = r.Resident_ID
+    GROUP BY r.Street, r.Barangay, hr.Health_Condition
+  `;
+  
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
 });
 
 /* ================= RESIDENT (UPDATED) ================= */
@@ -371,4 +390,17 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-app.listen(5000, () => console.log('🚀 Server running'));
+/* ================= GET UNIQUE STREETS ================= */
+app.get('/api/streets', (req, res) => {
+  const sql = `SELECT DISTINCT Street FROM residents WHERE Street IS NOT NULL ORDER BY Street`
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err)
+    res.json(results)
+  })
+})
+
+/* ================= START SERVER (ONLY ONCE) ================= */
+app.listen(5000, () => {
+  console.log('🚀 Server running on http://localhost:5000');
+  console.log('✅ All API endpoints ready');
+});

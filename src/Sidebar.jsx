@@ -23,21 +23,23 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { name: 'Home', icon: '🏠' },
     { name: 'Records', icon: '📋' },
     { name: 'Analytics', icon: '📊' },
+    { name: 'Heatmap', icon: '🔥' },  //ADDED HEATMAP BUTTON
     { name: 'Scan & Upload', icon: '📥' },
   ];
 
   // On mobile, sidebar collapses automatically; on desktop, always show full width
   const sidebarWidth = isMobile && isCollapsed ? '80px' : '240px';
 
-  return (
+    return (
     <div 
       className={`sidebar bg-white border-end vh-100 shadow-sm ${isCollapsed && isMobile ? 'collapsed' : 'expanded'}`}
       style={{ 
         width: sidebarWidth,
-        transition: 'width 0.3s ease-in-out'
+        transition: 'width 0.3s ease-in-out',
+        overflowY: 'auto'
       }}
     >
-      {/* Header with Logo and Toggle Button */}
+      {/* Header with Logo */}
       <div className="sidebar-header p-3 d-flex align-items-center justify-content-between border-bottom">
         {!isCollapsed && <img src={logoImage} alt="Logo" style={{ width: '60px' }} />}
       </div>
@@ -49,18 +51,29 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             key={item.name} 
             onClick={() => setActiveTab(item.name)}
             className={`nav-link text-start d-flex align-items-center gap-3 border-0 ${
-              activeTab === item.name ? 'active bg-teal' : 'text-dark bg-transparent'
+              activeTab === item.name ? 'active' : ''
             }`}
-            style={activeTab === item.name ? { backgroundColor: '#00695c', color: 'white' } : {}}
+            style={{
+              backgroundColor: activeTab === item.name ? '#00695c' : 'transparent',
+              color: activeTab === item.name ? 'white' : '#212529',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontWeight: activeTab === item.name ? 'bold' : 'normal'
+            }}
             title={isCollapsed ? item.name : ''}
           >
-            <span style={{ fontSize: '1.2rem', minWidth: '24px' }}>{item.icon}</span> 
-            {!isCollapsed && <span className="fw-semibold">{item.name}</span>}
+            <span style={{ fontSize: '1.2rem', minWidth: '24px', display: 'flex', alignItems: 'center' }}>
+              {item.icon}
+            </span> 
+            {!isCollapsed && <span>{item.name}</span>}
           </button>
         ))}
       </div>
     </div>
   );
 };
+
 
 export default Sidebar;
