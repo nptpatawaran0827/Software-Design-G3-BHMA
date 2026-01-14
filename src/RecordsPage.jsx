@@ -4,35 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import HealthForm from './HealthForm'; 
 import './style/RecordsPage.css';
 
-const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
+const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess }) => {
   
   /* ==================== STATE MANAGEMENT ==================== */
-  // UPDATED: Initialize from localStorage to survive reloads
-  const [showForm, setShowForm] = useState(() => {
-    return localStorage.getItem('isHealthFormOpen') === 'true';
-  });
-
+  const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // UPDATED: Initialize editingRecord from localStorage if it exists
-  const [editingRecord, setEditingRecord] = useState(() => {
-    const saved = localStorage.getItem('currentlyEditingRecord');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  /* ==================== MEMORY PERSISTENCE ==================== */
-  // NEW: Save states to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('isHealthFormOpen', showForm);
-    if (editingRecord) {
-      localStorage.setItem('currentlyEditingRecord', JSON.stringify(editingRecord));
-    } else {
-      localStorage.removeItem('currentlyEditingRecord');
-    }
-  }, [showForm, editingRecord]);
+  const [editingRecord, setEditingRecord] = useState(null);
 
   /* ==================== HELPER: CALCULATE AGE ==================== */
   const calculateAge = (birthDate) => {
@@ -93,14 +73,14 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingRecord(null);
-    // NEW: Explicitly clear memory on cancel
-    localStorage.removeItem('isHealthFormOpen');
-    localStorage.removeItem('currentlyEditingRecord');
   };
 
   const handleSubmitForm = async (formData) => {
     try {
+      // Get Admin Data from localStorage
       const adminId = parseInt(localStorage.getItem('adminId'), 10);
+      const adminUsername = localStorage.getItem('username') || 'Admin';
+
       if (!adminId) {
         setError('Admin ID not found. Please log in again.');
         return;
@@ -108,6 +88,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       
       const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
       
+      // 1. Save Resident Info
       const residentUrl = isNewRecord 
         ? `http://localhost:5000/api/residents`
         : `http://localhost:5000/api/residents/${formData.Resident_ID}`;
@@ -115,11 +96,12 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       const resUpdate = await fetch(residentUrl, {
         method: isNewRecord ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, admin_username: adminUsername })
       });
 
       if (!resUpdate.ok) throw new Error('Failed to save resident info');
 
+      // 2. Save Health Record
       const healthUrl = isNewRecord
         ? 'http://localhost:5000/api/health-records'
         : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
@@ -127,15 +109,18 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       const res = await fetch(healthUrl, {
         method: isNewRecord ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, Recorded_By: adminId })
+        body: JSON.stringify({ 
+          ...formData, 
+          Recorded_By: adminId, 
+          adminId: adminId,
+          admin_username: adminUsername 
+        })
       });
       
       if (res.ok) {
         setShowForm(false);
         setEditingRecord(null);
-        // NEW: Clear memory on success
-        localStorage.removeItem('isHealthFormOpen');
-        localStorage.removeItem('currentlyEditingRecord');
+        if (onSubmitSuccess) onSubmitSuccess(); // Updates Dashboard & Activity Log in Home.js
         fetchRecords(); 
       }
     } catch (err) {
@@ -144,10 +129,21 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   };
 
   const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm('Are you sure you want to delete this record?')) return;
+    if (!window.confirm('Are you sure you want to delete this record? This will remove all associated resident data.')) return;
+    
+    // Get admin username for the activity log
+    const adminUsername = localStorage.getItem('username') || 'Admin';
+
     try {
-      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}`, { method: 'DELETE' });
-      if (res.ok) fetchRecords();
+      // REVISED: Passing admin_username as a query param to match the Home.js pattern
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, { 
+        method: 'DELETE' 
+      });
+      
+      if (res.ok) {
+        if (onSubmitSuccess) onSubmitSuccess(); // Refresh Recent Activity in Home.js
+        fetchRecords();
+      }
     } catch (err) {
       setError('Failed to delete record.');
     }
@@ -156,8 +152,8 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   /* ==================== SEARCH FILTER ==================== */
   const filteredRecords = records.filter(record => 
     (record.Resident_Name || `${record.First_Name} ${record.Last_Name}`)
-    .toLowerCase()
-    .includes(searchTerm.toLowerCase())
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
   );
 
   /* ==================== RENDER FORM VIEW ==================== */
@@ -175,6 +171,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
   /* ==================== RENDER TABLE VIEW ==================== */
   return (
     <div className="records-container p-4">
+      {/* HEADER SECTION */}
       <div className="d-flex justify-content-between align-items-center mb-4 px-3">
         <div>
           <h2 className="fw-bold mb-1">Patient Records</h2>
@@ -185,6 +182,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
         </button>
       </div>
 
+      {/* SEARCH BAR */}
       <div className="px-3 mb-4">
         <div className="search-wrapper shadow-sm">
           <Search className="search-icon" size={20} />
@@ -198,14 +196,19 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null }) => {
       </div>
       
       {error && (
-        <div className="alert alert-danger mx-3" role="alert">{error}</div>
+        <div className="alert alert-danger mx-3 alert-dismissible fade show" role="alert">
+          {error}
+          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
+        </div>
       )}
 
+      {/* TABLE SECTION */}
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mx-3">
         <div className="card-body p-0">
           {loading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" />
+              <p className="mt-2 text-muted">Loading health records...</p>
             </div>
           ) : (
             <div className="table-responsive">
