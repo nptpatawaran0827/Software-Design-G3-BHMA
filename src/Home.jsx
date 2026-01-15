@@ -157,8 +157,8 @@ function Home({ onLogout }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_username: adminUsername })
       });
-      const result = await res.json();
-      setPreFillData({ ...resident, Is_PWD: resident.Is_PWD == 1, Health_Record_ID: result.Health_Record_ID });
+      const result = await res.json()
+      setPreFillData({ ...resident, Is_PWD: resident.Is_PWD == 1, Health_Record_ID: result.Health_Record_ID, Recorded_By_Name:adminUsername });
       setActiveTab('Records');
       setShouldAutoOpenForm(true);
       setShowNotification(false);
