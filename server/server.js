@@ -13,9 +13,28 @@ const db = mysql.createConnection({
   password: '@Group3-BHMA',
   database: 'admin_db'
 });
+
 db.connect(err => {
   if (err) return console.error(err);
   console.log('✅ Connected to admin_db');
+});
+
+/** * HELPER: Logic to insert into activity_logs
+ */
+const logActivity = (recordName, action, adminUsername) => {
+  const sql = "INSERT INTO activity_logs (record_name, action_type, admin_username) VALUES (?, ?, ?)";
+  db.query(sql, [recordName, action, adminUsername || 'Admin'], (err) => {
+    if (err) console.error("❌ Activity Log Error:", err);
+  });
+};
+
+/* ================= NEW: GET ACTIVITY LOGS ================= */
+app.get('/api/activity-logs', (req, res) => {
+  const sql = "SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 50";
+  db.query(sql, (err, rows) => {
+    if (err) return res.status(500).json(err);
+    res.json(rows);
+  });
 });
 
 /* ================= RESIDENT ================= */
@@ -111,7 +130,7 @@ app.get('/api/health-records', (req, res) => {
   });
 });
 
-/* ================= CREATE HEALTH RECORD (REVISED TO ENSURE Recorded_By) ================= */
+/* ================= CREATE HEALTH RECORD (LOGGING KEPT HERE) ================= */
 app.post('/api/health-records', (req, res) => {
   const d = req.body;
   const sql = `
@@ -135,11 +154,16 @@ app.post('/api/health-records', (req, res) => {
     d.Recorded_By || d.adminId || null  
   ], (err, result) => {
     if (err) return res.status(500).json(err);
+    db.query("SELECT First_Name, Last_Name FROM residents WHERE Resident_ID = ?", [d.Resident_ID], (err, rows) => {
+      if (!err && rows.length > 0) {
+        logActivity(`${rows[0].First_Name} ${rows[0].Last_Name}`, 'added', d.admin_username);
+      }
+    });
     res.json({ Health_Record_ID: result.insertId, success: true });
   });
 });
 
-/* ================= UPDATE HEALTH RECORD (REVISED TO ENSURE Recorded_By) ================= */
+/* ================= UPDATE HEALTH RECORD (LOGGING KEPT HERE) ================= */
 app.put('/api/health-records/:id', (req, res) => {
   const id = req.params.id;
   const d = req.body;
@@ -165,21 +189,25 @@ app.put('/api/health-records/:id', (req, res) => {
     id
   ], (err, result) => {
     if (err) return res.status(500).json(err);
+    db.query("SELECT r.First_Name, r.Last_Name FROM health_records hr JOIN residents r ON hr.Resident_ID = r.Resident_ID WHERE hr.Health_Record_ID = ?", [id], (err, rows) => {
+      if (!err && rows.length > 0) {
+        logActivity(`${rows[0].First_Name} ${rows[0].Last_Name}`, 'modified', d.admin_username);
+      }
+    });
     res.json({ success: true });
   });
 });
 
-/* ================= APPROVE PENDING (REVISED TO INCLUDE Verified_By) ================= */
+/* ================= APPROVE PENDING (LOGGING KEPT HERE) ================= */
 app.post('/api/pending-residents/accept/:id', (req, res) => {
   const id = req.params.id;
-
+  const { admin_username } = req.body; 
   db.query(
-    "SELECT * FROM pending_resident WHERE Pending_HR_ID = ?",
+    "SELECT pr.*, r.First_Name, r.Last_Name FROM pending_resident pr JOIN residents r ON pr.Resident_ID = r.Resident_ID WHERE Pending_HR_ID = ?",
     [id],
     (err, rows) => {
       if (err || rows.length === 0) return res.sendStatus(404);
       const p = rows[0];
-
       db.query(
         `INSERT INTO health_records 
           (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Recorded_By)
@@ -189,6 +217,7 @@ app.post('/api/pending-residents/accept/:id', (req, res) => {
           if (err) return res.status(500).json(err);
           db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id], (err) => {
             if (err) return res.status(500).json(err);
+            logActivity(`${p.First_Name} ${p.Last_Name}`, 'added', admin_username);
             res.json({ success: true, Health_Record_ID: result.insertId });
           });
         }
@@ -197,15 +226,23 @@ app.post('/api/pending-residents/accept/:id', (req, res) => {
   );
 });
 
-/* ================= DELETE ROUTES ================= */
+/* ================= DELETE ROUTES (STRICT ORDER FOR LOGGING) ================= */
 app.delete('/api/health-records/:id', (req, res) => {
   const healthRecordId = req.params.id;
-  db.query('SELECT Resident_ID FROM health_records WHERE Health_Record_ID = ?', [healthRecordId], (err, rows) => {
+  const admin_username = req.query.admin_username;
+
+  // 1. MUST FETCH NAME BEFORE ANY DELETION
+  db.query('SELECT r.First_Name, r.Last_Name, r.Resident_ID FROM health_records hr JOIN residents r ON hr.Resident_ID = r.Resident_ID WHERE hr.Health_Record_ID = ?', [healthRecordId], (err, rows) => {
     if (err || rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    
+    const residentName = `${rows[0].First_Name} ${rows[0].Last_Name}`;
     const residentId = rows[0].Resident_ID;
-    db.query('DELETE FROM health_records WHERE Health_Record_ID = ?', [healthRecordId], () => {
-      db.query('DELETE FROM pending_resident WHERE Resident_ID = ?', [residentId], () => {
-        db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], () => {
+
+    // 2. Cascade delete
+    db.query('DELETE FROM health_records WHERE Health_Record_ID = ?', [healthRecordId], (err) => {
+      db.query('DELETE FROM pending_resident WHERE Resident_ID = ?', [residentId], (err) => {
+        db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], (err) => {
+          logActivity(residentName, 'removed', admin_username);
           res.json({ success: true });
         });
       });
@@ -215,12 +252,18 @@ app.delete('/api/health-records/:id', (req, res) => {
 
 app.delete('/api/pending-residents/remove/:id', (req, res) => {
   const pendingId = req.params.id;
-  db.query('SELECT Resident_ID FROM pending_resident WHERE Pending_HR_ID = ?', [pendingId], (err, rows) => {
+  const admin_username = req.query.admin_username;
+
+  db.query('SELECT r.First_Name, r.Last_Name, r.Resident_ID FROM pending_resident pr JOIN residents r ON pr.Resident_ID = r.Resident_ID WHERE pr.Pending_HR_ID = ?', [pendingId], (err, rows) => {
     if (err || rows.length === 0) return res.sendStatus(404);
+    
+    const residentName = `${rows[0].First_Name} ${rows[0].Last_Name}`;
     const residentId = rows[0].Resident_ID;
-    db.query('DELETE FROM pending_resident WHERE Pending_HR_ID = ?', [pendingId], () => {
-      db.query('DELETE FROM health_records WHERE Resident_ID = ?', [residentId], () => {
-        db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], () => {
+
+    db.query('DELETE FROM pending_resident WHERE Pending_HR_ID = ?', [pendingId], (err) => {
+      db.query('DELETE FROM health_records WHERE Resident_ID = ?', [residentId], (err) => {
+        db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], (err) => {
+          logActivity(residentName, 'removed', admin_username);
           res.json({ success: true });
         });
       });

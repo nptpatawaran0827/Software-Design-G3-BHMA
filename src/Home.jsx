@@ -8,13 +8,12 @@ import AnalyticsPage from './AnalyticsPage';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 function Home({ onLogout }) {
-  // UPDATED: Initialize from localStorage so it remembers the tab on reload
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('activeDashboardTab') || 'Home';
   });
 
   const [filter, setFilter] = useState('All Activities');
-  const [activities, setActivities] = useState([]);
+  const [activities, setActivities] = useState([]); 
   const [shouldAutoOpenForm, setShouldAutoOpenForm] = useState(false);
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,19 +35,28 @@ function Home({ onLogout }) {
   const [diagnosisChartData, setDiagnosisChartData] = useState(null);
   const [genderChartData, setGenderChartData] = useState(null);
 
-  // NEW: Save the activeTab to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('activeDashboardTab', activeTab);
   }, [activeTab]);
 
-  // ==================== FETCH DATA (OPTIMIZED) ====================
+  // ==================== DATA FETCHING ====================
+  const fetchActivities = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/activity-logs');
+      const data = await response.json();
+      setActivities(data);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+    }
+  };
+
   const fetchHealthRecords = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/health-records');
       const data = await response.json();
       if (Array.isArray(data)) {
         setHealthRecords(data);
-        calculateStatistics(data);
+        calculateStatistics(data); 
       }
     } catch (error) {
       console.error('Error fetching health records:', error);
@@ -70,10 +78,12 @@ function Home({ onLogout }) {
   useEffect(() => {
     fetchHealthRecords();
     fetchPending();
+    fetchActivities();
     
     const interval = setInterval(() => {
       fetchPending();
       fetchHealthRecords(); 
+      fetchActivities(); 
     }, 5000);
     
     return () => clearInterval(interval);
@@ -91,7 +101,10 @@ function Home({ onLogout }) {
 
   // ==================== STATISTICS LOGIC ====================
   const calculateStatistics = (records) => {
-    if (!records || records.length === 0) return;
+    if (!records || records.length === 0) {
+      setDbStats({ totalPatients: 0, newPatients: 0, patientsWithDisability: 0, totalReports: 0, maleCount: 0, femaleCount: 0 });
+      return;
+    }
 
     const uniquePatients = new Set(records.map(r => r.Resident_ID)).size;
     const maleCount = records.filter(r => r.Sex?.toLowerCase() === 'male').length;
@@ -138,24 +151,45 @@ function Home({ onLogout }) {
 
   const handleAccept = async (resident) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, { method: 'POST' });
+      const adminUsername = localStorage.getItem('username') || 'Admin';
+      const res = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_username: adminUsername })
+      });
       const result = await res.json();
       setPreFillData({ ...resident, Is_PWD: resident.Is_PWD == 1, Health_Record_ID: result.Health_Record_ID });
       setActiveTab('Records');
       setShouldAutoOpenForm(true);
       setShowNotification(false);
       fetchHealthRecords(); 
+      fetchActivities(); 
     } catch (err) { console.error(err); }
   };
 
+  // REVISED: Handle Rejection and pass admin_username for logging
   const handleRemove = async (id) => {
-    await fetch(`http://localhost:5000/api/pending-residents/remove/${id}`, { method: 'DELETE' });
-    fetchPending();
+    const adminUsername = localStorage.getItem('username') || 'Admin';
+    try {
+      await fetch(`http://localhost:5000/api/pending-residents/remove/${id}?admin_username=${adminUsername}`, { 
+        method: 'DELETE' 
+      });
+      fetchPending();
+      fetchActivities(); // Refresh log to show the rejection
+    } catch (err) {
+      console.error('Error removing resident:', err);
+    }
   };
 
   const renderContent = () => {
     if (activeTab === 'Records') {
-      return <RecordsPage autoOpenForm={shouldAutoOpenForm} preFillData={preFillData} onSubmitSuccess={() => { fetchPending(); fetchHealthRecords(); }} />;
+      return (
+        <RecordsPage 
+          autoOpenForm={shouldAutoOpenForm} 
+          preFillData={preFillData} 
+          onSubmitSuccess={() => { fetchPending(); fetchHealthRecords(); fetchActivities(); }} 
+        />
+      );
     }
     if (activeTab === 'Analytics') return <AnalyticsPage />;
 
@@ -209,24 +243,62 @@ function Home({ onLogout }) {
               <option value="All Activities">All Activities</option>
               <option value="New Patients">New Patients</option>
               <option value="Updated Records">Updated Records</option>
-              <option value="Deleted Records">Deleted Records</option>
-              <option value="Report Generated">Report Generated</option>
             </select>
           </div>
-          <div className="card-body p-0">
+          <div className="card-body p-0" style={{maxHeight: '350px', overflowY: 'auto'}}>
             <ul className="list-group list-group-flush">
-              {activities.length > 0 ? (
-                activities.map((item, index) => (
-                  <li key={index} className="list-group-item d-flex align-items-center py-3 border-0 px-4">
-                    <i className={`bi bi-circle-fill text-primary me-3`} style={{fontSize: '0.5rem'}}></i>
-                    <div className="small">Activity log placeholder...</div>
+              {(() => {
+                const seen = new Set();
+                const processedActivities = activities
+                  .filter(item => {
+                    if (filter === 'All Activities') return true;
+                    if (filter === 'New Patients') return item.action_type === 'added';
+                    if (filter === 'Updated Records') return item.action_type === 'modified';
+                    return true;
+                  })
+                  .filter(item => {
+                    const dateMinute = new Date(item.created_at).toISOString().slice(0, 16);
+                    const fingerprint = `${item.record_name}-${item.action_type}-${dateMinute}`;
+                    if (seen.has(fingerprint)) return false; 
+                    seen.add(fingerprint);
+                    return true;
+                  });
+
+                return processedActivities.length > 0 ? (
+                  processedActivities.map((log) => {
+                    const dateObj = new Date(log.created_at);
+                    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateFormatted = dateObj.toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    });
+
+                    // REVISED: Check for rejection or deletion
+                    const isNegative = log.action_type === 'rejected' || log.action_type === 'deleted';
+
+                    return (
+                      <li key={log.log_id || Math.random()} className="list-group-item d-flex align-items-center py-3 border-0 px-4">
+                        <i className={`bi bi-circle-fill ${isNegative ? 'text-danger' : 'text-primary'} me-3`} style={{fontSize: '0.5rem'}}></i>
+                        <div className="small">
+                          <strong>{log.record_name}</strong> has been 
+                          <span className={isNegative ? 'text-danger fw-bold mx-1' : 'fw-bold mx-1'}>
+                            {log.action_type === 'added' ? 'added successfully' : 
+                             log.action_type === 'modified' ? 'modified' : 
+                             log.action_type === 'rejected' ? 'rejected' : 
+                             log.action_type === 'deleted' ? 'deleted' : log.action_type}
+                          </span> 
+                          by <strong>{log.admin_username}</strong> at <strong>{time}</strong> on <strong>{dateFormatted}</strong>.
+                        </div>
+                      </li>
+                    );
+                  })
+                ) : (
+                  <li className="list-group-item py-4 text-center text-muted border-0">
+                    No recent updates found.
                   </li>
-                ))
-              ) : (
-                <li className="list-group-item py-4 text-center text-muted border-0">
-                  No recent updates found for "{filter}".
-                </li>
-              )}
+                );
+              })()}
             </ul>
           </div>
         </div>
