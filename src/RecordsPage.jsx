@@ -113,6 +113,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
           ...formData, 
           Recorded_By: adminId, 
           adminId: adminId,
+          admin_username: adminUsername 
         })
       });
       
