@@ -151,22 +151,43 @@ function Home({ onLogout }) {
 
   const handleAccept = async (resident) => {
     try {
+      // 1. Retrieve the logged-in admin's details
       const adminUsername = localStorage.getItem('username') || 'Admin';
+      const adminId = localStorage.getItem('adminId'); // Added this
+
       const res = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_username: adminUsername })
+        // 2. Send both the username and the ID to the backend
+        body: JSON.stringify({ 
+          admin_username: adminUsername,
+          adminId: adminId 
+        })
       });
+
       const result = await res.json();
-      setPreFillData({ ...resident, Is_PWD: resident.Is_PWD == 1, Health_Record_ID: result.Health_Record_ID });
+      
+      // 3. Keep all your existing pre-fill and auto-open logic
+      setPreFillData({ 
+        ...resident, 
+        Is_PWD: resident.Is_PWD == 1, 
+        Health_Record_ID: result.Health_Record_ID, 
+        Recorded_By_Name: adminUsername 
+      });
+      
       setActiveTab('Records');
       setShouldAutoOpenForm(true);
       setShowNotification(false);
+      
+      // 4. Refresh all lists to keep the dashboard up-to-date
       fetchHealthRecords(); 
       fetchActivities(); 
-    } catch (err) { console.error(err); }
+      fetchPending();
+    } catch (err) { 
+      console.error('Error accepting resident:', err); 
+    }
   };
-
+  
   // REVISED: Handle Rejection and pass admin_username for logging
   const handleRemove = async (id) => {
     const adminUsername = localStorage.getItem('username') || 'Admin';

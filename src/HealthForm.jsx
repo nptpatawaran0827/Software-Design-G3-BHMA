@@ -28,7 +28,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     Allergies: '',
     Contact_Number: '',
     Street: '',
-    Barangay: '',
+    Barangay: 'Marikina Heights',
     Date_Visited: '',
     Remarks: '',
     status: 'Active',
@@ -82,12 +82,14 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         Height: initialData.Height ? String(initialData.Height) : '',
         BMI: initialData.BMI ? String(initialData.BMI) : '',
         Nutrition_Status: initialData.Nutrition_Status || calculateNutritionStatus(initialData.BMI),
+        Barangay: initialData.Barangay || 'Marikina Heights',
         Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin
       });
     } else {
       setFormData(prev => ({ 
         ...prev, 
         Resident_ID: generateResidentID(),
+        Barangay: 'Marikina Heights',
         Recorded_By_Name: currentAdmin 
       }));
     }
@@ -116,7 +118,68 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setMessage(null);
+
+    if (!formData.First_Name.trim() || !formData.Last_Name.trim()) {
+      setMessage({ 
+        type: 'error', 
+        text: '⚠️ ONE NAME POLICY: Both First Name and Last Name are required.' 
+      });
+      return;
+    }
+
+    try {
+      const recordId = initialData?.Health_Record_ID;
+      const adminId = localStorage.getItem('adminId');
+      const adminUsername = localStorage.getItem('username') || 'System';
+      
+      let url = 'http://localhost:5000/api/health-records';
+      const method = editMode ? 'PUT' : 'POST';
+
+      if (editMode && recordId) {
+        url = `${url}/${recordId}`;
+      }
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          Recorded_By: adminId,
+          Recorded_By_Name: adminUsername,
+          adminId: adminId,
+          admin_username: adminUsername
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.isDuplicate) {
+        setMessage({ 
+          type: 'error', 
+          text: `⚠️ RECORD ALREADY EXISTS: "${formData.First_Name} ${formData.Last_Name}" is already in the system.` 
+        });
+        return; 
+      }
+
+      if (!response.ok) throw new Error(result.details || 'Submission failed');
+
+      const successText = editMode 
+        ? `✅ Record for ${formData.First_Name} ${formData.Last_Name} has been modified successfully!` 
+        : `✅ Registration Successful! Resident ID: ${formData.Resident_ID} has been added.`;
+
+      setMessage({ type: 'success', text: successText });
+
+      setTimeout(() => {
+        // We pass 'editMode' as the second argument so RecordsPage knows what to display
+        if (onSubmit) onSubmit(formData, editMode); 
+        onCancel(); 
+      }, 2500);
+
+    } catch (error) {
+      console.error('Error:', error);
+      setMessage({ type: 'error', text: `❌ ${error.message}` });
+    }
   };
 
   return (
