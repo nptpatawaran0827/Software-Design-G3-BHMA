@@ -5,8 +5,6 @@ import HealthForm from './HealthForm';
 import './style/RecordsPage.css';
 
 const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess }) => {
-  
-  /* ==================== STATE MANAGEMENT ==================== */
   const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,14 +12,11 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   const [error, setError] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
 
-  // Unified Notification States
   const [showStatus, setShowStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ title: '', desc: '', type: 'success' });
   const [submissionStatus, setSubmissionStatus] = useState('');
 
-  /* ==================== HOME INTEGRATION ==================== */
   useEffect(() => {
-    // Automatically trigger form if directed from Home.js
     if (autoOpenForm) {
       if (preFillData) {
         setEditingRecord(preFillData);
@@ -29,10 +24,12 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
         setEditingRecord(null);
       }
       setShowForm(true);
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      }
     }
-  }, [autoOpenForm, preFillData]);
+  }, [autoOpenForm, preFillData, onSubmitSuccess]);
 
-  /* ==================== AUTO-CLOSE TIMER ==================== */
   useEffect(() => {
     if (showStatus) {
       const timer = setTimeout(() => {
@@ -42,7 +39,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
   }, [showStatus]);
 
-  /* ==================== SOUND LOGIC ==================== */
   const playSuccessSound = () => {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1433/1433-preview.mp3');
     audio.volume = 0.4; 
@@ -55,7 +51,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     audio.play().catch(e => console.log("Audio interaction required", e));
   };
 
-  /* ==================== HELPER: CALCULATE AGE ==================== */
   const calculateAge = (birthDate) => {
     if (!birthDate) return 'N/A';
     const today = new Date();
@@ -68,7 +63,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     return age;
   };
 
-  /* ==================== DATA FETCHING ==================== */
   const fetchRecords = async () => {
     try {
       setLoading(true);
@@ -87,7 +81,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     fetchRecords();
   }, []);
 
-  /* ==================== CRUD OPERATIONS ==================== */
   const handleAddNewRecord = () => {
     setEditingRecord(null);
     setShowForm(true);
@@ -103,46 +96,31 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     setEditingRecord(null);
   };
 
-  const handleSubmitForm = async (formData) => {
-    try {
-      const adminId = parseInt(localStorage.getItem('adminId'), 10);
-      const adminUsername = localStorage.getItem('username') || 'Admin';
-      const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
-      
-      const healthUrl = isNewRecord
-        ? 'http://localhost:5000/api/health-records'
-        : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
-      
-      const res = await fetch(healthUrl, {
-        method: isNewRecord ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...formData, 
-          Recorded_By: adminId, 
-          adminId: adminId,
-          admin_username: adminUsername 
-        })
-      });
-      
-      if (res.ok) {
-        setSubmissionStatus(formData.Resident_ID);
+  // UPDATED: Now accepts isDuplicate flag from HealthForm
+  const handleSubmitForm = async (formData, editMode, isDuplicate = false) => {
+    if (isDuplicate) {
+        setSubmissionStatus(formData.Resident_ID || 'EXISTING');
         setStatusMessage({
-          title: isNewRecord ? 'Record Created!' : 'Record Updated!',
-          desc: isNewRecord ? 'The new health record has been saved.' : 'Changes have been synchronized.',
-          type: 'success'
+          title: "RECORD ALREADY EXISTS",
+          desc: `"${formData.First_Name} ${formData.Last_Name}" is already in the system.`,
+          type: "delete" 
         });
-        
-        setShowForm(false);
-        setEditingRecord(null);
         setShowStatus(true);
-        playSuccessSound();
-
-        if (onSubmitSuccess) onSubmitSuccess(); 
-        fetchRecords(); 
-      }
-    } catch (err) {
-      setError('Failed to save record.');
+        playDeleteSound();
+        return;
     }
+
+    // Regular success flow (called after HealthForm confirms save)
+    setSubmissionStatus(formData.Resident_ID);
+    setStatusMessage({
+      title: editMode ? 'Record Updated!' : 'Record Created!',
+      desc: editMode ? 'Changes have been synchronized.' : 'The new health record has been saved.',
+      type: 'success'
+    });
+    
+    setShowStatus(true);
+    playSuccessSound();
+    fetchRecords();
   };
 
   const handleDeleteRecord = async (record) => {
@@ -174,7 +152,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
   };
 
-  /* ==================== SEARCH FILTER ==================== */
   const filteredRecords = records.filter(record => 
     (record.Resident_Name || `${record.First_Name} ${record.Last_Name}`)
       .toLowerCase()
@@ -194,7 +171,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
 
   return (
     <div className="records-container p-4">
-      {/* UNIFIED OVERLAY NOTIFICATION */}
       <AnimatePresence>
         {showStatus && (
           <motion.div 
@@ -205,7 +181,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
           >
             <div className="submission-alert-content shadow-lg">
               <div className={`alert-icon ${statusMessage.type === 'delete' ? 'icon-delete' : ''}`}>
-                {statusMessage.type === 'delete' ? '🗑️' : '✓'}
+                {statusMessage.title.includes("EXISTS") ? '⚠️' : (statusMessage.type === 'delete' ? '🗑️' : '✓')}
               </div>
               <div className="alert-text">
                 <strong>{statusMessage.title}</strong>

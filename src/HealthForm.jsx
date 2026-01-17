@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const STREETS = [
   "Apitong Street", "Champagnat Street", "Champaca Street", 
@@ -8,6 +9,10 @@ const STREETS = [
 ];
 
 const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
+  const [showStatus, setShowStatus] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState('');
+  const [statusMessage, setStatusMessage] = useState({ title: '', desc: '', type: '' });
+
   const [message, setMessage] = useState(null);
   const [formData, setFormData] = useState({
     First_Name: '',
@@ -66,11 +71,12 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
   useEffect(() => {
     const currentAdmin = localStorage.getItem('username') || 'System';
+    const deviceToday = new Date().toISOString().split('T')[0];
 
     if (initialData) {
       const rawBirthDate = initialData.Birthdate || '';
       const formattedBirthdate = rawBirthDate ? rawBirthDate.split('T')[0] : '';
-      const formattedVisitDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : '';
+      const formattedVisitDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : deviceToday;
       
       setFormData({
         ...initialData,
@@ -90,7 +96,8 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         ...prev, 
         Resident_ID: generateResidentID(),
         Barangay: 'Marikina Heights',
-        Recorded_By_Name: currentAdmin 
+        Recorded_By_Name: currentAdmin,
+        Date_Visited: deviceToday 
       }));
     }
   }, [initialData]);
@@ -141,7 +148,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
       
       let url = 'http://localhost:5000/api/health-records';
       const method = editMode ? 'PUT' : 'POST';
-
       if (editMode && recordId) {
         url = `${url}/${recordId}`;
       }
@@ -160,27 +166,18 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
       const result = await response.json();
 
+      // DUPLICATE LOGIC: Pass back to parent and exit form
       if (result.isDuplicate) {
-        setMessage({ 
-          type: 'error', 
-          text: `⚠️ RECORD ALREADY EXISTS: "${formData.First_Name} ${formData.Last_Name}" is already in the system.` 
-        });
+        if (onSubmit) onSubmit(formData, editMode, true);
+        onCancel(); 
         return; 
       }
 
       if (!response.ok) throw new Error(result.details || 'Submission failed');
 
-      const successText = editMode 
-        ? `✅ Record for ${formData.First_Name} ${formData.Last_Name} has been modified successfully!` 
-        : `✅ Registration Successful! Resident ID: ${formData.Resident_ID} has been added.`;
-
-      setMessage({ type: 'success', text: successText });
-
-      setTimeout(() => {
-        // We pass 'editMode' as the second argument so RecordsPage knows what to display
-        if (onSubmit) onSubmit(formData, editMode); 
-        onCancel(); 
-      }, 2500);
+      // SUCCESS CASE
+      if (onSubmit) onSubmit(formData, editMode, false);
+      onCancel();
 
     } catch (error) {
       console.error('Error:', error);
@@ -199,7 +196,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
       <div className="card border-0 shadow-sm rounded-4" style={{ backgroundColor: '#f8fbfe' }}>
         <div className="card-body p-4">
-          
           {message && (
             <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} mb-4 shadow-sm border-0 rounded-3`}>
               {message.text}
@@ -326,7 +322,15 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
               <div className="col-md-6">
                 <label className="form-label small fw-bold text-danger">Date of Visit</label>
-                <input type="date" className="form-control border-danger border-opacity-50" name="Date_Visited" value={formData.Date_Visited} onChange={handleChange} required />
+                <input 
+                  type="date" 
+                  className="form-control border-danger border-opacity-50 fw-bold" 
+                  name="Date_Visited" 
+                  value={formData.Date_Visited} 
+                  onChange={handleChange}
+                  required 
+                />
+                <small className="text-muted">Auto-filled based on system date.</small>
               </div>
               <div className="col-md-6 d-flex align-items-end">
                 <div className="p-2 bg-primary-subtle border border-primary-subtle rounded-3 w-100">
