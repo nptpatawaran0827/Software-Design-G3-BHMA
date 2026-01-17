@@ -35,6 +35,8 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     Recorded_By_Name: '' // Added for admin tracking
   });
 
+  const [message, setMessage] = useState(null);
+
   const calculateAge = (birthdate) => {
     if (!birthdate) return '';
     const today = new Date();
@@ -116,7 +118,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     setFormData(updatedData);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
 

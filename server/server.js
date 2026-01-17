@@ -162,40 +162,19 @@ app.get('/api/health-records', (req, res) => {
 app.post('/api/health-records', (req, res) => {
   const d = req.body;
   
+  // 1. Define the check query
   const checkSql = `
     SELECT Resident_ID FROM residents 
     WHERE TRIM(First_Name) = TRIM(?) 
     AND COALESCE(TRIM(Middle_Name), '') = COALESCE(TRIM(?), '') 
     AND TRIM(Last_Name) = TRIM(?)
   `;
-  db.query(sql, [
-    d.Resident_ID,
-    d.Is_PWD ? 1 : 0,
-    d.Blood_Pressure || null,
-    d.Weight || null,
-    d.Height || null,
-    d.BMI || null,
-    d.Nutrition_Status || null,
-    d.Health_Condition || null,
-    d.Diagnosis || null,
-    d.Allergies || null,
-    d.Date_Visited || null,
-    d.Remarks_Notes || d.Remarks || null,
-    d.Recorded_By || d.adminId || null  
-  ], (err, result) => {
-    if (err) return res.status(500).json(err);
-    db.query("SELECT First_Name, Last_Name FROM residents WHERE Resident_ID = ?", [d.Resident_ID], (err, rows) => {
-      if (!err && rows.length > 0) {
-        logActivity(`${rows[0].First_Name} ${rows[0].Last_Name}`, 'added', d.admin_username);
-      }
-    });
-    res.json({ Health_Record_ID: result.insertId, success: true });
-  });
-});
 
+  // 2. Check for duplicate Name in the residents table
   db.query(checkSql, [d.First_Name, d.Middle_Name || '', d.Last_Name], (err, rows) => {
     if (err) return res.status(500).json({ error: "DB Check Error", details: err.message });
 
+    // If name already exists, block the duplicate
     if (rows && rows.length > 0) {
       return res.status(200).json({ 
         success: false, 
@@ -204,6 +183,7 @@ app.post('/api/health-records', (req, res) => {
       });
     }
 
+    // 3. Start Transaction to insert both Resident and Health Record
     db.beginTransaction((tErr) => {
       if (tErr) return res.status(500).json(tErr);
 
@@ -225,7 +205,6 @@ app.post('/api/health-records', (req, res) => {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
-        // Parse numbers safely to avoid 0/NaN being inserted when they should be NULL
         const weight = (d.Weight === '' || isNaN(d.Weight)) ? null : parseFloat(d.Weight);
         const height = (d.Height === '' || isNaN(d.Height)) ? null : parseFloat(d.Height);
         const bmi = (d.BMI === '' || isNaN(d.BMI)) ? null : parseFloat(d.BMI);
@@ -241,15 +220,16 @@ app.post('/api/health-records', (req, res) => {
 
           db.commit((commitErr) => {
             if (commitErr) return db.rollback(() => res.status(500).json(commitErr));
+            
             logActivity(`${d.First_Name} ${d.Last_Name}`, 'added', d.admin_username);
             res.json({ success: true, isDuplicate: false });
           });
         });
       });
     });
-    res.json({ success: true });
   });
 });
+
 
 /* ================= APPROVE PENDING (FIXED TRANSACTION & LOGGING) ================= */
 app.post('/api/pending-residents/accept/:id', (req, res) => {
