@@ -2,7 +2,8 @@
 --
 -- Host: localhost    Database: admin_db
 -- ------------------------------------------------------
--- Server version	8.0.44
+-- Server version 8.0.44
+
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -15,9 +16,11 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+
 --
 -- Table structure for table `activity_logs`
 --
+
 
 DROP TABLE IF EXISTS `activity_logs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -32,9 +35,11 @@ CREATE TABLE `activity_logs` (
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+
 --
 -- Dumping data for table `activity_logs`
 --
+
 
 LOCK TABLES `activity_logs` WRITE;
 /*!40000 ALTER TABLE `activity_logs` DISABLE KEYS */;
@@ -42,9 +47,11 @@ INSERT INTO `activity_logs` VALUES (1,'Ikki Dominique Modar','added','Admin_H1',
 /*!40000 ALTER TABLE `activity_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
+
 --
 -- Table structure for table `admins`
 --
+
 
 DROP TABLE IF EXISTS `admins`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -58,9 +65,11 @@ CREATE TABLE `admins` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+
 --
 -- Dumping data for table `admins`
 --
+
 
 LOCK TABLES `admins` WRITE;
 /*!40000 ALTER TABLE `admins` DISABLE KEYS */;
@@ -68,9 +77,11 @@ INSERT INTO `admins` VALUES (1,'Admin_H1','34f26e6e8d36cedafae5617bbd69f40963f12
 /*!40000 ALTER TABLE `admins` ENABLE KEYS */;
 UNLOCK TABLES;
 
+
 --
 -- Table structure for table `health_records`
 --
+
 
 DROP TABLE IF EXISTS `health_records`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -97,9 +108,11 @@ CREATE TABLE `health_records` (
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+
 --
 -- Dumping data for table `health_records`
 --
+
 
 LOCK TABLES `health_records` WRITE;
 /*!40000 ALTER TABLE `health_records` DISABLE KEYS */;
@@ -107,9 +120,11 @@ INSERT INTO `health_records` VALUES (2,'RES-1737290-2655',NULL,60.00,165.00,22.0
 /*!40000 ALTER TABLE `health_records` ENABLE KEYS */;
 UNLOCK TABLES;
 
+
 --
 -- Table structure for table `pending_resident`
 --
+
 
 DROP TABLE IF EXISTS `pending_resident`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -132,9 +147,11 @@ CREATE TABLE `pending_resident` (
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+
 --
 -- Dumping data for table `pending_resident`
 --
+
 
 LOCK TABLES `pending_resident` WRITE;
 /*!40000 ALTER TABLE `pending_resident` DISABLE KEYS */;
@@ -142,9 +159,11 @@ INSERT INTO `pending_resident` VALUES (2,'RES-4071025-3317',0,157.00,63.00,25.56
 /*!40000 ALTER TABLE `pending_resident` ENABLE KEYS */;
 UNLOCK TABLES;
 
+
 --
 -- Table structure for table `residents`
 --
+
 
 DROP TABLE IF EXISTS `residents`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -165,9 +184,11 @@ CREATE TABLE `residents` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+
 --
 -- Dumping data for table `residents`
 --
+
 
 LOCK TABLES `residents` WRITE;
 /*!40000 ALTER TABLE `residents` DISABLE KEYS */;
@@ -176,6 +197,7 @@ INSERT INTO `residents` VALUES ('RES-1737290-2655','Johanna Lucia','Villarama','
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
+
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
@@ -183,5 +205,6 @@ UNLOCK TABLES;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
 
 -- Dump completed on 2026-01-17 17:49:26

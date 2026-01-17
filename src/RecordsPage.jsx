@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react'; 
-import { motion, AnimatePresence } from 'framer-motion'; 
-import HealthForm from './HealthForm'; 
+import { Search, Plus, Edit, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import HealthForm from './HealthForm';
 import './style/RecordsPage.css';
 
+
 const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess }) => {
-  
+ 
   /* ==================== STATE MANAGEMENT ==================== */
   const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
@@ -14,10 +15,12 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   const [error, setError] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
 
+
   // Unified Notification States
   const [showStatus, setShowStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ title: '', desc: '', type: 'success' });
   const [submissionStatus, setSubmissionStatus] = useState('');
+
 
   /* ==================== HOME INTEGRATION ==================== */
   useEffect(() => {
@@ -32,28 +35,32 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
   }, [autoOpenForm, preFillData]);
 
+
   /* ==================== AUTO-CLOSE TIMER ==================== */
   useEffect(() => {
     if (showStatus) {
       const timer = setTimeout(() => {
         setShowStatus(false);
-      }, 5000); 
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [showStatus]);
 
+
   /* ==================== SOUND LOGIC ==================== */
   const playSuccessSound = () => {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1433/1433-preview.mp3');
-    audio.volume = 0.4; 
+    audio.volume = 0.4;
     audio.play().catch(e => console.log("Audio interaction required", e));
   };
 
+
   const playDeleteSound = () => {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1470/1470-preview.mp3');
-    audio.volume = 0.3; 
+    audio.volume = 0.3;
     audio.play().catch(e => console.log("Audio interaction required", e));
   };
+
 
   /* ==================== HELPER: CALCULATE AGE ==================== */
   const calculateAge = (birthDate) => {
@@ -67,6 +74,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
     return age;
   };
+
 
   /* ==================== DATA FETCHING ==================== */
   const fetchRecords = async () => {
@@ -83,9 +91,11 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
   };
 
+
   useEffect(() => {
     fetchRecords();
   }, []);
+
 
   /* ==================== CRUD OPERATIONS ==================== */
   const handleAddNewRecord = () => {
@@ -93,37 +103,40 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     setShowForm(true);
   };
 
+
   const handleEditRecord = (record) => {
     setEditingRecord(record);
     setShowForm(true);
   };
+
 
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingRecord(null);
   };
 
+
   const handleSubmitForm = async (formData) => {
     try {
       const adminId = parseInt(localStorage.getItem('adminId'), 10);
       const adminUsername = localStorage.getItem('username') || 'Admin';
       const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
-      
+     
       const healthUrl = isNewRecord
         ? 'http://localhost:5000/api/health-records'
         : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
-      
+     
       const res = await fetch(healthUrl, {
         method: isNewRecord ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...formData, 
-          Recorded_By: adminId, 
+        body: JSON.stringify({
+          ...formData,
+          Recorded_By: adminId,
           adminId: adminId,
-          admin_username: adminUsername 
+          admin_username: adminUsername
         })
       });
-      
+     
       if (res.ok) {
         setSubmissionStatus(formData.Resident_ID);
         setStatusMessage({
@@ -131,32 +144,35 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
           desc: isNewRecord ? 'The new health record has been saved.' : 'Changes have been synchronized.',
           type: 'success'
         });
-        
+       
         setShowForm(false);
         setEditingRecord(null);
         setShowStatus(true);
         playSuccessSound();
 
-        if (onSubmitSuccess) onSubmitSuccess(); 
-        fetchRecords(); 
+
+        if (onSubmitSuccess) onSubmitSuccess();
+        fetchRecords();
       }
     } catch (err) {
       setError('Failed to save record.');
     }
   };
 
+
   const handleDeleteRecord = async (record) => {
     const recordId = record.Health_Record_ID;
     const residentId = record.Resident_ID;
-    
+   
     if (!window.confirm(`Are you sure you want to delete record for ID: ${residentId}?`)) return;
     const adminUsername = localStorage.getItem('username') || 'Admin';
 
+
     try {
-      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, { 
-        method: 'DELETE' 
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, {
+        method: 'DELETE'
       });
-      
+     
       if (res.ok) {
         setSubmissionStatus(residentId);
         setStatusMessage({
@@ -164,7 +180,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
           desc: 'The health record was removed from the system.',
           type: 'delete'
         });
-        
+       
         setShowStatus(true);
         playDeleteSound();
         fetchRecords();
@@ -174,17 +190,19 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
   };
 
+
   /* ==================== SEARCH FILTER ==================== */
-  const filteredRecords = records.filter(record => 
+  const filteredRecords = records.filter(record =>
     (record.Resident_Name || `${record.First_Name} ${record.Last_Name}`)
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
 
+
   if (showForm) {
     return (
-      <HealthForm 
-        onCancel={handleCancelForm} 
+      <HealthForm
+        onCancel={handleCancelForm}
         onSubmit={handleSubmitForm}
         editMode={!!editingRecord?.Health_Record_ID}
         initialData={editingRecord}
@@ -192,12 +210,13 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     );
   }
 
+
   return (
     <div className="records-container p-4">
       {/* UNIFIED OVERLAY NOTIFICATION */}
       <AnimatePresence>
         {showStatus && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
@@ -217,7 +236,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
           </motion.div>
         )}
       </AnimatePresence>
-      
+     
       <div className="d-flex justify-content-between align-items-center mb-4 px-3">
         <div>
           <h2 className="fw-bold mb-1">Patient Records</h2>
@@ -228,18 +247,19 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
         </button>
       </div>
 
+
       <div className="px-3 mb-4">
         <div className="search-wrapper shadow-sm">
           <Search className="search-icon" size={20} />
-          <input 
-            type="text" className="form-control custom-search" 
+          <input
+            type="text" className="form-control custom-search"
             placeholder="Search resident..."
-            value={searchTerm} 
+            value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
-      
+     
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mx-3">
         <div className="card-body p-0">
           {loading ? (
@@ -261,12 +281,12 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
                 <tbody>
                   <AnimatePresence mode='popLayout'>
                     {filteredRecords.map((record) => (
-                      <motion.tr 
+                      <motion.tr
                         layout
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0, x: -20 }}
-                        key={record.Health_Record_ID} 
+                        key={record.Health_Record_ID}
                         className="align-middle"
                       >
                         <td className="ps-4 fw-bold">{record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}</td>
@@ -302,4 +322,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   );
 };
 
+
 export default RecordsPage;
+
+
