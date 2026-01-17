@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, Save, Edit, Trash2 } from 'lucide-react'; 
+import { Search, Plus, Edit, Trash2 } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion'; 
 import HealthForm from './HealthForm'; 
 import './style/RecordsPage.css';
@@ -13,6 +13,47 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
+
+  // Unified Notification States
+  const [showStatus, setShowStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState({ title: '', desc: '', type: 'success' });
+  const [submissionStatus, setSubmissionStatus] = useState('');
+
+  /* ==================== HOME INTEGRATION ==================== */
+  useEffect(() => {
+    // Automatically trigger form if directed from Home.js
+    if (autoOpenForm) {
+      if (preFillData) {
+        setEditingRecord(preFillData);
+      } else {
+        setEditingRecord(null);
+      }
+      setShowForm(true);
+    }
+  }, [autoOpenForm, preFillData]);
+
+  /* ==================== AUTO-CLOSE TIMER ==================== */
+  useEffect(() => {
+    if (showStatus) {
+      const timer = setTimeout(() => {
+        setShowStatus(false);
+      }, 5000); 
+      return () => clearTimeout(timer);
+    }
+  }, [showStatus]);
+
+  /* ==================== SOUND LOGIC ==================== */
+  const playSuccessSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1433/1433-preview.mp3');
+    audio.volume = 0.4; 
+    audio.play().catch(e => console.log("Audio interaction required", e));
+  };
+
+  const playDeleteSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1470/1470-preview.mp3');
+    audio.volume = 0.3; 
+    audio.play().catch(e => console.log("Audio interaction required", e));
+  };
 
   /* ==================== HELPER: CALCULATE AGE ==================== */
   const calculateAge = (birthDate) => {
@@ -36,7 +77,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
       const data = await res.json();
       setRecords(data);
     } catch (err) {
-      setError('Could not connect to the server. Please check backend.');
+      setError('Could not connect to the server.');
     } finally {
       setLoading(false);
     }
@@ -45,19 +86,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   useEffect(() => {
     fetchRecords();
   }, []);
-
-  /* ==================== AUTO-OPEN LOGIC ==================== */
-  useEffect(() => {
-    if (autoOpenForm) {
-      if (preFillData) {
-        setEditingRecord(preFillData);
-        setShowForm(true);
-      } else if (records.length > 0) {
-        setEditingRecord(records[0]);
-        setShowForm(true);
-      }
-    }
-  }, [autoOpenForm, preFillData, records.length]);
 
   /* ==================== CRUD OPERATIONS ==================== */
   const handleAddNewRecord = () => {
@@ -77,31 +105,10 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
 
   const handleSubmitForm = async (formData) => {
     try {
-      // Get Admin Data from localStorage
       const adminId = parseInt(localStorage.getItem('adminId'), 10);
       const adminUsername = localStorage.getItem('username') || 'Admin';
-
-      if (!adminId) {
-        setError('Admin ID not found. Please log in again.');
-        return;
-      }
-      
       const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
       
-      // 1. Save Resident Info
-      const residentUrl = isNewRecord 
-        ? `http://localhost:5000/api/residents`
-        : `http://localhost:5000/api/residents/${formData.Resident_ID}`;
-
-      const resUpdate = await fetch(residentUrl, {
-        method: isNewRecord ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, admin_username: adminUsername })
-      });
-
-      if (!resUpdate.ok) throw new Error('Failed to save resident info');
-
-      // 2. Save Health Record
       const healthUrl = isNewRecord
         ? 'http://localhost:5000/api/health-records'
         : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
@@ -113,13 +120,24 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
           ...formData, 
           Recorded_By: adminId, 
           adminId: adminId,
+          admin_username: adminUsername 
         })
       });
       
       if (res.ok) {
+        setSubmissionStatus(formData.Resident_ID);
+        setStatusMessage({
+          title: isNewRecord ? 'Record Created!' : 'Record Updated!',
+          desc: isNewRecord ? 'The new health record has been saved.' : 'Changes have been synchronized.',
+          type: 'success'
+        });
+        
         setShowForm(false);
         setEditingRecord(null);
-        if (onSubmitSuccess) onSubmitSuccess(); // Updates Dashboard & Activity Log in Home.js
+        setShowStatus(true);
+        playSuccessSound();
+
+        if (onSubmitSuccess) onSubmitSuccess(); 
         fetchRecords(); 
       }
     } catch (err) {
@@ -127,20 +145,28 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
   };
 
-  const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm('Are you sure you want to delete this record? This will remove all associated resident data.')) return;
+  const handleDeleteRecord = async (record) => {
+    const recordId = record.Health_Record_ID;
+    const residentId = record.Resident_ID;
     
-    // Get admin username for the activity log
+    if (!window.confirm(`Are you sure you want to delete record for ID: ${residentId}?`)) return;
     const adminUsername = localStorage.getItem('username') || 'Admin';
 
     try {
-      // REVISED: Passing admin_username as a query param to match the Home.js pattern
       const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, { 
         method: 'DELETE' 
       });
       
       if (res.ok) {
-        if (onSubmitSuccess) onSubmitSuccess(); // Refresh Recent Activity in Home.js
+        setSubmissionStatus(residentId);
+        setStatusMessage({
+          title: 'Record Deleted',
+          desc: 'The health record was removed from the system.',
+          type: 'delete'
+        });
+        
+        setShowStatus(true);
+        playDeleteSound();
         fetchRecords();
       }
     } catch (err) {
@@ -155,7 +181,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
       .includes(searchTerm.toLowerCase())
   );
 
-  /* ==================== RENDER FORM VIEW ==================== */
   if (showForm) {
     return (
       <HealthForm 
@@ -167,10 +192,32 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     );
   }
 
-  /* ==================== RENDER TABLE VIEW ==================== */
   return (
     <div className="records-container p-4">
-      {/* HEADER SECTION */}
+      {/* UNIFIED OVERLAY NOTIFICATION */}
+      <AnimatePresence>
+        {showStatus && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className={`submission-alert-overlay ${statusMessage.type === 'delete' ? 'delete-theme' : ''}`}
+          >
+            <div className="submission-alert-content shadow-lg">
+              <div className={`alert-icon ${statusMessage.type === 'delete' ? 'icon-delete' : ''}`}>
+                {statusMessage.type === 'delete' ? '🗑️' : '✓'}
+              </div>
+              <div className="alert-text">
+                <strong>{statusMessage.title}</strong>
+                <p>Resident ID: <span className="id-highlight">{submissionStatus}</span></p>
+                <small>{statusMessage.desc}</small>
+              </div>
+              <button className="close-alert" onClick={() => setShowStatus(false)}>×</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       <div className="d-flex justify-content-between align-items-center mb-4 px-3">
         <div>
           <h2 className="fw-bold mb-1">Patient Records</h2>
@@ -181,7 +228,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
         </button>
       </div>
 
-      {/* SEARCH BAR */}
       <div className="px-3 mb-4">
         <div className="search-wrapper shadow-sm">
           <Search className="search-icon" size={20} />
@@ -194,21 +240,10 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
         </div>
       </div>
       
-      {error && (
-        <div className="alert alert-danger mx-3 alert-dismissible fade show" role="alert">
-          {error}
-          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
-        </div>
-      )}
-
-      {/* TABLE SECTION */}
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mx-3">
         <div className="card-body p-0">
           {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" />
-              <p className="mt-2 text-muted">Loading health records...</p>
-            </div>
+            <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
           ) : (
             <div className="table-responsive">
               <table className="table table-hover mb-0">
@@ -224,26 +259,23 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRecords.length === 0 ? (
-                    <tr><td colSpan="7" className="text-center py-5 text-muted">No records found.</td></tr>
-                  ) : (
-                    filteredRecords.map((record) => (
+                  <AnimatePresence mode='popLayout'>
+                    {filteredRecords.map((record) => (
                       <motion.tr 
                         layout
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, x: -20 }}
                         key={record.Health_Record_ID} 
                         className="align-middle"
                       >
-                        <td className="ps-4 fw-bold">
-                          {record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}
-                        </td>
+                        <td className="ps-4 fw-bold">{record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}</td>
                         <td>{record.Age || calculateAge(record.Birthdate)} <small className="text-muted">yrs</small></td>
                         <td>{record.Sex}</td>
                         <td>{record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString() : 'N/A'}</td>
                         <td>
                           <span className="badge bg-light text-primary border">
-                            {record.Recorded_By_Name || 'Unknown Admin'}
+                            {record.Recorded_By_Name || 'Admin'}
                           </span>
                         </td>
                         <td>
@@ -253,17 +285,13 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
                         </td>
                         <td className="text-center">
                           <div className="btn-group">
-                            <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditRecord(record)}>
-                              <Edit size={14} className="me-1" /> Edit
-                            </button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteRecord(record.Health_Record_ID)}>
-                              <Trash2 size={14} />
-                            </button>
+                            <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditRecord(record)}><Edit size={14} /></button>
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteRecord(record)}><Trash2 size={14} /></button>
                           </div>
                         </td>
                       </motion.tr>
-                    ))
-                  )}
+                    ))}
+                  </AnimatePresence>
                 </tbody>
               </table>
             </div>

@@ -29,7 +29,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     Allergies: '',
     Contact_Number: '',
     Street: '',
-    Barangay: '',
+    Barangay: 'Marikina Heights',
     Date_Visited: '',
     Remarks: '',
     status: 'Active',
@@ -82,13 +82,14 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         Height: initialData.Height ? String(initialData.Height) : '',
         BMI: initialData.BMI ? String(initialData.BMI) : '',
         Nutrition_Status: initialData.Nutrition_Status || calculateNutritionStatus(initialData.BMI),
-        // Priority: Passed name from parent -> existing record name -> current logged in admin
+        Barangay: initialData.Barangay || 'Marikina Heights',
         Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin
       });
     } else {
       setFormData(prev => ({ 
         ...prev, 
         Resident_ID: generateResidentID(),
+        Barangay: 'Marikina Heights',
         Recorded_By_Name: currentAdmin 
       }));
     }
@@ -151,7 +152,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         body: JSON.stringify({
           ...formData,
           Recorded_By: adminId,
-          Recorded_By_Name: adminUsername, // Ensures "Unknown Admin" is fixed in DB
+          Recorded_By_Name: adminUsername,
           adminId: adminId,
           admin_username: adminUsername
         })
@@ -169,16 +170,15 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
       if (!response.ok) throw new Error(result.details || 'Submission failed');
 
-      // SUCCESS NOTIFICATION LOGIC
       const successText = editMode 
         ? `✅ Record for ${formData.First_Name} ${formData.Last_Name} has been modified successfully!` 
         : `✅ Registration Successful! Resident ID: ${formData.Resident_ID} has been added.`;
 
       setMessage({ type: 'success', text: successText });
 
-      // DELAYED REDIRECT: Give user 2.5s to read the success message
       setTimeout(() => {
-        if (onSubmit) onSubmit(result); 
+        // We pass 'editMode' as the second argument so RecordsPage knows what to display
+        if (onSubmit) onSubmit(formData, editMode); 
         onCancel(); 
       }, 2500);
 

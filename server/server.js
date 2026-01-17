@@ -16,7 +16,7 @@ const db = mysql.createConnection({
 
 db.connect(err => {
   if (err) return console.error(err);
-  console.log('✅ Connected to admin_db');
+  console.log('Connected to admin_db');
 });
 
 /** * HELPER: Logic to insert into activity_logs
@@ -41,8 +41,6 @@ app.get('/api/activity-logs', (req, res) => {
 app.post('/api/residents', (req, res) => {
   const d = req.body;
 
-  // 1. STEP ONE: Strict check for existing name
-  // We use TRIM and COALESCE to make sure "Juan " and "Juan" are treated the same
   const checkSql = `
     SELECT Resident_ID FROM residents 
     WHERE TRIM(First_Name) = TRIM(?) 
@@ -56,7 +54,6 @@ app.post('/api/residents', (req, res) => {
       return res.status(500).json(err);
     }
 
-    // 2. STEP TWO: If rows are found, return isDuplicate: true and STOP.
     if (rows.length > 0) {
       console.log(`🚫 Duplicate blocked: ${d.First_Name} ${d.Last_Name}`);
       return res.json({ 
@@ -66,7 +63,6 @@ app.post('/api/residents', (req, res) => {
       });
     }
 
-    // 3. STEP THREE: Only if unique, proceed with INSERT
     const sql = `
       INSERT INTO residents 
       (Resident_ID, First_Name, Middle_Name, Last_Name, Sex, Civil_Status, Birthdate, Contact_Number, Street, Barangay)
@@ -162,12 +158,10 @@ app.get('/api/health-records', (req, res) => {
   });
 });
 
-
-/* ================= ADD HEALTH RECORD (WITH ONE NAME POLICY) ================= */
+/* ================= ADD HEALTH RECORD (STRICT ONE NAME POLICY) ================= */
 app.post('/api/health-records', (req, res) => {
   const d = req.body;
   
-  // 1. Strict Check for Duplicate Name
   const checkSql = `
     SELECT Resident_ID FROM residents 
     WHERE TRIM(First_Name) = TRIM(?) 
@@ -178,7 +172,6 @@ app.post('/api/health-records', (req, res) => {
   db.query(checkSql, [d.First_Name, d.Middle_Name || '', d.Last_Name], (err, rows) => {
     if (err) return res.status(500).json({ error: "DB Check Error", details: err.message });
 
-    // If name exists, return 200 but with isDuplicate: true
     if (rows && rows.length > 0) {
       return res.status(200).json({ 
         success: false, 
@@ -187,7 +180,6 @@ app.post('/api/health-records', (req, res) => {
       });
     }
 
-    // 2. Proceed with Transaction if Unique
     db.beginTransaction((tErr) => {
       if (tErr) return res.status(500).json(tErr);
 
@@ -209,10 +201,11 @@ app.post('/api/health-records', (req, res) => {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
+        // Parse numbers safely to avoid 0/NaN being inserted when they should be NULL
         const weight = (d.Weight === '' || isNaN(d.Weight)) ? null : parseFloat(d.Weight);
         const height = (d.Height === '' || isNaN(d.Height)) ? null : parseFloat(d.Height);
         const bmi = (d.BMI === '' || isNaN(d.BMI)) ? null : parseFloat(d.BMI);
-        let adminId = parseInt(d.adminId) || null;
+        let adminId = parseInt(d.Recorded_By || d.adminId) || null;
 
         db.query(hrSql, [
           d.Resident_ID, d.Is_PWD ? 1 : 0, d.Blood_Pressure || null, 
@@ -232,44 +225,54 @@ app.post('/api/health-records', (req, res) => {
     });
   });
 });
-/* ================= APPROVE PENDING (LOGGING KEPT HERE) ================= */
+
+/* ================= APPROVE PENDING (FIXED TRANSACTION & LOGGING) ================= */
 app.post('/api/pending-residents/accept/:id', (req, res) => {
   const id = req.params.id;
-  const { admin_username } = req.body; 
+  const { admin_username, adminId } = req.body; 
+
   db.query(
     "SELECT pr.*, r.First_Name, r.Last_Name FROM pending_resident pr JOIN residents r ON pr.Resident_ID = r.Resident_ID WHERE Pending_HR_ID = ?",
     [id],
     (err, rows) => {
       if (err || rows.length === 0) return res.sendStatus(404);
       const p = rows[0];
-      db.query(
-        `INSERT INTO health_records 
-          (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Recorded_By)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [p.Resident_ID, p.Is_PWD || 0, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies, p.Verified_By],
-        (err, result) => {
-          if (err) return res.status(500).json(err);
-          db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id], (err) => {
-            if (err) return res.status(500).json(err);
-            logActivity(`${p.First_Name} ${p.Last_Name}`, 'added', admin_username);
-            res.json({ success: true, Health_Record_ID: result.insertId });
-          });
-        }
-      );
+
+      db.beginTransaction((tErr) => {
+        if (tErr) return res.status(500).json(tErr);
+
+        db.query(
+          `INSERT INTO health_records 
+            (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Recorded_By)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [p.Resident_ID, p.Is_PWD || 0, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies, adminId],
+          (err, result) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+            
+            db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id], (err) => {
+              if (err) return db.rollback(() => res.status(500).json(err));
+              
+              db.commit((commitErr) => {
+                if (commitErr) return db.rollback(() => res.status(500).json(commitErr));
+                logActivity(`${p.First_Name} ${p.Last_Name}`, 'added', admin_username);
+                res.json({ success: true, Health_Record_ID: result.insertId });
+              });
+            });
+          }
+        );
+      });
     }
   );
 });
 
-/* ================= UPDATE HEALTH RECORD (FIXED) ================= */
+/* ================= UPDATE HEALTH RECORD (TRANSACTIONAL) ================= */
 app.put('/api/health-records/:id', (req, res) => {
   const healthRecordId = req.params.id;
   const d = req.body;
 
-  // 1. Start a transaction to update both tables if necessary
   db.beginTransaction((err) => {
     if (err) return res.status(500).json(err);
 
-    // Update the Resident details (Name, Birthdate, etc.)
     const resSql = `
       UPDATE residents r
       JOIN health_records hr ON r.Resident_ID = hr.Resident_ID
@@ -286,7 +289,6 @@ app.put('/api/health-records/:id', (req, res) => {
     ], (resErr) => {
       if (resErr) return db.rollback(() => res.status(500).json(resErr));
 
-      // Update the Health Record details (Vitals, Diagnosis, etc.)
       const hrSql = `
         UPDATE health_records 
         SET Is_PWD = ?, Blood_Pressure = ?, Weight = ?, Height = ?, 
@@ -295,9 +297,13 @@ app.put('/api/health-records/:id', (req, res) => {
         WHERE Health_Record_ID = ?
       `;
 
+      const weight = (d.Weight === '' || isNaN(d.Weight)) ? null : parseFloat(d.Weight);
+      const height = (d.Height === '' || isNaN(d.Height)) ? null : parseFloat(d.Height);
+      const bmi = (d.BMI === '' || isNaN(d.BMI)) ? null : parseFloat(d.BMI);
+
       db.query(hrSql, [
-        d.Is_PWD ? 1 : 0, d.Blood_Pressure, d.Weight, d.Height, 
-        d.BMI, d.Nutrition_Status, d.Health_Condition, 
+        d.Is_PWD ? 1 : 0, d.Blood_Pressure, weight, height, 
+        bmi, d.Nutrition_Status, d.Health_Condition, 
         d.Diagnosis, d.Allergies, d.Date_Visited, d.Remarks || d.Remarks_Notes || null,
         healthRecordId
       ], (hrErr) => {
@@ -305,7 +311,6 @@ app.put('/api/health-records/:id', (req, res) => {
 
         db.commit((commitErr) => {
           if (commitErr) return db.rollback(() => res.status(500).json(commitErr));
-          
           logActivity(`${d.First_Name} ${d.Last_Name}`, 'modified', d.admin_username);
           res.json({ success: true });
         });
@@ -314,24 +319,32 @@ app.put('/api/health-records/:id', (req, res) => {
   });
 });
 
-/* ================= DELETE ROUTES (STRICT ORDER FOR LOGGING) ================= */
+/* ================= DELETE ROUTES (CASCADE TRANSACTION) ================= */
 app.delete('/api/health-records/:id', (req, res) => {
   const healthRecordId = req.params.id;
   const admin_username = req.query.admin_username;
 
-  // 1. MUST FETCH NAME BEFORE ANY DELETION
   db.query('SELECT r.First_Name, r.Last_Name, r.Resident_ID FROM health_records hr JOIN residents r ON hr.Resident_ID = r.Resident_ID WHERE hr.Health_Record_ID = ?', [healthRecordId], (err, rows) => {
     if (err || rows.length === 0) return res.status(404).json({ error: 'Not found' });
     
     const residentName = `${rows[0].First_Name} ${rows[0].Last_Name}`;
     const residentId = rows[0].Resident_ID;
 
-    // 2. Cascade delete
-    db.query('DELETE FROM health_records WHERE Health_Record_ID = ?', [healthRecordId], (err) => {
-      db.query('DELETE FROM pending_resident WHERE Resident_ID = ?', [residentId], (err) => {
-        db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], (err) => {
-          logActivity(residentName, 'removed', admin_username);
-          res.json({ success: true });
+    db.beginTransaction(err => {
+      if (err) return res.status(500).json(err);
+
+      db.query('DELETE FROM health_records WHERE Health_Record_ID = ?', [healthRecordId], (err) => {
+        if (err) return db.rollback(() => res.status(500).json(err));
+        db.query('DELETE FROM pending_resident WHERE Resident_ID = ?', [residentId], (err) => {
+          if (err) return db.rollback(() => res.status(500).json(err));
+          db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], (err) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+            db.commit(err => {
+              if (err) return db.rollback(() => res.status(500).json(err));
+              logActivity(residentName, 'removed', admin_username);
+              res.json({ success: true });
+            });
+          });
         });
       });
     });
@@ -348,11 +361,18 @@ app.delete('/api/pending-residents/remove/:id', (req, res) => {
     const residentName = `${rows[0].First_Name} ${rows[0].Last_Name}`;
     const residentId = rows[0].Resident_ID;
 
-    db.query('DELETE FROM pending_resident WHERE Pending_HR_ID = ?', [pendingId], (err) => {
-      db.query('DELETE FROM health_records WHERE Resident_ID = ?', [residentId], (err) => {
+    db.beginTransaction(err => {
+      if (err) return res.status(500).json(err);
+
+      db.query('DELETE FROM pending_resident WHERE Pending_HR_ID = ?', [pendingId], (err) => {
+        if (err) return db.rollback(() => res.status(500).json(err));
         db.query('DELETE FROM residents WHERE Resident_ID = ?', [residentId], (err) => {
-          logActivity(residentName, 'removed', admin_username);
-          res.json({ success: true });
+          if (err) return db.rollback(() => res.status(500).json(err));
+          db.commit(err => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+            logActivity(residentName, 'removed', admin_username);
+            res.json({ success: true });
+          });
         });
       });
     });
@@ -389,4 +409,4 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-app.listen(5000, () => console.log('🚀 Server running on port 5000'));
+app.listen(5000, () => console.log('Server running on port 5000'));

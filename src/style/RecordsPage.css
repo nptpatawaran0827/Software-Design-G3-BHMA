@@ -97,3 +97,19 @@
     border: none;
     font-weight: 600;
 }
+
+/* Red theme for Deletion */
+.submission-alert-overlay.delete-theme .submission-alert-content {
+    border-left: 5px solid #dc3545;
+}
+
+.submission-alert-overlay.delete-theme .alert-icon.icon-delete {
+    background: #ffeef0;
+    color: #dc3545;
+    border: 1px solid #f5c2c7;
+}
+
+.submission-alert-overlay.delete-theme .id-highlight {
+    background: #f8d7da;
+    color: #842029;
+}
