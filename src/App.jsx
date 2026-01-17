@@ -1,44 +1,35 @@
-import Header from './Header.jsx'
-import LoginPage from './LoginPage.jsx'
-import Home from './Home.jsx'
-import LandingPage from './LandingPage.jsx'
-import ResidentPage from './ResidentPage.jsx'
-import AnalyticsPage from './AnalyticsPage.jsx' 
-import RecordsPage from './RecordsPage.jsx'     
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion' // Added for smooth fade-in
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import Header from './Header.jsx';
+import Sidebar from './Sidebar.jsx'; // 1. Import Sidebar
+import LoginPage from './LoginPage.jsx';
+import Home from './Home.jsx';
+import LandingPage from './LandingPage.jsx';
+import ResidentPage from './ResidentPage.jsx';
+import AnalyticsPage from './AnalyticsPage.jsx';
+import RecordsPage from './RecordsPage.jsx';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
-  const [isAuthed, setIsAuthed] = useState(Boolean(localStorage.getItem('authToken')))
-  const [page, setPage] = useState(() => localStorage.getItem('currentPage') || 'landing')
-  const [submittedId, setSubmittedId] = useState(null)
+  const [isAuthed, setIsAuthed] = useState(Boolean(localStorage.getItem('authToken')));
+  const [submittedId, setSubmittedId] = useState(null);
 
-  // --- INACTIVITY STATES ---
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(10);
-  
   const logoutTimerRef = useRef(null);
   const warningTimerRef = useRef(null);
   const countdownIntervalRef = useRef(null);
 
-  useEffect(() => {
-    localStorage.setItem('currentPage', page);
-  }, [page]);
-
-  function handleLoginSuccess() {
-    localStorage.setItem('authToken', 'sample-token')
-    setIsAuthed(true)
-    setPage('home')
-  }
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('currentPage') 
-    setIsAuthed(false)
-    setPage('landing')
+    localStorage.removeItem('authToken');
+    setIsAuthed(false);
     setShowWarning(false);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-  }, []);
+    navigate('/'); 
+  }, [navigate]);
 
   const resetInactivityTimer = useCallback(() => {
     setShowWarning(false);
@@ -48,7 +39,6 @@ function App() {
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
     if (isAuthed) {
-      // 50 seconds of silence -> Show warning
       warningTimerRef.current = setTimeout(() => {
         setShowWarning(true);
         countdownIntervalRef.current = setInterval(() => {
@@ -56,7 +46,6 @@ function App() {
         }, 1000);
       }, 50000);
 
-      // 60 seconds of silence -> Logout
       logoutTimerRef.current = setTimeout(() => {
         handleLogout();
       }, 60000);
@@ -71,95 +60,85 @@ function App() {
     }
     return () => {
       events.forEach(e => window.removeEventListener(e, resetInactivityTimer));
-      if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
-      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
   }, [isAuthed, resetInactivityTimer]);
 
-  function handleResidentSuccess(newId) {
-    setSubmittedId(newId);
-    setPage('landing');
-  }
+  const handleLoginSuccess = () => {
+    localStorage.setItem('authToken', 'sample-token');
+    setIsAuthed(true);
+    navigate('/Dashboard');
+  };
 
-  const isDashboardPage = ['home', 'analytics', 'records', 'healthform'].includes(page);
+  const handleResidentSuccess = (newId) => {
+    setSubmittedId(newId);
+    navigate('/');
+  };
+
+  const dashboardRoutes = ['/Dashboard', '/Records', '/Analytics', '/Records/AddResident'];
+  const isDashboardPath = dashboardRoutes.includes(location.pathname);
+  const showDashboardUI = isAuthed && isDashboardPath;
 
   return (
     <div className="app-root">
-      {/* --- WARNING OVERLAY --- */}
       <AnimatePresence>
         {showWarning && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            style={overlayStyle}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              style={aestheticModalStyle}
-            >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} style={aestheticModalStyle}>
               <div style={iconCircleStyle}>⌛</div>
-              <h5 style={{ fontWeight: '700', marginBottom: '8px' }}>Inactivity Timeout</h5>
-              <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
-                Your session expires in <strong style={{ color: '#ff4757' }}>{countdown}s</strong>
-              </p>
-              
-              {/* Progress Bar */}
+              <h5>Inactivity Timeout</h5>
+              <p>Your session expires in <strong style={{ color: '#ff4757' }}>{countdown}s</strong></p>
               <div style={progressBgStyle}>
-                <motion.div 
-                  initial={{ width: '100%' }}
-                  animate={{ width: '0%' }}
-                  transition={{ duration: 10, ease: "linear" }}
-                  style={progressFillStyle}
-                />
+                <motion.div initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: 10, ease: "linear" }} style={progressFillStyle} />
               </div>
-
-              <button 
-                onClick={resetInactivityTimer} 
-                style={stayButtonStyle}
-              >
-                Keep working
-              </button>
+              <button onClick={resetInactivityTimer} style={stayButtonStyle}>Keep working</button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="app-content">
-        {isAuthed && isDashboardPage && (
-          <Header onNavigate={(target) => setPage(target)} onLogout={handleLogout} />
-        )}
+      {/* 2. Wrap content in d-flex to keep Sidebar and Main Content side-by-side */}
+      <div className="app-content d-flex">
+        
+        {/* 3. Persistent Sidebar - only shows when logged in on dashboard paths */}
+        {showDashboardUI && <Sidebar />}
 
-        {page === 'landing' && (
-          <LandingPage 
-            onHealthWorkerClick={() => { setSubmittedId(null); setPage('login'); }}
-            onResidentClick={() => { setSubmittedId(null); setPage('resident'); }}
-            submissionStatus={submittedId}
-          />
-        )}
+        <div className="flex-grow-1">
+          {showDashboardUI && (
+            <Header onNavigate={(target) => navigate(`/${target}`)} onLogout={handleLogout} />
+          )}
 
-        {page === 'resident' && (
-          <ResidentPage onCancel={() => setPage('landing')} onSubmitSuccess={handleResidentSuccess} />
-        )}
+          <Routes>
+            <Route path="/" element={
+              <LandingPage 
+                onHealthWorkerClick={() => navigate('/HWLogin')} 
+                onResidentClick={() => navigate('/Resident')} 
+                submissionStatus={submittedId} 
+              />
+            } />
+            
+            <Route path="/Resident" element={
+              <ResidentPage onCancel={() => navigate('/')} onSubmitSuccess={handleResidentSuccess} />
+            } />
+            
+            <Route path="/HWLogin" element={
+              !isAuthed ? <LoginPage onLoginSuccess={handleLoginSuccess} onReturnToLanding={() => navigate('/')} /> : <Navigate to="/Dashboard" />
+            } />
 
-        {page === 'login' && (
-          <LoginPage onLoginSuccess={handleLoginSuccess} onReturnToLanding={() => setPage('landing')} />
-        )}
-
-        {isAuthed && (
-          <>
-            {page === 'home' && <Home onLogout={handleLogout} />}
-            {page === 'analytics' && <AnalyticsPage />}
-            {page === 'records' && <RecordsPage />}
-            {page === 'healthform' && <RecordsPage autoOpenForm={true} />} 
-          </>
-        )}
+            <Route path="/Dashboard" element={isAuthed ? <Home onLogout={handleLogout} /> : <Navigate to="/HWLogin" />} />
+            <Route path="/Records" element={isAuthed ? <RecordsPage /> : <Navigate to="/HWLogin" />} />
+            <Route path="/Analytics" element={isAuthed ? <AnalyticsPage /> : <Navigate to="/HWLogin" />} />
+            <Route path="/Records/Add" element={isAuthed ? <RecordsPage autoOpenForm={true} /> : <Navigate to="/HWLogin" />} />
+            
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
       </div>
     </div>
-  )
+  );
 }
+
+
+// ... (Keep your existing styles at the bottom)
 
 // --- WARNING STYLES ---
 const overlayStyle = {
