@@ -84,12 +84,11 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(null); // Clear previous messages
+    setMessage(null);
 
     const newCustomId = generateResidentId();
 
     try {
-      // 1. ATTEMPT TO REGISTER RESIDENT
       const residentRes = await fetch('http://localhost:5000/api/residents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,26 +102,8 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
         })
       });
 
-      const resData = await residentRes.json();
-
-      // 2. THE ONE NAME POLICY NOTIFICATION
-      if (resData.isDuplicate) {
-        setResidentId(resData.Resident_ID);
-        // This triggers the RED alert box in your UI
-        setMessage({ 
-          type: 'error', 
-          text: `⚠️ RECORD ALREADY EXISTS: ${formData.First_Name} ${formData.Last_Name} is already registered with ID: ${resData.Resident_ID}. Duplicate entries are not allowed.` 
-        });
-        
-        // Use a standard browser alert as a fallback/extra notification
-        alert(`Duplicate Found!\nResident: ${formData.First_Name} ${formData.Last_Name}\nExisting ID: ${resData.Resident_ID}`);
-        
-        return; // STOP HERE. Do not proceed to health submission.
-      }
-
       if (!residentRes.ok) throw new Error('Resident creation failed');
       
-      // 3. PROCEED TO HEALTH SUBMISSION (Only if name is unique)
       const pendingRes = await fetch('http://localhost:5000/api/pending-resident', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,20 +120,19 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
       if (!pendingRes.ok) throw new Error('Health submission failed');
 
-      // SUCCESS NOTIFICATION
       setResidentId(newCustomId);
-      setMessage({ type: 'success', text: `Registration Successful! Your Resident ID is: ${newCustomId}` });
-      setFormData(initialState); // Clear form only on success
+      setMessage({ type: 'success', text: `Submitted successfully. Resident ID: ${newCustomId}` });
+      setFormData(initialState);
       
       if (onSubmitSuccess) {
         setTimeout(() => {
           onSubmitSuccess(newCustomId);
-        }, 2000);
+        }, 1500);
       }
 
     } catch (error) {
       console.error('Error:', error);
-      setMessage({ type: 'error', text: 'System error. Please try again later.' });
+      setMessage({ type: 'error', text: 'Submission failed. Please try again.' });
     }
   };
 
