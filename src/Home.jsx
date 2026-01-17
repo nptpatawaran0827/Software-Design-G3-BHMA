@@ -1,4 +1,3 @@
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar, Doughnut } from 'react-chartjs-2';
@@ -9,6 +8,10 @@ import AnalyticsPage from './AnalyticsPage';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 function Home({ onLogout }) {
+  // Retrieve Admin Info from LocalStorage
+  const adminUsername = localStorage.getItem('username') || 'Administrator';
+  const adminId = localStorage.getItem('adminId') || 'N/A';
+
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('activeDashboardTab') || 'Home';
   });
@@ -152,35 +155,31 @@ function Home({ onLogout }) {
 
   const handleAccept = async (resident) => {
     try {
-      // 1. Retrieve the logged-in admin's details
-      const adminUsername = localStorage.getItem('username') || 'Admin';
-      const adminId = localStorage.getItem('adminId'); // Added this
+      const currentAdminName = localStorage.getItem('username') || 'Admin';
+      const currentAdminId = localStorage.getItem('adminId');
 
       const res = await fetch(`http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // 2. Send both the username and the ID to the backend
         body: JSON.stringify({ 
-          admin_username: adminUsername,
-          adminId: adminId 
+          admin_username: currentAdminName,
+          adminId: currentAdminId 
         })
       });
 
       const result = await res.json();
       
-      // 3. Keep all your existing pre-fill and auto-open logic
       setPreFillData({ 
         ...resident, 
         Is_PWD: resident.Is_PWD == 1, 
         Health_Record_ID: result.Health_Record_ID, 
-        Recorded_By_Name: adminUsername 
+        Recorded_By_Name: currentAdminName 
       });
       
       setActiveTab('Records');
       setShouldAutoOpenForm(true);
       setShowNotification(false);
       
-      // 4. Refresh all lists to keep the dashboard up-to-date
       fetchHealthRecords(); 
       fetchActivities(); 
       fetchPending();
@@ -189,15 +188,14 @@ function Home({ onLogout }) {
     }
   };
   
-  // REVISED: Handle Rejection and pass admin_username for logging
   const handleRemove = async (id) => {
-    const adminUsername = localStorage.getItem('username') || 'Admin';
+    const currentAdminName = localStorage.getItem('username') || 'Admin';
     try {
-      await fetch(`http://localhost:5000/api/pending-residents/remove/${id}?admin_username=${adminUsername}`, { 
+      await fetch(`http://localhost:5000/api/pending-residents/remove/${id}?admin_username=${currentAdminName}`, { 
         method: 'DELETE' 
       });
       fetchPending();
-      fetchActivities(); // Refresh log to show the rejection
+      fetchActivities(); 
     } catch (err) {
       console.error('Error removing resident:', err);
     }
@@ -209,7 +207,13 @@ function Home({ onLogout }) {
         <RecordsPage 
           autoOpenForm={shouldAutoOpenForm} 
           preFillData={preFillData} 
-          onSubmitSuccess={() => { fetchPending(); fetchHealthRecords(); fetchActivities(); }} 
+          onSubmitSuccess={() => { 
+            setShouldAutoOpenForm(false); 
+            setPreFillData(null); 
+            fetchPending(); 
+            fetchHealthRecords(); 
+            fetchActivities(); 
+          }} 
         />
       );
     }
@@ -256,7 +260,14 @@ function Home({ onLogout }) {
           <button className="btn btn-outline-dark px-4" onClick={onLogout}>Logout</button>
         </div>
 
-        <h2 className="fw-bold mb-4 text-uppercase">WELCOME BACK, ADMIN!</h2>
+        {/* UPDATED WELCOME SECTION */}
+        <div className="mb-4">
+            <h2 className="fw-bold mb-0 text-uppercase">WELCOME BACK, <span className="text-primary">{adminUsername}</span>!</h2>
+            <div className="d-flex align-items-center gap-2 mt-1">
+                <span className="badge bg-dark px-2 py-1">ADMIN ID: {adminId}</span>
+                <span className="text-muted small">• System Access Authorized</span>
+            </div>
+        </div>
 
         <div className="card border-0 shadow-sm rounded-4 mb-4">
           <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
@@ -296,7 +307,6 @@ function Home({ onLogout }) {
                       year: 'numeric'
                     });
 
-                    // REVISED: Check for rejection or deletion
                     const isNegative = log.action_type === 'rejected' || log.action_type === 'deleted';
 
                     return (
@@ -325,7 +335,7 @@ function Home({ onLogout }) {
           </div>
         </div>
 
-        <h2 className="text-success fw-bold mb-3">Dashboard</h2>
+        <h2 className="text-success fw-bold mb-3">Dashboard Overview</h2>
         <div className="bg-white p-4 rounded-4 shadow-sm border">
           <div className="row g-3">
             <div className="col-lg-5">
@@ -381,15 +391,15 @@ function Home({ onLogout }) {
       </div>
     );
   };
-                  
+
   return (
     <div className="dashboard-container d-flex">
-      {/*  <Sidebar activeTab={activeTab} onTabChange={setActiveTab} /> */}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="main-wrapper flex-grow-1 bg-light min-vh-100">
         <main>{renderContent()}</main>
       </div>
     </div>
-  );    
+  );
 }
 
 export default Home;

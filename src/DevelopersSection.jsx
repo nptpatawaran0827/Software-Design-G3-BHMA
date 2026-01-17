@@ -12,11 +12,12 @@ const DevelopersSection = () => {
     { id: 3, name: "Developer 3", role: "(ROLE)", image: example },
     { id: 4, name: "Developer 4", role: "(ROLE)", image: example },
     { id: 5, name: "Developer 5", role: "(ROLE)", image: example },
-    { id: 6, name: "Developer 6", role: "(ROLE)", image: example }
+    { id: 6, name: "Developer 6", role: "(ROLE)", image: example },
+    { id: 7, name: "Developer 7", role: "(ROLE)", image: example }
   ];
 
-  const topRowDevs = developers.slice(0, 3);
-  const bottomRowDevs = developers.slice(3, 6);
+  const topRowDevs = developers.slice(0, 4);
+  const bottomRowDevs = developers.slice(4, 7);
 
   return (
     <section 
@@ -35,7 +36,7 @@ const DevelopersSection = () => {
           The talented team behind this innovative healthcare solution
         </p>
 
-        {/* Top Row - 3 Developers */}
+        {/* Top Row - 4 Developers */}
         <div className="developers-row-top">
           {topRowDevs.map((dev) => (
             <div key={dev.id} className="developer-card">
