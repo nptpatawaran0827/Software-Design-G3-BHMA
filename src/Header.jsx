@@ -6,7 +6,7 @@ const Header = ({ onNavigate }) => {
          style={{ backgroundColor: '#4da3ff', height: '80px', margin: '20px' }}>
       
       <h2 className="m-0 fw-bold tracking-wider px-3" style={{ fontSize: '1.5rem', letterSpacing: '2px' }}>
-        BARANGAY HEALTH RECORDS and ANALYTICS SYSTEM
+        BARANGAY HEALTH MONITORING and ANALYTICS SYSTEM
       </h2>
 
       

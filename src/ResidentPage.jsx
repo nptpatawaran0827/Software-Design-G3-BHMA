@@ -1,3 +1,4 @@
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import './style/ResidentPage.css';
 import cloudBackground from './assets/bg-cloud.jpg';

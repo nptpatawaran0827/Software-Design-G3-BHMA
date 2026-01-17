@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom'; 
 import logoImage from './assets/logo.png'; 
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -16,11 +17,10 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Map the names to your actual logical tabs
   const menuItems = [
-    { name: 'Home', icon: '🏠', file: 'HomePage' },
-    { name: 'Records', icon: '📋', file: 'RecordsPage' },
-    { name: 'Analytics', icon: '📊', file: 'AnalyticsPage' },
+    { name: 'Home', icon: '🏠', path: '/Dashboard' },
+    { name: 'Records', icon: '📋', path: '/Records' },
+    { name: 'Analytics', icon: '📊', path: '/Analytics' },
   ];
 
   const sidebarWidth = isMobile && isCollapsed ? '80px' : '240px';
@@ -32,33 +32,47 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         width: sidebarWidth,
         transition: 'width 0.3s ease-in-out',
         position: 'sticky',
-        top: 0
+        top: 0,
+        zIndex: 1000
       }}
     >
-      <div className="sidebar-header p-3 d-flex align-items-center justify-content-between border-bottom">
-        {!isCollapsed && <img src={logoImage} alt="Logo" style={{ width: '60px' }} />}
+      {/* MODIFICATION: 
+          1. Changed to flex-column and align-items-center to force the logo to the center.
+          2. Removed justify-content-between.
+      */}
+      <div className="sidebar-header p-3 d-flex flex-column align-items-center border-bottom">
+        <img 
+          src={logoImage} 
+          alt="Logo" 
+          style={{ 
+            width: isCollapsed && isMobile ? '40px' : '65px', 
+            transition: 'width 0.3s ease' 
+          }} 
+        />
       </div>
       
       <div className="nav flex-column nav-pills p-2 gap-2">
         {menuItems.map((item) => (
-          <button 
+          <NavLink 
             key={item.name} 
-            onClick={() => setActiveTab(item.name)} // This triggers the renderContent() in Home.jsx
-            className={`nav-link text-start d-flex align-items-center gap-3 border-0 transition-all ${
-              activeTab === item.name ? 'active shadow-sm' : 'text-dark bg-transparent'
-            }`}
-            style={activeTab === item.name ? { backgroundColor: '#00695c', color: 'white' } : {}}
-            title={item.file} // Shows the filename when hovering
+            to={item.path} 
+            className={({ isActive }) => 
+              `nav-link text-start d-flex align-items-center gap-3 border-0 transition-all ${
+                isActive ? 'active shadow-sm' : 'text-dark bg-transparent'
+              }`
+            }
+            style={({ isActive }) => 
+              isActive ? { backgroundColor: '#00695c', color: 'white' } : {}
+            }
           >
             <span style={{ fontSize: '1.2rem', minWidth: '24px' }}>{item.icon}</span> 
-            {!isCollapsed && (
+            {!(isCollapsed && isMobile) && (
               <div className="d-flex flex-column">
                 <span className="fw-semibold">{item.name}</span>
-                {/* Optional: subtile filename text */}
-                <small style={{ fontSize: '0.65rem', opacity: 0.7 }}>{item.file}</small>
+                
               </div>
             )}
-          </button>
+          </NavLink>
         ))}
       </div>
     </div>
