@@ -37,7 +37,7 @@ app.get('/api/activity-logs', (req, res) => {
   });
 });
 
-/* ================= RESIDENT (STRICT ONE NAME POLICY) ================= */
+/* ================= RESIDENT ================= */
 app.post('/api/residents', (req, res) => {
   const d = req.body;
 
@@ -168,6 +168,30 @@ app.post('/api/health-records', (req, res) => {
     AND COALESCE(TRIM(Middle_Name), '') = COALESCE(TRIM(?), '') 
     AND TRIM(Last_Name) = TRIM(?)
   `;
+  db.query(sql, [
+    d.Resident_ID,
+    d.Is_PWD ? 1 : 0,
+    d.Blood_Pressure || null,
+    d.Weight || null,
+    d.Height || null,
+    d.BMI || null,
+    d.Nutrition_Status || null,
+    d.Health_Condition || null,
+    d.Diagnosis || null,
+    d.Allergies || null,
+    d.Date_Visited || null,
+    d.Remarks_Notes || d.Remarks || null,
+    d.Recorded_By || d.adminId || null  
+  ], (err, result) => {
+    if (err) return res.status(500).json(err);
+    db.query("SELECT First_Name, Last_Name FROM residents WHERE Resident_ID = ?", [d.Resident_ID], (err, rows) => {
+      if (!err && rows.length > 0) {
+        logActivity(`${rows[0].First_Name} ${rows[0].Last_Name}`, 'added', d.admin_username);
+      }
+    });
+    res.json({ Health_Record_ID: result.insertId, success: true });
+  });
+});
 
   db.query(checkSql, [d.First_Name, d.Middle_Name || '', d.Last_Name], (err, rows) => {
     if (err) return res.status(500).json({ error: "DB Check Error", details: err.message });
@@ -223,6 +247,7 @@ app.post('/api/health-records', (req, res) => {
         });
       });
     });
+    res.json({ success: true });
   });
 });
 

@@ -8,7 +8,6 @@ const STREETS = [
 ];
 
 const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
-  const [message, setMessage] = useState(null);
   const [formData, setFormData] = useState({
     First_Name: '',
     Middle_Name: '',
@@ -33,7 +32,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     Date_Visited: '',
     Remarks: '',
     status: 'Active',
-    Recorded_By_Name: '' 
+    Recorded_By_Name: '' // Added for admin tracking
   });
 
   const calculateAge = (birthdate) => {
@@ -65,6 +64,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
   };
 
   useEffect(() => {
+    // Capture the logged-in admin name
     const currentAdmin = localStorage.getItem('username') || 'System';
 
     if (initialData) {
@@ -116,13 +116,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     setFormData(updatedData);
   };
 
-  useEffect(() => {
-    if (message) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [message]);
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setMessage(null);
 
@@ -199,14 +193,9 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
       <div className="card border-0 shadow-sm rounded-4" style={{ backgroundColor: '#f8fbfe' }}>
         <div className="card-body p-4">
-          
-          {message && (
-            <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} mb-4 shadow-sm border-0 rounded-3`}>
-              {message.text}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
+            
+            {/* 1. BASIC INFO */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Personal Information</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-4">
@@ -258,6 +247,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
+            {/* 2. HEALTH METRICS */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Vitals & Measurements</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-3">
@@ -291,6 +281,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
+            {/* 3. MEDICAL DETAILS */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Medical History</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-6">
@@ -309,11 +300,18 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
+            {/* 4. ADDRESS & VISIT INFO */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Address & Visit Details</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-6">
                 <label className="form-label small fw-bold">Street</label>
-                <select className="form-select rounded-3" name="Street" value={formData.Street} onChange={handleChange} required>
+                <select 
+                  className="form-select rounded-3" 
+                  name="Street" 
+                  value={formData.Street} 
+                  onChange={handleChange}
+                  required
+                >
                   <option value="">Select Street...</option>
                   {STREETS.map((street) => (
                     <option key={street} value={street}>{street}</option>
