@@ -301,7 +301,7 @@ function Home({ onLogout }) {
         <h2 className="text-success fw-bold mb-3 dashboard-overview-title">Dashboard Overview</h2>
         <div className="bg-white p-4 rounded-4 shadow-sm border dashboard-overview-content">
           <div className="row g-4">
-            {/* Left Column - 4 Stat Cards in 2x2 Grid */}
+            {/* Left Column - 4  Cards */}
             <div className="col-lg-4">
               <div className="row g-4 h-100">
                 <div className="col-6">
@@ -447,7 +447,7 @@ function Home({ onLogout }) {
         <main className="flex-grow-1 main-content">
           <div className="shadow-sm text-white d-flex align-items-center justify-content-between header-banner">
             <h2 className="m-0 fw-bold text-center flex-grow-1">
-              BARANGAY HEALTH RECORDS and ANALYTICS SYSTEM
+              BARANGAY HEALTH MONITORING and ANALYTICS SYSTEM
             </h2>
             
             {/* BUTTONS IN HEADER */}
@@ -495,7 +495,7 @@ function Home({ onLogout }) {
         </main>
       </div>
 
-      {/* ZOOM MODAL */}
+      {/* ZOOM for cards*/}
       {zoomedContent && (
         <div className="zoom-overlay" onClick={() => setZoomedContent(null)}>
           <div className="zoom-content" onClick={(e) => e.stopPropagation()}>
