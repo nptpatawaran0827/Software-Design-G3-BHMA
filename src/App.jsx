@@ -1,4 +1,3 @@
-import Header from './Header.jsx'
 import LoginPage from './LoginPage.jsx'
 import Home from './Home.jsx'
 import LandingPage from './LandingPage.jsx'
@@ -15,7 +14,7 @@ function App() {
 
   // --- INACTIVITY STATES ---
   const [showWarning, setShowWarning] = useState(false);
-  const [countdown, setCountdown] = useState(60); // Updated: Starts at 60s
+  const [countdown, setCountdown] = useState(60);
   
   const logoutTimerRef = useRef(null);
   const warningTimerRef = useRef(null);
@@ -42,13 +41,12 @@ function App() {
 
   const resetInactivityTimer = useCallback(() => {
     setShowWarning(false);
-    setCountdown(60); // Reset to 60 seconds
+    setCountdown(60);
     if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
     if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
     if (isAuthed) {
-      // 4 minutes (240,000ms) of silence -> Show warning
       warningTimerRef.current = setTimeout(() => {
         setShowWarning(true);
         countdownIntervalRef.current = setInterval(() => {
@@ -56,7 +54,6 @@ function App() {
         }, 1000);
       }, 240000); 
 
-      // 5 minutes (300,000ms) of silence -> Logout
       logoutTimerRef.current = setTimeout(() => {
         handleLogout();
       }, 300000);
@@ -82,8 +79,6 @@ function App() {
     setPage('landing');
   }
 
-  const isDashboardPage = ['home', 'analytics', 'records', 'healthform'].includes(page);
-
   return (
     <div className="app-root">
       {/* --- WARNING OVERLAY --- */}
@@ -106,7 +101,6 @@ function App() {
                 Your session expires in <strong style={{ color: '#ff4757' }}>{countdown}s</strong>
               </p>
               
-              {/* Progress Bar - Updated transition to 60s */}
               <div style={progressBgStyle}>
                 <motion.div 
                   initial={{ width: '100%' }}
@@ -128,9 +122,6 @@ function App() {
       </AnimatePresence>
 
       <div className="app-content">
-        {isAuthed && isDashboardPage && (
-          <Header onNavigate={(target) => setPage(target)} onLogout={handleLogout} />
-        )}
 
         {page === 'landing' && (
           <LandingPage 
