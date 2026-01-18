@@ -24,7 +24,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
 
   /* ==================== HOME INTEGRATION ==================== */
   useEffect(() => {
-    // Automatically trigger form if directed from Home.js
     if (autoOpenForm) {
       if (preFillData) {
         setEditingRecord(preFillData);
@@ -32,8 +31,11 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
         setEditingRecord(null);
       }
       setShowForm(true);
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      }
     }
-  }, [autoOpenForm, preFillData]);
+  }, [autoOpenForm, preFillData, onSubmitSuccess]);
 
 
   /* ==================== AUTO-CLOSE TIMER ==================== */
@@ -115,48 +117,31 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     setEditingRecord(null);
   };
 
-
-  const handleSubmitForm = async (formData) => {
-    try {
-      const adminId = parseInt(localStorage.getItem('adminId'), 10);
-      const adminUsername = localStorage.getItem('username') || 'Admin';
-      const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
-     
-      const healthUrl = isNewRecord
-        ? 'http://localhost:5000/api/health-records'
-        : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
-     
-      const res = await fetch(healthUrl, {
-        method: isNewRecord ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          Recorded_By: adminId,
-          adminId: adminId,
-          admin_username: adminUsername
-        })
-      });
-     
-      if (res.ok) {
-        setSubmissionStatus(formData.Resident_ID);
+  // UPDATED: Now accepts isDuplicate flag from HealthForm
+  const handleSubmitForm = async (formData, editMode, isDuplicate = false) => {
+    if (isDuplicate) {
+        setSubmissionStatus(formData.Resident_ID || 'EXISTING');
         setStatusMessage({
-          title: isNewRecord ? 'Record Created!' : 'Record Updated!',
-          desc: isNewRecord ? 'The new health record has been saved.' : 'Changes have been synchronized.',
-          type: 'success'
+          title: "RECORD ALREADY EXISTS",
+          desc: `"${formData.First_Name} ${formData.Last_Name}" is already in the system.`,
+          type: "delete" 
         });
-       
-        setShowForm(false);
-        setEditingRecord(null);
         setShowStatus(true);
-        playSuccessSound();
-
-
-        if (onSubmitSuccess) onSubmitSuccess();
-        fetchRecords();
-      }
-    } catch (err) {
-      setError('Failed to save record.');
+        playDeleteSound();
+        return;
     }
+
+    // Regular success flow (called after HealthForm confirms save)
+    setSubmissionStatus(formData.Resident_ID);
+    setStatusMessage({
+      title: editMode ? 'Record Updated!' : 'Record Created!',
+      desc: editMode ? 'Changes have been synchronized.' : 'The new health record has been saved.',
+      type: 'success'
+    });
+    
+    setShowStatus(true);
+    playSuccessSound();
+    fetchRecords();
   };
 
 
@@ -213,7 +198,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
 
   return (
     <div className="records-container p-4">
-      {/* UNIFIED OVERLAY NOTIFICATION */}
       <AnimatePresence>
         {showStatus && (
           <motion.div
@@ -224,7 +208,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
           >
             <div className="submission-alert-content shadow-lg">
               <div className={`alert-icon ${statusMessage.type === 'delete' ? 'icon-delete' : ''}`}>
-                {statusMessage.type === 'delete' ? '🗑️' : '✓'}
+                {statusMessage.title.includes("EXISTS") ? '⚠️' : (statusMessage.type === 'delete' ? '🗑️' : '✓')}
               </div>
               <div className="alert-text">
                 <strong>{statusMessage.title}</strong>

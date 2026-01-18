@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 const STREETS = [
@@ -72,13 +73,14 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
   useEffect(() => {
     const currentAdmin = localStorage.getItem('username') || 'System';
+    const deviceToday = new Date().toISOString().split('T')[0];
 
 
     if (initialData) {
       const rawBirthDate = initialData.Birthdate || '';
       const formattedBirthdate = rawBirthDate ? rawBirthDate.split('T')[0] : '';
-      const formattedVisitDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : '';
-     
+      const formattedVisitDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : deviceToday;
+      
       setFormData({
         ...initialData,
         Birthdate: formattedBirthdate,
@@ -97,7 +99,8 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         ...prev,
         Resident_ID: generateResidentID(),
         Barangay: 'Marikina Heights',
-        Recorded_By_Name: currentAdmin
+        Recorded_By_Name: currentAdmin,
+        Date_Visited: deviceToday 
       }));
     }
   }, [initialData]);
@@ -126,13 +129,11 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     setFormData(updatedData);
   };
 
-
   useEffect(() => {
     if (message) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [message]);
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -155,8 +156,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
      
       let url = 'http://localhost:5000/api/health-records';
       const method = editMode ? 'PUT' : 'POST';
-
-
       if (editMode && recordId) {
         url = `${url}/${recordId}`;
       }
@@ -177,13 +176,11 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
       const result = await response.json();
 
-
+      // DUPLICATE LOGIC: Pass back to parent and exit form
       if (result.isDuplicate) {
-        setMessage({
-          type: 'error',
-          text: `⚠️ RECORD ALREADY EXISTS: "${formData.First_Name} ${formData.Last_Name}" is already in the system.`
-        });
-        return;
+        if (onSubmit) onSubmit(formData, editMode, true);
+        onCancel(); 
+        return; 
       }
 
 
@@ -230,7 +227,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               {message.text}
             </div>
           )}
-
 
           <form onSubmit={handleSubmit}>
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Personal Information</h5>
@@ -284,7 +280,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Vitals & Measurements</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-3">
@@ -318,7 +313,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Medical History</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-6">
@@ -337,7 +331,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Address & Visit Details</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-6">
@@ -355,7 +348,15 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
               <div className="col-md-6">
                 <label className="form-label small fw-bold text-danger">Date of Visit</label>
-                <input type="date" className="form-control border-danger border-opacity-50" name="Date_Visited" value={formData.Date_Visited} onChange={handleChange} required />
+                <input 
+                  type="date" 
+                  className="form-control border-danger border-opacity-50 fw-bold" 
+                  name="Date_Visited" 
+                  value={formData.Date_Visited} 
+                  onChange={handleChange}
+                  required 
+                />
+                <small className="text-muted">Auto-filled based on system date.</small>
               </div>
               <div className="col-md-6 d-flex align-items-end">
                 <div className="p-2 bg-primary-subtle border border-primary-subtle rounded-3 w-100">

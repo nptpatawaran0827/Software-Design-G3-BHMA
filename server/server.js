@@ -42,7 +42,6 @@ app.get('/api/activity-logs', (req, res) => {
   });
 });
 
-
 /* ================= RESIDENT (STRICT ONE NAME POLICY) ================= */
 app.post('/api/residents', (req, res) => {
   const d = req.body;
@@ -182,7 +181,6 @@ app.post('/api/health-records', (req, res) => {
     AND COALESCE(TRIM(Middle_Name), '') = COALESCE(TRIM(?), '')
     AND TRIM(Last_Name) = TRIM(?)
   `;
-
 
   db.query(checkSql, [d.First_Name, d.Middle_Name || '', d.Last_Name], (err, rows) => {
     if (err) return res.status(500).json({ error: "DB Check Error", details: err.message });
