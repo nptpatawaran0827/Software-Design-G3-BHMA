@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, Save, Edit, Trash2 } from 'lucide-react'; 
+import { Search, Plus, Edit, Trash2, Calendar, User, Activity } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion'; 
 import HealthForm from './HealthForm'; 
 import './style/RecordsPage.css';
 
+
 const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess }) => {
-  
+ 
   /* ==================== STATE MANAGEMENT ==================== */
   const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
@@ -13,6 +14,56 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
+
+
+  // Unified Notification States
+  const [showStatus, setShowStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState({ title: '', desc: '', type: 'success' });
+  const [submissionStatus, setSubmissionStatus] = useState('');
+
+
+  /* ==================== HOME INTEGRATION ==================== */
+  useEffect(() => {
+    if (autoOpenForm) {
+      if (preFillData) {
+        setEditingRecord(preFillData);
+      } else {
+        setEditingRecord(null);
+      }
+      setShowForm(true);
+      if (onSubmitSuccess) {
+        onSubmitSuccess();
+      }
+    }
+  }, [autoOpenForm, preFillData, onSubmitSuccess]);
+
+
+  /* ==================== AUTO-CLOSE TIMER ==================== */
+  useEffect(() => {
+    if (showStatus) {
+      const timer = setTimeout(() => {
+        setShowStatus(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showStatus]);
+
+
+  /* ==================== SOUND LOGIC ==================== */
+  const playSuccessSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1433/1433-preview.mp3');
+    audio.volume = 0.4;
+    audio.play().catch(e => console.log("Audio interaction required", e));
+  };
+
+
+  const playDeleteSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1470/1470-preview.mp3');
+    audio.volume = 0.3;
+    audio.play().catch(e => console.log("Audio interaction required", e));
+  };
+
 
   /* ==================== HELPER: CALCULATE AGE ==================== */
   const calculateAge = (birthDate) => {
@@ -27,6 +78,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     return age;
   };
 
+
   /* ==================== DATA FETCHING ==================== */
   const fetchRecords = async () => {
     try {
@@ -36,28 +88,34 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
       const data = await res.json();
       setRecords(data);
     } catch (err) {
-      setError('Could not connect to the server. Please check backend.');
+      setError('Could not connect to the server.');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchPendingCount = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/pending-residents');
+      if (!res.ok) throw new Error('Failed to fetch pending residents');
+      const data = await res.json();
+      setPendingCount(data.length);
+    } catch (err) {
+      console.error('Failed to fetch pending count:', err);
+    }
+  };
+
   useEffect(() => {
     fetchRecords();
+    fetchPendingCount();
+    
+    const interval = setInterval(() => {
+      fetchPendingCount();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
-  /* ==================== AUTO-OPEN LOGIC ==================== */
-  useEffect(() => {
-    if (autoOpenForm) {
-      if (preFillData) {
-        setEditingRecord(preFillData);
-        setShowForm(true);
-      } else if (records.length > 0) {
-        setEditingRecord(records[0]);
-        setShowForm(true);
-      }
-    }
-  }, [autoOpenForm, preFillData, records.length]);
 
   /* ==================== CRUD OPERATIONS ==================== */
   const handleAddNewRecord = () => {
@@ -65,102 +123,89 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     setShowForm(true);
   };
 
+
   const handleEditRecord = (record) => {
     setEditingRecord(record);
     setShowForm(true);
   };
+
 
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingRecord(null);
   };
 
-  const handleSubmitForm = async (formData) => {
-    try {
-      // Get Admin Data from localStorage
-      const adminId = parseInt(localStorage.getItem('adminId'), 10);
-      const adminUsername = localStorage.getItem('username') || 'Admin';
-
-      if (!adminId) {
-        setError('Admin ID not found. Please log in again.');
+  const handleSubmitForm = async (formData, editMode, isDuplicate = false) => {
+    if (isDuplicate) {
+        setSubmissionStatus(formData.Resident_ID || 'EXISTING');
+        setStatusMessage({
+          title: "RECORD ALREADY EXISTS",
+          desc: `"${formData.First_Name} ${formData.Last_Name}" is already in the system.`,
+          type: "delete" 
+        });
+        setShowStatus(true);
+        playDeleteSound();
         return;
-      }
-      
-      const isNewRecord = !editingRecord || !editingRecord.Health_Record_ID;
-      
-      // 1. Save Resident Info
-      const residentUrl = isNewRecord 
-        ? `http://localhost:5000/api/residents`
-        : `http://localhost:5000/api/residents/${formData.Resident_ID}`;
-
-      const resUpdate = await fetch(residentUrl, {
-        method: isNewRecord ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, admin_username: adminUsername })
-      });
-
-      if (!resUpdate.ok) throw new Error('Failed to save resident info');
-
-      // 2. Save Health Record
-      const healthUrl = isNewRecord
-        ? 'http://localhost:5000/api/health-records'
-        : `http://localhost:5000/api/health-records/${editingRecord.Health_Record_ID}`;
-      
-      const res = await fetch(healthUrl, {
-        method: isNewRecord ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...formData, 
-          Recorded_By: adminId, 
-          adminId: adminId,
-          admin_username: adminUsername 
-        })
-      });
-      
-      if (res.ok) {
-        setShowForm(false);
-        setEditingRecord(null);
-        if (onSubmitSuccess) onSubmitSuccess(); // Updates Dashboard & Activity Log in Home.js
-        fetchRecords(); 
-      }
-    } catch (err) {
-      setError('Failed to save record.');
     }
+
+    setSubmissionStatus(formData.Resident_ID);
+    setStatusMessage({
+      title: editMode ? 'Record Updated!' : 'Record Created!',
+      desc: editMode ? 'Changes have been synchronized.' : 'The new health record has been saved.',
+      type: 'success'
+    });
+    
+    setShowStatus(true);
+    playSuccessSound();
+    fetchRecords();
+    fetchPendingCount();
   };
 
-  const handleDeleteRecord = async (recordId) => {
-    if (!window.confirm('Are you sure you want to delete this record? This will remove all associated resident data.')) return;
-    
-    // Get admin username for the activity log
+
+  const handleDeleteRecord = async (record) => {
+    const recordId = record.Health_Record_ID;
+    const residentId = record.Resident_ID;
+   
+    if (!window.confirm(`Are you sure you want to delete record for ID: ${residentId}?`)) return;
     const adminUsername = localStorage.getItem('username') || 'Admin';
 
+
     try {
-      // REVISED: Passing admin_username as a query param to match the Home.js pattern
-      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, { 
-        method: 'DELETE' 
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, {
+        method: 'DELETE'
       });
-      
+     
       if (res.ok) {
-        if (onSubmitSuccess) onSubmitSuccess(); // Refresh Recent Activity in Home.js
+        setSubmissionStatus(residentId);
+        setStatusMessage({
+          title: 'Record Deleted',
+          desc: 'The health record was removed from the system.',
+          type: 'delete'
+        });
+       
+        setShowStatus(true);
+        playDeleteSound();
         fetchRecords();
+        fetchPendingCount();
       }
     } catch (err) {
       setError('Failed to delete record.');
     }
   };
 
+
   /* ==================== SEARCH FILTER ==================== */
-  const filteredRecords = records.filter(record => 
+  const filteredRecords = records.filter(record =>
     (record.Resident_Name || `${record.First_Name} ${record.Last_Name}`)
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
 
-  /* ==================== RENDER FORM VIEW ==================== */
+
   if (showForm) {
     return (
-      <HealthForm 
-        onCancel={handleCancelForm} 
+      <HealthForm
+        onCancel={handleCancelForm}
         onSubmit={handleSubmitForm}
         editMode={!!editingRecord?.Health_Record_ID}
         initialData={editingRecord}
@@ -168,103 +213,200 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     );
   }
 
-  /* ==================== RENDER TABLE VIEW ==================== */
+
   return (
-    <div className="records-container p-4">
-      {/* HEADER SECTION */}
-      <div className="d-flex justify-content-between align-items-center mb-4 px-3">
-        <div>
-          <h2 className="fw-bold mb-1">Patient Records</h2>
-          <p className="text-muted small">Manage resident medical check-ups</p>
+    <div className="records-page-wrapper">
+      {/* Status Notification */}
+      <AnimatePresence>
+        {showStatus && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="records-alert-overlay"
+          >
+            <div className={`records-alert-content ${statusMessage.type === 'delete' ? 'alert-delete' : 'alert-success'}`}>
+              <div className="alert-icon-circle">
+                {statusMessage.title.includes("EXISTS") ? '⚠️' : (statusMessage.type === 'delete' ? '🗑️' : '✓')}
+              </div>
+              <div className="alert-text-content">
+                <strong className="alert-title">{statusMessage.title}</strong>
+                <p className="alert-id">Resident ID: <span className="id-badge">{submissionStatus}</span></p>
+                <small className="alert-description">{statusMessage.desc}</small>
+              </div>
+              <button className="alert-close-btn" onClick={() => setShowStatus(false)}>×</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header Section */}
+      <div className="records-header">
+        <div className="header-content">
+          <div className="header-text">
+            <h2 className="records-title">PATIENT RECORDS</h2>
+            <p className="records-subtitle">
+              <Activity size={16} className="me-1" />
+              Comprehensive Health Records Management
+            </p>
+          </div>
+          <button onClick={handleAddNewRecord} className="btn-add-record">
+            <Plus size={20} /> Add New Record
+          </button>
         </div>
-        <button onClick={handleAddNewRecord} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
-          <Plus size={18} /> Add Record
-        </button>
       </div>
 
-      {/* SEARCH BAR */}
-      <div className="px-3 mb-4">
-        <div className="search-wrapper shadow-sm">
-          <Search className="search-icon" size={20} />
+      {/* Stats Overview */}
+      <div className="records-stats">
+        <div className="stat-box">
+          <div className="stat-icon stat-icon-warning">
+            <User size={24} />
+          </div>
+          <div className="stat-info">
+            <h3 className="stat-value">{pendingCount}</h3>
+            <p className="stat-label">Pending Approvals</p>
+          </div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-icon stat-icon-success">
+            <Activity size={24} />
+          </div>
+          <div className="stat-info">
+            <h3 className="stat-value">{records.length}</h3>
+            <p className="stat-label">Total Records</p>
+          </div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-icon stat-icon-info">
+            <Calendar size={24} />
+          </div>
+          <div className="stat-info">
+            <h3 className="stat-value">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</h3>
+            <p className="stat-label">Today's Date</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="search-section">
+        <div className="search-container">
+          <Search className="search-icon-input" size={20} />
           <input 
-            type="text" className="form-control custom-search" 
-            placeholder="Search resident..."
+            type="text" 
+            className="search-input" 
+            placeholder="Search by name, ID, or condition..."
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          {searchTerm && (
+            <button className="search-clear" onClick={() => setSearchTerm('')}>×</button>
+          )}
         </div>
       </div>
-      
-      {error && (
-        <div className="alert alert-danger mx-3 alert-dismissible fade show" role="alert">
-          {error}
-          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
-        </div>
-      )}
 
-      {/* TABLE SECTION */}
-      <div className="card border-0 shadow-sm rounded-4 overflow-hidden mx-3">
-        <div className="card-body p-0">
+      {/* Records Table */}
+      <div className="records-table-container">
+        <div className="table-card">
           {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" />
-              <p className="mt-2 text-muted">Loading health records...</p>
+            <div className="loading-state">
+              <div className="spinner-border text-primary" role="status"></div>
+              <p className="mt-3 text-muted">Loading records...</p>
+            </div>
+          ) : filteredRecords.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📋</div>
+              <h4 className="empty-title">No Records Found</h4>
+              <p className="empty-description">
+                {searchTerm ? 'Try adjusting your search terms' : 'Start by adding a new patient record'}
+              </p>
+              {!searchTerm && (
+                <button onClick={handleAddNewRecord} className="btn-empty-action">
+                  <Plus size={18} /> Add First Record
+                </button>
+              )}
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead className="table-light">
-                  <tr className="text-uppercase small fw-bold">
-                    <th className="ps-4">Name</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Last Visit</th>
-                    <th>Recorded By</th>
-                    <th>Status</th>
-                    <th className="text-center">Actions</th>
+            <div className="table-wrapper">
+              <table className="records-table">
+                <thead>
+                  <tr>
+                    <th className="th-name">Patient Name</th>
+                    <th className="th-center">Age</th>
+                    <th className="th-center">Gender</th>
+                    <th className="th-center">Last Visit</th>
+                    <th className="th-center">Recorded By</th>
+                    <th className="th-center">Status</th>
+                    <th className="th-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRecords.length === 0 ? (
-                    <tr><td colSpan="7" className="text-center py-5 text-muted">No records found.</td></tr>
-                  ) : (
-                    filteredRecords.map((record) => (
-                      <motion.tr 
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        key={record.Health_Record_ID} 
-                        className="align-middle"
-                      >
-                        <td className="ps-4 fw-bold">
-                          {record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}
-                        </td>
-                        <td>{record.Age || calculateAge(record.Birthdate)} <small className="text-muted">yrs</small></td>
-                        <td>{record.Sex}</td>
-                        <td>{record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString() : 'N/A'}</td>
-                        <td>
-                          <span className="badge bg-light text-primary border">
-                            {record.Recorded_By_Name || 'Unknown Admin'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge rounded-pill ${(!record.status || record.status === 'Active') ? 'bg-success' : 'bg-secondary'}`}>
-                            {record.status || 'Active'}
-                          </span>
-                        </td>
-                        <td className="text-center">
-                          <div className="btn-group">
-                            <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditRecord(record)}>
-                              <Edit size={14} className="me-1" /> Edit
-                            </button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteRecord(record.Health_Record_ID)}>
-                              <Trash2 size={14} />
-                            </button>
+                  {filteredRecords.map((record) => (
+                    <tr 
+                      key={record.Health_Record_ID}
+                      className="table-row"
+                    >
+                      <td className="td-name">
+                        <div className="patient-info">
+                          <div className="patient-avatar">
+                            {(record.Resident_Name || `${record.First_Name} ${record.Last_Name}`).charAt(0).toUpperCase()}
                           </div>
-                        </td>
-                      </motion.tr>
-                    ))
-                  )}
+                          <div className="patient-details">
+                            <span className="patient-name">
+                              {record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}
+                            </span>
+                            <span className="patient-id">ID: {record.Resident_ID}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="td-center">
+                        <span className="age-badge">
+                          {record.Age || calculateAge(record.Birthdate)} yrs
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className={`gender-badge ${record.Sex === 'Male' ? 'gender-male' : 'gender-female'}`}>
+                          {record.Sex}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className="visit-date">
+                          {record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          }) : 'Not recorded'}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className="recorder-badge" data-admin={record.Recorded_By_Name || 'Admin'}>
+                          {record.Recorded_By_Name || 'Admin'}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className={`status-badge ${(!record.status || record.status === 'Active') ? 'status-active' : 'status-inactive'}`}>
+                          {record.status || 'Active'}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <div className="action-buttons">
+                          <button 
+                            className="btn-action btn-action-edit" 
+                            onClick={() => handleEditRecord(record)}
+                            title="Edit Record"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-action btn-action-delete" 
+                            onClick={() => handleDeleteRecord(record)}
+                            title="Delete Record"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -275,4 +417,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   );
 };
 
+
 export default RecordsPage;
+
+

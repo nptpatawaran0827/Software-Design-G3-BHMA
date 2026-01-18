@@ -50,12 +50,10 @@ const AnalyticsPage = () => {
 
   const handleExportPDF = async () => {
     const element = reportRef.current;
-    
-    // Higher scale for crisp text in the PDF
     const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true,
-        backgroundColor: "#ffffff" // Ensures background is white
+        backgroundColor: "#ffffff"
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -112,23 +110,23 @@ const AnalyticsPage = () => {
     setChartsData({
       residentsPerStreet: {
         labels: sortedStreets.map(([s]) => s),
-        datasets: [{ label: 'Residents', data: sortedStreets.map(([, c]) => c), backgroundColor: '#4A90E2', borderRadius: 4 }]
+        datasets: [{ label: 'Residents', data: sortedStreets.map(([, c]) => c), backgroundColor: '#4A90E2', borderRadius: 8 }]
       },
       ageGroupDistribution: {
         labels: Object.keys(ageGroupCounts),
-        datasets: [{ data: Object.values(ageGroupCounts), backgroundColor: ['#67E8F9', '#86EFAC', '#FFD93D', '#4A90E2', '#A78BFA'], borderRadius: 4 }]
+        datasets: [{ data: Object.values(ageGroupCounts), backgroundColor: ['#FFB3A7', '#86EFAC', '#67E8F9', '#FFD700', '#DDA0DD'], borderRadius: 8 }]
       },
       healthConditions: {
         labels: Object.keys(conditionCounts),
-        datasets: [{ data: Object.values(conditionCounts), backgroundColor: ['#43E9A6', '#FFD93D', '#FF6B6B'] }]
+        datasets: [{ data: Object.values(conditionCounts), backgroundColor: ['#FFB3A7', '#86EFAC', '#67E8F9', '#FFD700', '#DDA0DD'] }]
       },
       nutritionStatus: {
         labels: Object.keys(nutritionCounts),
-        datasets: [{ data: Object.values(nutritionCounts), backgroundColor: ['#67E8F9', '#43E9A6', '#FFD93D', '#FF6B6B'] }]
+        datasets: [{ data: Object.values(nutritionCounts), backgroundColor: ['#FFB3A7', '#86EFAC', '#67E8F9', '#FFD700'] }]
       },
       pwdDistribution: {
         labels: ['PWD', 'Non-PWD'],
-        datasets: [{ data: [pwdCount, records.length - pwdCount], backgroundColor: ['#A78BFA', '#E2E8F0'] }]
+        datasets: [{ data: [pwdCount, records.length - pwdCount], backgroundColor: ['#4A90E2', '#F5A623'] }]
       }
     });
   };
@@ -158,96 +156,140 @@ const AnalyticsPage = () => {
     plugins: { ...commonOptions.plugins, legend: { position: 'bottom' }, datalabels: { ...commonOptions.plugins.datalabels, anchor: 'center', align: 'center', textStrokeColor: '#ffffff', textStrokeWidth: 2 } }
   };
 
-  if (loading) return <div className="p-4 text-center">Loading analytics...</div>;
+  if (loading) return <div className="p-5 text-center"><div className="spinner-border text-primary" role="status"></div><p className="mt-3 text-muted">Loading analytics...</p></div>;
 
   const totalGender = stats.maleCount + stats.femaleCount;
   const mPct = totalGender > 0 ? Math.round((stats.maleCount / totalGender) * 100) : 0;
   const fPct = totalGender > 0 ? 100 - mPct : 0;
 
   return (
-    <div className="analytics-page-root p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="m-0 fw-bold">Analytics Dashboard</h2>
-        <button className="btn btn-danger fw-bold px-4" onClick={handleExportPDF}>
-          <i className="bi bi-file-earmark-pdf me-2"></i>Download PDF Report
+    <div className="analytics-page-wrapper">
+      {/* Header Section */}
+      <div className="analytics-header">
+        <div>
+          <h2 className="analytics-title">ANALYTICS DASHBOARD</h2>
+          <p className="analytics-subtitle">Comprehensive Health Data Insights & Reporting</p>
+        </div>
+        <button className="btn-export-pdf" onClick={handleExportPDF}>
+          <i className="bi bi-file-earmark-pdf me-2"></i>Export PDF Report
         </button>
       </div>
 
-      {/* THE PRINTABLE AREA STARTS HERE */}
-      <div ref={reportRef} className="bg-white p-4 rounded-4 shadow-sm border">
-        
-        {/* ================= PDF HEADER (NEW) ================= */}
-        <div className="text-center mb-5 pb-3 border-bottom">
-            <h2 className="fw-bold text-uppercase mb-1" style={{ letterSpacing: '2px' }}>Health Analytics Report</h2>
-            <h5 className="text-muted mb-3">Community Health Information System</h5>
-            <div className="d-flex justify-content-center gap-4 small text-secondary">
-                <span><strong>Date Generated:</strong> {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                <span><strong>Total Records:</strong> {healthRecords.length}</span>
-            </div>
+      {/* Printable Report Section - MOVED TO TOP */}
+      <div ref={reportRef} className="report-container">
+        <div className="report-header-pdf">
+          <h2 className="report-title-pdf">HEALTH ANALYTICS REPORT</h2>
+          <h5 className="report-subtitle-pdf">Community Health Information System</h5>
+          <div className="report-meta-pdf">
+            <span><strong>Date Generated:</strong> {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            <span><strong>Total Records:</strong> {healthRecords.length}</span>
+          </div>
         </div>
-        {/* ==================================================== */}
 
-        <div className="row g-3 mb-4">
-          <div className="col-lg-3"><div className="stat-card"><div>Total Residents</div><h3>{stats.totalResidents}</h3></div></div>
-          <div className="col-lg-3">
-              <div className="stat-card">
-                  <div>Gender Split</div>
-                  <span>M: {mPct}% | F: {fPct}%</span>
-                  <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden', marginTop: '5px' }}>
-                      <div style={{ width: `${mPct}%`, backgroundColor: '#4A90E2' }}></div>
-                      <div style={{ width: `${fPct}%`, backgroundColor: '#F56969' }}></div>
-                  </div>
+        {/* Stats Overview Inside PDF */}
+        <div className="stats-section-pdf">
+          <h3 className="section-heading">KEY STATISTICS</h3>
+          <div className="stats-grid">
+            <div className="stat-card-modern">
+              <i className="bi bi-people stat-icon text-success"></i>
+              <div className="stat-content">
+                <h3 className="stat-number">{stats.totalResidents}</h3>
+                <p className="stat-label">Total Residents</p>
               </div>
-          </div>
-          <div className="col-lg-3"><div className="stat-card"><div>Total PWDs</div><h3>{stats.pwdCount}</h3></div></div>
-          <div className="col-lg-3"><div className="stat-card"><div>Leading Condition</div><h3 className="text-success">{stats.topCondition}</h3></div></div>
-        </div>
+            </div>
 
-        <h5 className="fw-bold mb-3 border-start border-4 border-primary ps-2">Community Demographics</h5>
-        <div className="row g-3 mb-5">
-          <div className="col-lg-6">
-            <div className="chart-card">
-              <h6 className="fw-bold text-muted">Residents per Street</h6>
-              {chartsData.residentsPerStreet && <Bar data={chartsData.residentsPerStreet} options={barOptions} />}
+            <div className="stat-card-modern">
+              <i className="bi bi-gender-ambiguous stat-icon text-primary"></i>
+              <div className="stat-content">
+                <h3 className="stat-number">M: {mPct}% | F: {fPct}%</h3>
+                <p className="stat-label">Gender Split</p>
+                <div className="gender-bar">
+                  <div className="gender-bar-male" style={{width: `${mPct}%`}}></div>
+                  <div className="gender-bar-female" style={{width: `${fPct}%`}}></div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="col-lg-6">
-            <div className="chart-card">
-              <h6 className="fw-bold text-muted">Age Group Distribution</h6>
-              {chartsData.ageGroupDistribution && <Bar data={chartsData.ageGroupDistribution} options={barOptions} />}
-            </div>
-          </div>
-        </div>
 
-        <h5 className="fw-bold mb-3 border-start border-4 border-primary ps-2">Health & Disability Overview</h5>
-        <div className="row g-3">
-          <div className="col-lg-4">
-            <div className="chart-card text-center">
-              <h6 className="fw-bold text-muted">PWD Distribution</h6>
-              {chartsData.pwdDistribution && <Doughnut data={chartsData.pwdDistribution} options={pieOptions} />}
+            <div className="stat-card-modern stat-card-pwd">
+              <i className="bi bi-person-wheelchair stat-icon stat-icon-pwd"></i>
+              <div className="stat-content">
+                <h3 className="stat-number stat-number-pwd">{stats.pwdCount}</h3>
+                <p className="stat-label stat-label-pwd">PWD Residents</p>
+              </div>
             </div>
-          </div>
-          <div className="col-lg-4">
-            <div className="chart-card text-center">
-              <h6 className="fw-bold text-muted">Health Conditions</h6>
-              {chartsData.healthConditions && <Pie data={chartsData.healthConditions} options={pieOptions} />}
-            </div>
-          </div>
-          <div className="col-lg-4">
-            <div className="chart-card text-center">
-              <h6 className="fw-bold text-muted">Nutrition Status</h6>
-              {chartsData.nutritionStatus && <Doughnut data={chartsData.nutritionStatus} options={pieOptions} />}
+
+            <div className="stat-card-modern">
+              <i className="bi bi-clipboard2-pulse stat-icon text-success"></i>
+              <div className="stat-content">
+                <h3 className="stat-number text-success">{stats.topCondition}</h3>
+                <p className="stat-label">Top Condition</p>
+              </div>
             </div>
           </div>
         </div>
 
-          {/* PDF FOOTER (Optional) */}
-          <div className="mt-5 pt-4 text-center border-top small text-muted">
-              <p>Generated by Health Information System Dashboard of PUP CEA GROUP 3 &copy; 2026</p>
+        {/* Charts Section */}
+        <div className="charts-section">
+          <h3 className="section-heading">COMMUNITY DEMOGRAPHICS</h3>
+          <div className="charts-grid">
+            <div className="chart-card-modern">
+              <div className="chart-header">
+                <h6 className="chart-title">Residents per Street</h6>
+              </div>
+              <div className="chart-body">
+                {chartsData.residentsPerStreet && <Bar data={chartsData.residentsPerStreet} options={barOptions} />}
+              </div>
+            </div>
+
+            <div className="chart-card-modern">
+              <div className="chart-header">
+                <h6 className="chart-title">Age Group Distribution</h6>
+              </div>
+              <div className="chart-body">
+                {chartsData.ageGroupDistribution && <Bar data={chartsData.ageGroupDistribution} options={barOptions} />}
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="charts-section">
+          <h3 className="section-heading">HEALTH & DISABILITY OVERVIEW</h3>
+          <div className="charts-grid-three">
+            <div className="chart-card-modern">
+              <div className="chart-header">
+                <h6 className="chart-title">PWD Distribution</h6>
+              </div>
+              <div className="chart-body">
+                {chartsData.pwdDistribution && <Doughnut data={chartsData.pwdDistribution} options={pieOptions} />}
+              </div>
+            </div>
+
+            <div className="chart-card-modern">
+              <div className="chart-header">
+                <h6 className="chart-title">Health Conditions</h6>
+              </div>
+              <div className="chart-body">
+                {chartsData.healthConditions && <Pie data={chartsData.healthConditions} options={pieOptions} />}
+              </div>
+            </div>
+
+            <div className="chart-card-modern">
+              <div className="chart-header">
+                <h6 className="chart-title">Nutrition Status</h6>
+              </div>
+              <div className="chart-body">
+                {chartsData.nutritionStatus && <Doughnut data={chartsData.nutritionStatus} options={pieOptions} />}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="report-footer-pdf">
+          <p>Generated by Health Information System Dashboard &copy; 2026</p>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
-  export default AnalyticsPage;
+export default AnalyticsPage;

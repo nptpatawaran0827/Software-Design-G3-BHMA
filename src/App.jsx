@@ -1,4 +1,3 @@
-import Header from './Header.jsx'
 import LoginPage from './LoginPage.jsx'
 import Home from './Home.jsx'
 import LandingPage from './LandingPage.jsx'
@@ -6,7 +5,7 @@ import ResidentPage from './ResidentPage.jsx'
 import AnalyticsPage from './AnalyticsPage.jsx' 
 import RecordsPage from './RecordsPage.jsx'     
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion' // Added for smooth fade-in
+import { motion, AnimatePresence } from 'framer-motion' 
 
 function App() {
   const [isAuthed, setIsAuthed] = useState(Boolean(localStorage.getItem('authToken')))
@@ -15,7 +14,7 @@ function App() {
 
   // --- INACTIVITY STATES ---
   const [showWarning, setShowWarning] = useState(false);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(60);
   
   const logoutTimerRef = useRef(null);
   const warningTimerRef = useRef(null);
@@ -42,24 +41,22 @@ function App() {
 
   const resetInactivityTimer = useCallback(() => {
     setShowWarning(false);
-    setCountdown(10);
+    setCountdown(60);
     if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
     if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
     if (isAuthed) {
-      // 50 seconds of silence -> Show warning
       warningTimerRef.current = setTimeout(() => {
         setShowWarning(true);
         countdownIntervalRef.current = setInterval(() => {
           setCountdown(prev => prev - 1);
         }, 1000);
-      }, 50000);
+      }, 240000); 
 
-      // 60 seconds of silence -> Logout
       logoutTimerRef.current = setTimeout(() => {
         handleLogout();
-      }, 60000);
+      }, 300000);
     }
   }, [isAuthed, handleLogout]);
 
@@ -81,8 +78,6 @@ function App() {
     setSubmittedId(newId);
     setPage('landing');
   }
-
-  const isDashboardPage = ['home', 'analytics', 'records', 'healthform'].includes(page);
 
   return (
     <div className="app-root">
@@ -106,12 +101,11 @@ function App() {
                 Your session expires in <strong style={{ color: '#ff4757' }}>{countdown}s</strong>
               </p>
               
-              {/* Progress Bar */}
               <div style={progressBgStyle}>
                 <motion.div 
                   initial={{ width: '100%' }}
                   animate={{ width: '0%' }}
-                  transition={{ duration: 10, ease: "linear" }}
+                  transition={{ duration: 60, ease: "linear" }}
                   style={progressFillStyle}
                 />
               </div>
@@ -128,9 +122,6 @@ function App() {
       </AnimatePresence>
 
       <div className="app-content">
-        {isAuthed && isDashboardPage && (
-          <Header onNavigate={(target) => setPage(target)} onLogout={handleLogout} />
-        )}
 
         {page === 'landing' && (
           <LandingPage 

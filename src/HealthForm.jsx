@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 const STREETS = [
-  "Apitong Street", "Champagnat Street", "Champaca Street", 
-  "Dao Street", "Ipil Street", "East Drive Street", 
-  "General Ordonez Street", "Liwasang Kalayaan Street", 
+  "Apitong Street", "Champagnat Street", "Champaca Street",
+  "Dao Street", "Ipil Street", "East Drive Street",
+  "General Ordonez Street", "Liwasang Kalayaan Street",
   "Narra Street", "P. Valenzuela Street"
 ];
 
+
 const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
+  const [message, setMessage] = useState(null);
   const [formData, setFormData] = useState({
     First_Name: '',
     Middle_Name: '',
@@ -28,12 +32,13 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     Allergies: '',
     Contact_Number: '',
     Street: '',
-    Barangay: '',
+    Barangay: 'Marikina Heights',
     Date_Visited: '',
     Remarks: '',
     status: 'Active',
-    Recorded_By_Name: '' // Added for admin tracking
+    Recorded_By_Name: ''
   });
+
 
   const calculateAge = (birthdate) => {
     if (!birthdate) return '';
@@ -47,6 +52,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     return age >= 0 ? age : '';
   };
 
+
   const calculateNutritionStatus = (bmi) => {
     if (!bmi || bmi === '') return '';
     const bmiValue = parseFloat(bmi);
@@ -57,20 +63,23 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     return '';
   };
 
+
   const generateResidentID = () => {
-    const part1 = Math.floor(1000000 + Math.random() * 9000000); 
-    const part2 = Math.floor(1000 + Math.random() * 9000);       
+    const part1 = Math.floor(1000000 + Math.random() * 9000000);
+    const part2 = Math.floor(1000 + Math.random() * 9000);      
     return `RES-${part1}-${part2}`;
   };
 
+
   useEffect(() => {
-    // Capture the logged-in admin name
     const currentAdmin = localStorage.getItem('username') || 'System';
+    const deviceToday = new Date().toISOString().split('T')[0];
+
 
     if (initialData) {
       const rawBirthDate = initialData.Birthdate || '';
       const formattedBirthdate = rawBirthDate ? rawBirthDate.split('T')[0] : '';
-      const formattedVisitDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : '';
+      const formattedVisitDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : deviceToday;
       
       setFormData({
         ...initialData,
@@ -82,26 +91,32 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         Height: initialData.Height ? String(initialData.Height) : '',
         BMI: initialData.BMI ? String(initialData.BMI) : '',
         Nutrition_Status: initialData.Nutrition_Status || calculateNutritionStatus(initialData.BMI),
+        Barangay: initialData.Barangay || 'Marikina Heights',
         Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin
       });
     } else {
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         Resident_ID: generateResidentID(),
-        Recorded_By_Name: currentAdmin 
+        Barangay: 'Marikina Heights',
+        Recorded_By_Name: currentAdmin,
+        Date_Visited: deviceToday 
       }));
     }
   }, [initialData]);
 
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const finalValue = type === 'checkbox' ? checked : value;
-    
+   
     let updatedData = { ...formData, [name]: finalValue };
+
 
     if (name === 'Birthdate') {
       updatedData.Age = calculateAge(value);
     }
+
 
     if ((name === 'Weight' || name === 'Height') && updatedData.Weight && updatedData.Height) {
       const heightInMeters = parseFloat(updatedData.Height) / 100;
@@ -114,10 +129,85 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     setFormData(updatedData);
   };
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (message) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [message]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setMessage(null);
+
+
+    if (!formData.First_Name.trim() || !formData.Last_Name.trim()) {
+      setMessage({
+        type: 'error',
+        text: '⚠️ ONE NAME POLICY: Both First Name and Last Name are required.'
+      });
+      return;
+    }
+
+
+    try {
+      const recordId = initialData?.Health_Record_ID;
+      const adminId = localStorage.getItem('adminId');
+      const adminUsername = localStorage.getItem('username') || 'System';
+     
+      let url = 'http://localhost:5000/api/health-records';
+      const method = editMode ? 'PUT' : 'POST';
+      if (editMode && recordId) {
+        url = `${url}/${recordId}`;
+      }
+
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          Recorded_By: adminId,
+          Recorded_By_Name: adminUsername,
+          adminId: adminId,
+          admin_username: adminUsername
+        })
+      });
+
+
+      const result = await response.json();
+
+      // DUPLICATE LOGIC: Pass back to parent and exit form
+      if (result.isDuplicate) {
+        if (onSubmit) onSubmit(formData, editMode, true);
+        onCancel(); 
+        return; 
+      }
+
+
+      if (!response.ok) throw new Error(result.details || 'Submission failed');
+
+
+      const successText = editMode
+        ? `✅ Record for ${formData.First_Name} ${formData.Last_Name} has been modified successfully!`
+        : `✅ Registration Successful! Resident ID: ${formData.Resident_ID} has been added.`;
+
+
+      setMessage({ type: 'success', text: successText });
+
+
+      setTimeout(() => {
+        // We pass 'editMode' as the second argument so RecordsPage knows what to display
+        if (onSubmit) onSubmit(formData, editMode);
+        onCancel();
+      }, 2500);
+
+
+    } catch (error) {
+      console.error('Error:', error);
+      setMessage({ type: 'error', text: `❌ ${error.message}` });
+    }
   };
+
 
   return (
     <div className="p-4">
@@ -128,11 +218,17 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         </button>
       </div>
 
+
       <div className="card border-0 shadow-sm rounded-4" style={{ backgroundColor: '#f8fbfe' }}>
         <div className="card-body p-4">
+         
+          {message && (
+            <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} mb-4 shadow-sm border-0 rounded-3`}>
+              {message.text}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
-            
-            {/* 1. BASIC INFO */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Personal Information</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-4">
@@ -184,7 +280,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            {/* 2. HEALTH METRICS */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Vitals & Measurements</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-3">
@@ -218,7 +313,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            {/* 3. MEDICAL DETAILS */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Medical History</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-6">
@@ -237,18 +331,11 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            {/* 4. ADDRESS & VISIT INFO */}
             <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Address & Visit Details</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-6">
                 <label className="form-label small fw-bold">Street</label>
-                <select 
-                  className="form-select rounded-3" 
-                  name="Street" 
-                  value={formData.Street} 
-                  onChange={handleChange}
-                  required
-                >
+                <select className="form-select rounded-3" name="Street" value={formData.Street} onChange={handleChange} required>
                   <option value="">Select Street...</option>
                   {STREETS.map((street) => (
                     <option key={street} value={street}>{street}</option>
@@ -261,7 +348,15 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
               <div className="col-md-6">
                 <label className="form-label small fw-bold text-danger">Date of Visit</label>
-                <input type="date" className="form-control border-danger border-opacity-50" name="Date_Visited" value={formData.Date_Visited} onChange={handleChange} required />
+                <input 
+                  type="date" 
+                  className="form-control border-danger border-opacity-50 fw-bold" 
+                  name="Date_Visited" 
+                  value={formData.Date_Visited} 
+                  onChange={handleChange}
+                  required 
+                />
+                <small className="text-muted">Auto-filled based on system date.</small>
               </div>
               <div className="col-md-6 d-flex align-items-end">
                 <div className="p-2 bg-primary-subtle border border-primary-subtle rounded-3 w-100">
@@ -273,6 +368,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
                 <textarea className="form-control" name="Remarks" rows="2" value={formData.Remarks} onChange={handleChange} placeholder="General health remarks..."></textarea>
               </div>
             </div>
+
 
             <div className="d-flex justify-content-end gap-2 border-top pt-4">
               <button type="button" className="btn btn-light px-4 fw-bold" onClick={onCancel}>Cancel</button>
@@ -286,5 +382,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     </div>
   );
 };
+
 
 export default HealthForm;
