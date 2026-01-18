@@ -265,25 +265,38 @@ function Home({ onLogout }) {
                     const dateObj = new Date(log.created_at);
                     const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const dateFormatted = dateObj.toLocaleDateString('en-US', {
-                      month: 'long',
+                      month: 'short',
                       day: 'numeric',
                       year: 'numeric'
                     });
 
-                    const isNegative = log.action_type === 'rejected' || log.action_type === 'deleted';
+                    const isNegative = log.action_type === 'rejected' || log.action_type === 'deleted' || log.action_type === 'removed';
+                    
+                    // Determine admin class based on username
+                    let adminClass = 'admin-other';
+                    if (log.admin_username === 'Admin_H1') adminClass = 'admin-h1';
+                    else if (log.admin_username === 'Admin_H2') adminClass = 'admin-h2';
+                    
+                    // Determine action class
+                    let actionClass = '';
+                    if (log.action_type === 'added') actionClass = 'action-added';
+                    else if (log.action_type === 'modified') actionClass = 'action-modified';
+                    else if (log.action_type === 'rejected' || log.action_type === 'deleted') actionClass = 'action-deleted';
+                    else if (log.action_type === 'removed') actionClass = 'action-removed';
 
                     return (
                       <li key={log.log_id || Math.random()} className="list-group-item d-flex align-items-center py-3 border-0 px-4">
-                        <i className={`bi bi-circle-fill ${isNegative ? 'text-danger' : 'text-primary'} me-3 activity-icon`}></i>
+                        <i className={`bi bi-circle-fill ${isNegative ? 'text-danger' : 'text-success'} me-3 activity-icon`}></i>
                         <div className="small">
-                          <strong>{log.record_name}</strong> has been 
-                          <span className={isNegative ? 'text-danger fw-bold mx-1' : 'fw-bold mx-1'}>
+                          <span className="record-name">{log.record_name}</span> has been 
+                          <span className={`${actionClass} mx-1`}>
                             {log.action_type === 'added' ? 'added successfully' : 
                              log.action_type === 'modified' ? 'modified' : 
                              log.action_type === 'rejected' ? 'rejected' : 
-                             log.action_type === 'deleted' ? 'deleted' : log.action_type}
+                             log.action_type === 'deleted' ? 'deleted' :
+                             log.action_type === 'removed' ? 'removed' : log.action_type}
                           </span> 
-                          by <strong>{log.admin_username}</strong> at <strong>{time}</strong> on <strong>{dateFormatted}</strong>.
+                          by <strong className={adminClass}>{log.admin_username}</strong> at <span className="activity-time">{time}</span> on <span className="activity-date">{dateFormatted}</span>
                         </div>
                       </li>
                     );
@@ -362,9 +375,11 @@ function Home({ onLogout }) {
             {/* Middle Column - Gender Distribution */}
             <div className="col-lg-4">
               <div className="border rounded-4 overflow-hidden shadow-sm bg-white d-flex flex-column h-100 zoom-card" style={{cursor: 'pointer'}} onClick={() => setZoomedContent(
-                <div className="d-flex flex-column align-items-center justify-content-center p-4" style={{minWidth: '600px', minHeight: '500px'}}>
-                  <div className="text-white text-center py-3 fw-bold mb-4 rounded-3" style={{backgroundColor: '#14b8a6', fontSize: '1.5rem', letterSpacing: '2px', width: '100%'}}>GENDER DISTRIBUTION</div>
-                  <div className="d-flex align-items-center justify-content-center" style={{width: '100%', maxWidth: '450px', flex: 1}}>
+                <div className="d-flex flex-column align-items-center justify-content-center" style={{padding: '2rem', minHeight: '500px'}}>
+                  <div className="text-white text-center fw-bold mb-4 rounded-3 d-flex align-items-center justify-content-center" style={{backgroundColor: '#14b8a6', fontSize: 'clamp(1.2rem, 3vw, 1.8rem)', letterSpacing: '2px', width: '100%', height: '80px', padding: '1rem'}}>
+                    GENDER DISTRIBUTION
+                  </div>
+                  <div className="d-flex align-items-center justify-content-center flex-grow-1" style={{width: '100%', maxWidth: '500px', padding: '1rem'}}>
                     {genderChartData && <Doughnut data={genderChartData} options={{
                       responsive: true,
                       maintainAspectRatio: true,
@@ -373,7 +388,7 @@ function Home({ onLogout }) {
                           position: 'bottom',
                           labels: {
                             font: { size: 18, weight: 'bold' },
-                            padding: 20,
+                            padding: 25,
                             usePointStyle: true,
                             pointStyle: 'circle'
                           }
@@ -381,7 +396,7 @@ function Home({ onLogout }) {
                         tooltip: {
                           titleFont: { size: 16 },
                           bodyFont: { size: 16 },
-                          padding: 12
+                          padding: 14
                         }
                       }
                     }} />}
@@ -400,9 +415,11 @@ function Home({ onLogout }) {
             {/* Right Column - Common Diagnosis */}
             <div className="col-lg-4">
               <div className="border rounded-4 overflow-hidden shadow-sm bg-white d-flex flex-column h-100 zoom-card" style={{cursor: 'pointer'}} onClick={() => setZoomedContent(
-                <div className="d-flex flex-column align-items-center justify-content-center p-4" style={{minWidth: '600px', minHeight: '500px'}}>
-                  <div className="text-white text-center py-3 fw-bold mb-4 rounded-3" style={{backgroundColor: '#14b8a6', fontSize: '1.5rem', letterSpacing: '2px', width: '100%'}}>COMMON DIAGNOSIS</div>
-                  <div className="d-flex align-items-center justify-content-center" style={{width: '100%', maxWidth: '450px', flex: 1}}>
+                <div className="d-flex flex-column align-items-center justify-content-center" style={{padding: '2rem', minHeight: '500px'}}>
+                  <div className="text-white text-center fw-bold mb-4 rounded-3 d-flex align-items-center justify-content-center" style={{backgroundColor: '#14b8a6', fontSize: 'clamp(1.2rem, 3vw, 1.8rem)', letterSpacing: '2px', width: '100%', height: '80px', padding: '1rem'}}>
+                    COMMON DIAGNOSIS
+                  </div>
+                  <div className="d-flex align-items-center justify-content-center flex-grow-1" style={{width: '100%', maxWidth: '500px', padding: '1rem'}}>
                     {diagnosisChartData && <Pie data={diagnosisChartData} options={{
                       responsive: true,
                       maintainAspectRatio: true,
@@ -411,7 +428,7 @@ function Home({ onLogout }) {
                           position: 'bottom',
                           labels: {
                             font: { size: 18, weight: 'bold' },
-                            padding: 20,
+                            padding: 25,
                             usePointStyle: true,
                             pointStyle: 'circle'
                           }
@@ -419,7 +436,7 @@ function Home({ onLogout }) {
                         tooltip: {
                           titleFont: { size: 16 },
                           bodyFont: { size: 16 },
-                          padding: 12
+                          padding: 14
                         }
                       }
                     }} />}
@@ -446,48 +463,50 @@ function Home({ onLogout }) {
       <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
         <main className="flex-grow-1 main-content">
           <div className="shadow-sm text-white d-flex align-items-center justify-content-between header-banner">
-            <h2 className="m-0 fw-bold text-center flex-grow-1">
-              BARANGAY HEALTH MONITORING and ANALYTICS SYSTEM
-            </h2>
-            
-            {/* BUTTONS IN HEADER */}
-            <div className="d-flex align-items-center gap-2">
-              <div ref={notificationRef} className="position-relative">
-                <button className="btn btn-light position-relative" onClick={() => setShowNotification(!showNotification)}>
-                  <i className="bi bi-bell"></i>
-                  {pendingResidents.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{pendingResidents.length}</span>}
-                </button>
-                
-                {showNotification && (
-                  <div className="position-absolute end-0 mt-2 border rounded-4 shadow-lg p-0 notification-dropdown" style={{zIndex: 1050, backgroundColor: '#ffffff'}}>
-                    <div className="p-3 border-bottom d-flex justify-content-between align-items-center" style={{backgroundColor: '#f9fafb'}}>
-                      <h6 className="m-0 fw-bold text-uppercase small text-dark">Pending Requests</h6>
-                      <span className="badge bg-primary">{pendingResidents.length}</span>
+            <div className="header-content-wrapper">
+              <h2 className="m-0 fw-bold text-center">
+                BARANGAY HEALTH MONITORING and ANALYTICS SYSTEM
+              </h2>
+              
+              {/* BUTTONS IN HEADER */}
+              <div className="d-flex align-items-center gap-2 header-buttons">
+                <div ref={notificationRef} className="position-relative">
+                  <button className="btn btn-light position-relative" onClick={() => setShowNotification(!showNotification)}>
+                    <i className="bi bi-bell"></i>
+                    {pendingResidents.length > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{pendingResidents.length}</span>}
+                  </button>
+                  
+                  {showNotification && (
+                    <div className="notification-dropdown border rounded-4 shadow-lg p-0 bg-white">
+                      <div className="p-3 border-bottom d-flex justify-content-between align-items-center" style={{backgroundColor: '#f9fafb'}}>
+                        <h6 className="m-0 fw-bold text-uppercase small text-dark">Pending Requests</h6>
+                        <span className="badge bg-primary">{pendingResidents.length}</span>
+                      </div>
+                      <ul className="list-group list-group-flush notification-list">
+                        {pendingResidents.length > 0 ? (
+                          pendingResidents.map(res => (
+                            <li key={res.Pending_HR_ID} className="list-group-item p-3 border-bottom">
+                              <div className="d-flex justify-content-between align-items-center gap-2">
+                                <div className="small flex-grow-1 min-width-0">
+                                  <div className="fw-bold text-dark text-truncate">{res.Resident_Name}</div>
+                                  <div className="text-muted notification-item-subtitle text-truncate">Resident ID: {res.Resident_ID}</div>
+                                </div>
+                                <div className="d-flex gap-1 flex-shrink-0">
+                                  <button className="btn btn-success btn-sm p-1 px-2" title="Accept" onClick={() => handleAccept(res)}><i className="bi bi-check-lg"></i></button>
+                                  <button className="btn btn-outline-danger btn-sm p-1 px-2" title="Remove" onClick={() => handleRemove(res.Pending_HR_ID)}><i className="bi bi-x-lg"></i></button>
+                                </div>
+                              </div>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="list-group-item py-3 text-center text-muted">No pending residents</li>
+                        )}
+                      </ul>
                     </div>
-                    <ul className="list-group list-group-flush notification-list">
-                      {pendingResidents.length > 0 ? (
-                        pendingResidents.map(res => (
-                          <li key={res.Pending_HR_ID} className="list-group-item p-3 border-bottom">
-                            <div className="d-flex justify-content-between align-items-center">
-                              <div className="small">
-                                <div className="fw-bold text-dark">{res.Resident_Name}</div>
-                                <div className="text-muted notification-item-subtitle">Resident ID: {res.Resident_ID}</div>
-                              </div>
-                              <div className="d-flex gap-1">
-                                <button className="btn btn-success btn-sm p-1 px-2" title="Accept" onClick={() => handleAccept(res)}><i className="bi bi-check-lg"></i></button>
-                                <button className="btn btn-outline-danger btn-sm p-1 px-2" title="Remove" onClick={() => handleRemove(res.Pending_HR_ID)}><i className="bi bi-x-lg"></i></button>
-                              </div>
-                            </div>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="list-group-item py-4 text-center text-muted">No pending residents</li>
-                      )}
-                    </ul>
-                  </div>
-                )}
+                  )}
+                </div>
+                <button className="btn btn-light px-4" onClick={onLogout}>Logout</button>
               </div>
-              <button className="btn btn-light px-4" onClick={onLogout}>Logout</button>
             </div>
           </div>
           

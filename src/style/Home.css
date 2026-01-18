@@ -2,6 +2,7 @@
 .dashboard-container {
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 /* Main Wrapper */
@@ -25,17 +26,33 @@
   padding: 1.5rem 2rem;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 1rem;
+  align-items: center;
+}
+
+.header-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+  position: relative;
+}
+
+.header-buttons {
+  flex-shrink: 0;
+  position: relative;
 }
 
 .header-banner h2 {
   font-size: 2.2rem;
   letter-spacing: 1.5px;
   font-weight: 700;
+  flex-grow: 1;
 }
 
 /* Top Actions Bar - Welcome Section */
@@ -70,13 +87,57 @@
 
 /* Notification Dropdown */
 .notification-dropdown {
-  z-index: 1050;
-  width: 340px;
+  position: absolute !important;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  left: auto;
+  transform: none;
+  z-index: 2000;
+  width: 380px;
   overflow: hidden;
+  max-height: 500px;
+}
+
+@media (max-width: 992px) {
+  .notification-dropdown {
+    position: fixed !important;
+    top: 140px !important;
+    right: 3rem !important;
+    left: auto !important;
+    width: 90vw;
+    max-width: 380px;
+  }
+}
+
+/* Special breakpoint for small desktop/large tablet */
+@media (max-width: 850px) {
+  .notification-dropdown {
+    top: 160px !important;
+    right: 3rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .notification-dropdown {
+    top: 170px !important;
+    right: 2.5rem !important;
+    width: 90vw;
+    max-width: 380px;
+  }
+}
+
+@media (max-width: 576px) {
+  .notification-dropdown {
+    top: 180px !important;
+    right: 2rem !important;
+    left: auto !important;
+    width: 85vw;
+    max-width: 340px;
+  }
 }
 
 .notification-list {
-  max-height: 320px;
+  max-height: 400px;
   overflow-y: auto;
 }
 
@@ -84,15 +145,33 @@
   font-size: 0.75rem;
 }
 
-/* Recent Activity Card */
+.min-width-0 {
+  min-width: 0;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .activity-card {
   margin: 1.5rem 2.5rem;
   border: 1px solid #e5e7eb !important;
 }
 
 .activity-card .card-header {
-  background-color: #fafbfc !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  background: linear-gradient(135deg, #f8fafb 0%, #f3f4f6 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.activity-card .card-header h5 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #1f2937;
+  text-transform: uppercase;
 }
 
 .activity-list {
@@ -102,6 +181,127 @@
 
 .activity-icon {
   font-size: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.activity-list .list-group-item {
+  padding: 1.25rem 1.5rem !important;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid #f3f4f6 !important;
+  transition: background-color 0.2s ease, border-left-color 0.2s ease;
+}
+
+.activity-list .list-group-item:hover {
+  background: #f9fafb !important;
+  border-left-color: #14b8a6;
+}
+
+.activity-list .list-group-item:last-child {
+  border-bottom: none !important;
+}
+
+.activity-list strong:last-of-type {
+  background: #f0fdfa;
+  color: #0d9488;
+  border: 1px solid #99f6e4;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+/* Admin_H1 - First teal shade */
+.activity-list .admin-h1 {
+  background: #ccfbf1 !important;
+  color: #0f766e !important;
+  border-color: #5eead4 !important;
+}
+
+/* Admin_H2 - Second teal shade */
+.activity-list .admin-h2 {
+  background: #f0fdfa !important;
+  color: #0d9488 !important;
+  border-color: #99f6e4 !important;
+}
+
+.activity-list .admin-other {
+  background: #e0f7f4 !important;
+  color: #115e59 !important;
+  border-color: #7dd3c0 !important;
+}
+
+.activity-list .activity-time2 {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+.activity-list .activity-date {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+/* Action Type Styling */
+.activity-list .action-added {
+  color: #059669 !important;
+  font-weight: 700 !important;
+  background: #d1fae500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.activity-list .action-modified {
+  color: #d97706 !important;
+  font-weight: 700 !important;
+  background: #fef3c700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.activity-list .action-rejected,
+.activity-list .action-deleted {
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+  background: #fee2e2;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.activity-list .action-removed {
+  color: #d32626 !important;
+  font-weight: 700 !important;
+  background: #fae8ff00;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+/* Patient/Record Name Highlight */
+.activity-list .record-name {
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 0.95rem;
+  background: #f3f4f6;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  display: inline-block;
 }
 
 /* Dashboard Overview */
@@ -224,31 +424,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 10000;
   animation: fadeIn 0.2s ease-in-out;
   backdrop-filter: blur(4px);
+  padding: 1rem;
 }
 
 .zoom-content {
   background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  max-width: 90vw;
+  border-radius: 24px;
+  padding: 0;
+  width: 90vw;
+  max-width: 550px;
   max-height: 90vh;
   position: relative;
   animation: zoomIn 0.3s ease-out;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .zoom-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.75rem;
+  right: 0.75rem;
   background: #ef4444;
   color: white;
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -256,12 +461,14 @@
   cursor: pointer;
   font-size: 1.2rem;
   transition: all 0.2s ease;
-  z-index: 10;
+  z-index: 10001;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .zoom-close:hover {
   background: #dc2626;
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
 
 .zoom-card {
@@ -347,12 +554,12 @@
     font-size: 1.4rem;
     letter-spacing: 0.5px;
     text-align: center;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
   
   .header-banner .d-flex {
-    width: 100%;
-    justify-content: center;
+    flex-shrink: 0;
   }
   
   .top-actions-bar {
@@ -380,27 +587,37 @@
     padding: 1rem;
     min-height: auto;
   }
+
+  .header-content-wrapper {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
   
   .header-banner h2 {
     font-size: 1.1rem;
     letter-spacing: 0.3px;
     line-height: 1.3;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
+    text-align: center;
+  }
+
+  .header-buttons {
+    width: 100%;
+    justify-content: center;
   }
   
   .header-banner .d-flex.gap-2 {
     gap: 0.5rem !important;
-    flex-wrap: wrap;
   }
   
   .header-banner .btn {
     font-size: 0.85rem;
     padding: 0.4rem 0.8rem;
   }
-  
-  .notification-dropdown {
-    width: 280px;
-    right: -10px;
+
+  .notification-list {
+    max-height: 350px;
   }
   
   .top-actions-bar {
@@ -450,6 +667,22 @@
   .dashboard-overview-content small {
     font-size: 0.7rem;
   }
+  
+  .zoom-overlay {
+    padding: 0.75rem;
+  }
+  
+  .zoom-content {
+    width: 95vw;
+    max-width: 500px;
+    max-height: 85vh;
+  }
+  
+  .zoom-close {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
 }
 
 /* Small Mobile Devices */
@@ -463,10 +696,9 @@
     font-size: 0.75rem;
     padding: 0.35rem 0.6rem;
   }
-  
-  .notification-dropdown {
-    width: calc(100vw - 30px);
-    right: -5px;
+
+  .notification-list {
+    max-height: 300px;
   }
   
   .top-actions-bar h2 {
@@ -477,7 +709,19 @@
     font-size: 1rem;
   }
   
+  .zoom-overlay {
+    padding: 0.5rem;
+  }
+  
   .zoom-content {
-    padding: 1rem;
+    width: 96vw;
+    max-width: 450px;
+    max-height: 80vh;
+  }
+  
+  .zoom-close {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
   }
 }

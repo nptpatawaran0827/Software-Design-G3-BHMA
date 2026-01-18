@@ -346,12 +346,13 @@
 /* ========== TABLE STYLING ========== */
 .table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .records-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  min-width: 900px; 
 }
 
 .records-table thead {
@@ -367,12 +368,14 @@
   letter-spacing: 0.5px;
   color: #374151;
   text-align: left;
+  white-space: nowrap;
 }
 
 /* Specific column widths */
 .records-table th:nth-child(1),
 .records-table td:nth-child(1) {
   width: 20%;
+  min-width: 200px;
   padding-left: 2rem;
   text-align: left;
 }
@@ -380,36 +383,42 @@
 .records-table th:nth-child(2),
 .records-table td:nth-child(2) {
   width: 10%;
+  min-width: 80px;
   text-align: center;
 }
 
 .records-table th:nth-child(3),
 .records-table td:nth-child(3) {
   width: 12%;
+  min-width: 100px;
   text-align: center;
 }
 
 .records-table th:nth-child(4),
 .records-table td:nth-child(4) {
   width: 15%;
+  min-width: 130px;
   text-align: center;
 }
 
 .records-table th:nth-child(5),
 .records-table td:nth-child(5) {
   width: 15%;
+  min-width: 120px;
   text-align: center;
 }
 
 .records-table th:nth-child(6),
 .records-table td:nth-child(6) {
   width: 13%;
+  min-width: 100px;
   text-align: center;
 }
 
 .records-table th:nth-child(7),
 .records-table td:nth-child(7) {
   width: 15%;
+  min-width: 120px;
   text-align: center;
 }
 
@@ -492,6 +501,8 @@
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.85rem;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .gender-badge {
@@ -501,6 +512,8 @@
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .gender-male {
@@ -517,6 +530,7 @@
   color: #6b7280;
   font-size: 0.9rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .recorder-badge {
@@ -527,6 +541,8 @@
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.85rem;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 /* Slightly different teal shades for different admins */
@@ -556,6 +572,8 @@
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .status-active {
@@ -573,6 +591,7 @@
   display: flex;
   gap: 0.5rem;
   justify-content: center;
+  flex-wrap: nowrap;
 }
 
 .btn-action {
@@ -586,6 +605,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .btn-action-edit {
@@ -617,22 +637,6 @@
   }
 }
 
-@media (max-width: 1200px) {
-  .records-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .records-table th:nth-child(1),
-  .records-table td:nth-child(1) {
-    width: 25%;
-  }
-  
-  .records-table th:nth-child(2),
-  .records-table td:nth-child(2) {
-    width: 12%;
-  }
-}
-
 @media (max-width: 768px) {
   .records-page-wrapper {
     padding: 1.5rem;
@@ -657,11 +661,18 @@
     max-width: 100%;
   }
 
-  .records-alert-content {
-    min-width: auto;
-    max-width: 90vw;
+  .records-alert-overlay {
+    right: 1rem;
+    left: 1rem;
+    top: 1rem;
   }
 
+  .records-alert-content {
+    min-width: auto;
+    width: 100%;
+  }
+
+  /* Table stays scrollable on mobile */
   .records-table {
     font-size: 0.85rem;
   }
@@ -669,6 +680,15 @@
   .records-table th,
   .records-table td {
     padding: 0.75rem 0.5rem;
+  }
+
+  .records-table th:nth-child(1),
+  .records-table td:nth-child(1) {
+    padding-left: 1rem;
+  }
+
+  .td-name {
+    padding-left: 1rem;
   }
 
   .patient-avatar {
@@ -679,5 +699,72 @@
 
   .patient-name {
     font-size: 0.85rem;
+  }
+
+  .patient-id {
+    font-size: 0.7rem;
+  }
+
+  /* Keep badges readable on mobile */
+  .age-badge,
+  .gender-badge,
+  .recorder-badge,
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .visit-date {
+    font-size: 0.8rem;
+  }
+
+  /* Action buttons slightly smaller on mobile */
+  .btn-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .btn-action svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .records-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .records-table {
+    min-width: 800px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .records-page-wrapper {
+    padding: 1rem;
+  }
+
+  .records-title {
+    font-size: 1.5rem;
+  }
+
+  .stat-box {
+    padding: 1rem;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
   }
 }
