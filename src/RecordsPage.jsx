@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react'; 
+import { Search, Plus, Edit, Trash2, Calendar, User, Activity } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion'; 
 import HealthForm from './HealthForm'; 
 import './style/RecordsPage.css';
@@ -11,6 +11,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const [showStatus, setShowStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ title: '', desc: '', type: 'success' });
@@ -77,8 +78,26 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     }
   };
 
+  const fetchPendingCount = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/pending-residents');
+      if (!res.ok) throw new Error('Failed to fetch pending residents');
+      const data = await res.json();
+      setPendingCount(data.length);
+    } catch (err) {
+      console.error('Failed to fetch pending count:', err);
+    }
+  };
+
   useEffect(() => {
     fetchRecords();
+    fetchPendingCount();
+    
+    const interval = setInterval(() => {
+      fetchPendingCount();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleAddNewRecord = () => {
@@ -96,7 +115,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     setEditingRecord(null);
   };
 
-  // UPDATED: Now accepts isDuplicate flag from HealthForm
   const handleSubmitForm = async (formData, editMode, isDuplicate = false) => {
     if (isDuplicate) {
         setSubmissionStatus(formData.Resident_ID || 'EXISTING');
@@ -110,7 +128,6 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
         return;
     }
 
-    // Regular success flow (called after HealthForm confirms save)
     setSubmissionStatus(formData.Resident_ID);
     setStatusMessage({
       title: editMode ? 'Record Updated!' : 'Record Created!',
@@ -121,6 +138,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
     setShowStatus(true);
     playSuccessSound();
     fetchRecords();
+    fetchPendingCount();
   };
 
   const handleDeleteRecord = async (record) => {
@@ -146,6 +164,7 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
         setShowStatus(true);
         playDeleteSound();
         fetchRecords();
+        fetchPendingCount();
       }
     } catch (err) {
       setError('Failed to delete record.');
@@ -170,104 +189,198 @@ const RecordsPage = ({ autoOpenForm = false, preFillData = null, onSubmitSuccess
   }
 
   return (
-    <div className="records-container p-4">
+    <div className="records-page-wrapper">
+      {/* Status Notification */}
       <AnimatePresence>
         {showStatus && (
           <motion.div 
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
-            className={`submission-alert-overlay ${statusMessage.type === 'delete' ? 'delete-theme' : ''}`}
+            className="records-alert-overlay"
           >
-            <div className="submission-alert-content shadow-lg">
-              <div className={`alert-icon ${statusMessage.type === 'delete' ? 'icon-delete' : ''}`}>
+            <div className={`records-alert-content ${statusMessage.type === 'delete' ? 'alert-delete' : 'alert-success'}`}>
+              <div className="alert-icon-circle">
                 {statusMessage.title.includes("EXISTS") ? '⚠️' : (statusMessage.type === 'delete' ? '🗑️' : '✓')}
               </div>
-              <div className="alert-text">
-                <strong>{statusMessage.title}</strong>
-                <p>Resident ID: <span className="id-highlight">{submissionStatus}</span></p>
-                <small>{statusMessage.desc}</small>
+              <div className="alert-text-content">
+                <strong className="alert-title">{statusMessage.title}</strong>
+                <p className="alert-id">Resident ID: <span className="id-badge">{submissionStatus}</span></p>
+                <small className="alert-description">{statusMessage.desc}</small>
               </div>
-              <button className="close-alert" onClick={() => setShowStatus(false)}>×</button>
+              <button className="alert-close-btn" onClick={() => setShowStatus(false)}>×</button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      
-      <div className="d-flex justify-content-between align-items-center mb-4 px-3">
-        <div>
-          <h2 className="fw-bold mb-1">Patient Records</h2>
-          <p className="text-muted small">Manage resident medical check-ups</p>
+
+      {/* Header Section */}
+      <div className="records-header">
+        <div className="header-content">
+          <div className="header-text">
+            <h2 className="records-title">PATIENT RECORDS</h2>
+            <p className="records-subtitle">
+              <Activity size={16} className="me-1" />
+              Comprehensive Health Records Management
+            </p>
+          </div>
+          <button onClick={handleAddNewRecord} className="btn-add-record">
+            <Plus size={20} /> Add New Record
+          </button>
         </div>
-        <button onClick={handleAddNewRecord} className="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm">
-          <Plus size={18} /> Add Record
-        </button>
       </div>
 
-      <div className="px-3 mb-4">
-        <div className="search-wrapper shadow-sm">
-          <Search className="search-icon" size={20} />
+      {/* Stats Overview */}
+      <div className="records-stats">
+        <div className="stat-box">
+          <div className="stat-icon stat-icon-warning">
+            <User size={24} />
+          </div>
+          <div className="stat-info">
+            <h3 className="stat-value">{pendingCount}</h3>
+            <p className="stat-label">Pending Approvals</p>
+          </div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-icon stat-icon-success">
+            <Activity size={24} />
+          </div>
+          <div className="stat-info">
+            <h3 className="stat-value">{records.length}</h3>
+            <p className="stat-label">Total Records</p>
+          </div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-icon stat-icon-info">
+            <Calendar size={24} />
+          </div>
+          <div className="stat-info">
+            <h3 className="stat-value">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</h3>
+            <p className="stat-label">Today's Date</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="search-section">
+        <div className="search-container">
+          <Search className="search-icon-input" size={20} />
           <input 
-            type="text" className="form-control custom-search" 
-            placeholder="Search resident..."
+            type="text" 
+            className="search-input" 
+            placeholder="Search by name, ID, or condition..."
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          {searchTerm && (
+            <button className="search-clear" onClick={() => setSearchTerm('')}>×</button>
+          )}
         </div>
       </div>
-      
-      <div className="card border-0 shadow-sm rounded-4 overflow-hidden mx-3">
-        <div className="card-body p-0">
+
+      {/* Records Table */}
+      <div className="records-table-container">
+        <div className="table-card">
           {loading ? (
-            <div className="text-center py-5"><div className="spinner-border text-primary" /></div>
+            <div className="loading-state">
+              <div className="spinner-border text-primary" role="status"></div>
+              <p className="mt-3 text-muted">Loading records...</p>
+            </div>
+          ) : filteredRecords.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📋</div>
+              <h4 className="empty-title">No Records Found</h4>
+              <p className="empty-description">
+                {searchTerm ? 'Try adjusting your search terms' : 'Start by adding a new patient record'}
+              </p>
+              {!searchTerm && (
+                <button onClick={handleAddNewRecord} className="btn-empty-action">
+                  <Plus size={18} /> Add First Record
+                </button>
+              )}
+            </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead className="table-light">
-                  <tr className="text-uppercase small fw-bold">
-                    <th className="ps-4">Name</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Last Visit</th>
-                    <th>Recorded By</th>
-                    <th>Status</th>
-                    <th className="text-center">Actions</th>
+            <div className="table-wrapper">
+              <table className="records-table">
+                <thead>
+                  <tr>
+                    <th className="th-name">Patient Name</th>
+                    <th className="th-center">Age</th>
+                    <th className="th-center">Gender</th>
+                    <th className="th-center">Last Visit</th>
+                    <th className="th-center">Recorded By</th>
+                    <th className="th-center">Status</th>
+                    <th className="th-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <AnimatePresence mode='popLayout'>
-                    {filteredRecords.map((record) => (
-                      <motion.tr 
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        key={record.Health_Record_ID} 
-                        className="align-middle"
-                      >
-                        <td className="ps-4 fw-bold">{record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}</td>
-                        <td>{record.Age || calculateAge(record.Birthdate)} <small className="text-muted">yrs</small></td>
-                        <td>{record.Sex}</td>
-                        <td>{record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString() : 'N/A'}</td>
-                        <td>
-                          <span className="badge bg-light text-primary border">
-                            {record.Recorded_By_Name || 'Admin'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge rounded-pill ${(!record.status || record.status === 'Active') ? 'bg-success' : 'bg-secondary'}`}>
-                            {record.status || 'Active'}
-                          </span>
-                        </td>
-                        <td className="text-center">
-                          <div className="btn-group">
-                            <button className="btn btn-sm btn-outline-primary" onClick={() => handleEditRecord(record)}><Edit size={14} /></button>
-                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteRecord(record)}><Trash2 size={14} /></button>
+                  {filteredRecords.map((record) => (
+                    <tr 
+                      key={record.Health_Record_ID}
+                      className="table-row"
+                    >
+                      <td className="td-name">
+                        <div className="patient-info">
+                          <div className="patient-avatar">
+                            {(record.Resident_Name || `${record.First_Name} ${record.Last_Name}`).charAt(0).toUpperCase()}
                           </div>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                          <div className="patient-details">
+                            <span className="patient-name">
+                              {record.Resident_Name || `${record.First_Name} ${record.Last_Name}`}
+                            </span>
+                            <span className="patient-id">ID: {record.Resident_ID}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="td-center">
+                        <span className="age-badge">
+                          {record.Age || calculateAge(record.Birthdate)} yrs
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className={`gender-badge ${record.Sex === 'Male' ? 'gender-male' : 'gender-female'}`}>
+                          {record.Sex}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className="visit-date">
+                          {record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          }) : 'Not recorded'}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className="recorder-badge" data-admin={record.Recorded_By_Name || 'Admin'}>
+                          {record.Recorded_By_Name || 'Admin'}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <span className={`status-badge ${(!record.status || record.status === 'Active') ? 'status-active' : 'status-inactive'}`}>
+                          {record.status || 'Active'}
+                        </span>
+                      </td>
+                      <td className="td-center">
+                        <div className="action-buttons">
+                          <button 
+                            className="btn-action btn-action-edit" 
+                            onClick={() => handleEditRecord(record)}
+                            title="Edit Record"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-action btn-action-delete" 
+                            onClick={() => handleDeleteRecord(record)}
+                            title="Delete Record"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
