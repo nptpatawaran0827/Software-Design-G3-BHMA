@@ -2,17 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 
-const STREETS = [
-  "Apitong Street", "Champagnat Street", "Champaca Street",
-  "Dao Street", "Ipil Street", "East Drive Street",
-  "General Ordonez Street", "Liwasang Kalayaan Street",
-  "Narra Street", "P. Valenzuela Street"
-];
-
-
 const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
-  const [message, setMessage] = useState(null);
-  const [formData, setFormData] = useState({
+   const [streetList, setStreetList] = useState([]);
+
+   useEffect(() => {
+    const fetchStreets = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/streets');
+        const data = await res.json();
+        setStreetList(data);
+      } catch (err) {
+        console.error("Failed to fetch streets:", err);
+      }
+    };
+    fetchStreets();
+  }, []);
+
+   const [message, setMessage] = useState(null);
+   const [formData, setFormData] = useState({
     First_Name: '',
     Middle_Name: '',
     Last_Name: '',
@@ -31,7 +38,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     Diagnosis: '',
     Allergies: '',
     Contact_Number: '',
-    Street: '',
+    Street_ID: '',
     Barangay: 'Marikina Heights',
     Date_Visited: '',
     Remarks: '',
@@ -335,10 +342,12 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
             <div className="row g-3 mb-4">
               <div className="col-md-6">
                 <label className="form-label small fw-bold">Street</label>
-                <select className="form-select rounded-3" name="Street" value={formData.Street} onChange={handleChange} required>
+                <select className="form-select rounded-3" name="Street_ID" value={formData.Street_ID} onChange={handleChange} required>
                   <option value="">Select Street...</option>
-                  {STREETS.map((street) => (
-                    <option key={street} value={street}>{street}</option>
+                     {streetList.map((s) => (
+                      <option key={s.Street_ID} value={s.Street_ID}>
+                       {s.Street_Name}
+                   </option>
                   ))}
                 </select>
               </div>

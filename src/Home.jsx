@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar, Doughnut } from 'react-chartjs-2';
-import Sidebar from './Sidebar';
 import RecordsPage from './RecordsPage';
-import AnalyticsPage from './AnalyticsPage';
 import './style/Home.css';
+import HeatmapPage from './HeatmapPage'; // Import the Heatmap component
+
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -13,9 +13,7 @@ function Home({ onLogout }) {
   const adminUsername = localStorage.getItem('username') || 'Administrator';
   const adminId = localStorage.getItem('adminId') || 'N/A';
 
-  const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem('activeDashboardTab') || 'Home';
-  });
+  const [activeTab, setActiveTab] = useState('Home');
 
   const [filter, setFilter] = useState('All Activities');
   const [activities, setActivities] = useState([]); 
@@ -219,7 +217,10 @@ function Home({ onLogout }) {
         />
       );
     }
-    if (activeTab === 'Analytics') return <AnalyticsPage />;
+    if (activeTab === 'Heatmap') {
+      return (<HeatmapPage />);
+    }
+    
 
     return (
       <>
@@ -442,7 +443,7 @@ function Home({ onLogout }) {
 
   return (
     <div className="dashboard-container d-flex">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
       <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
         <main className="flex-grow-1 main-content">
           <div className="shadow-sm text-white d-flex align-items-center justify-content-between header-banner">
@@ -487,7 +488,7 @@ function Home({ onLogout }) {
                   </div>
                 )}
               </div>
-              <button className="btn btn-light px-4" onClick={onLogout}>Logout</button>
+              
             </div>
           </div>
           

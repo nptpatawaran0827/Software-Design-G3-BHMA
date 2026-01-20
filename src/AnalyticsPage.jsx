@@ -87,8 +87,8 @@ const AnalyticsPage = () => {
   const buildChartsData = (records, conditionCounts, pwdCount) => {
     const streetCounts = {};
     records.forEach(r => {
-      if (r.Street) {
-        const street = r.Street.trim();
+      if (r.Street_Name) {
+        const street = r.Street_Name.trim();
         streetCounts[street] = (streetCounts[street] || 0) + 1;
       }
     });

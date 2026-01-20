@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom'; // Use NavLink for routing
 import logoImage from './assets/logo2.png'; 
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = ({ onLogout }) => { // Accept onLogout prop
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -11,15 +12,16 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       setIsMobile(mobile);
       if (!mobile) setIsCollapsed(false);
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Update paths to match your App.jsx Routes
   const menuItems = [
-    { name: 'Home', icon: '🏠', file: 'HomePage' },
-    { name: 'Records', icon: '📋', file: 'RecordsPage' },
-    { name: 'Analytics', icon: '📊', file: 'AnalyticsPage' },
+    { name: 'Home', icon: '🏠', path: '/Dashboard' },
+    { name: 'Records', icon: '📋', path: '/Records' },
+    { name: 'Analytics', icon: '📊', path: '/Analytics' },
+    { name: 'Heatmap', icon: '🔥', path: '/Heatmap' },
   ];
 
   const sidebarWidth = isMobile && isCollapsed ? '80px' : '240px';
@@ -42,29 +44,39 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       
       <div className="nav flex-column nav-pills p-3 gap-3 flex-grow-1">
         {menuItems.map((item) => (
-          <button 
+          <NavLink 
             key={item.name} 
-            onClick={() => setActiveTab(item.name)}
-            className={`nav-link text-start d-flex align-items-center gap-3 border-0 transition-all ${
-              activeTab === item.name ? 'active shadow-sm' : 'text-dark bg-transparent'
-            }`}
-            style={{
-              ...(activeTab === item.name ? { backgroundColor: '#00695c', color: 'white' } : {}),
+            to={item.path}
+            className={({ isActive }) => 
+              `nav-link text-start d-flex align-items-center gap-3 border-0 transition-all ${
+                isActive ? 'active shadow-sm text-white' : 'text-dark bg-transparent'
+              }`
+            }
+            style={({ isActive }) => ({
+              backgroundColor: isActive ? '#00695c' : 'transparent',
               padding: '16px 20px',
               fontSize: '1.1rem',
-              fontWeight: '600'
-            }}
-            title={item.file}
+              fontWeight: '600',
+              textDecoration: 'none'
+            })}
           >
             <span style={{ fontSize: '1.5rem', minWidth: '30px' }}>{item.icon}</span> 
             {!isCollapsed && (
-              <div className="d-flex flex-column">
-                <span className="fw-bold" style={{ fontSize: '1.1rem' }}>{item.name}</span>
-                <small style={{ fontSize: '0.7rem', opacity: 0.7 }}>{item.file}</small>
-              </div>
+              <span className="fw-bold" style={{ fontSize: '1.1rem' }}>{item.name}</span>
             )}
-          </button>
+          </NavLink>
         ))}
+      </div>
+
+      {/* Added Logout Button at the bottom */}
+      <div className="p-3 border-top">
+        <button 
+          onClick={onLogout}
+          className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
+          style={{ fontWeight: '600' }}
+        >
+          <span>🚪</span> {!isCollapsed && 'Logout'}
+        </button>
       </div>
     </div>
   );

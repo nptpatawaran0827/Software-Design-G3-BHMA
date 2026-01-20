@@ -12,6 +12,10 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
 
 .sidebar { width: 240px; background: white; border-right: 1px solid #eee; display: flex; flex-direction: column; }
 .sidebar-header { padding: 20px; }
+/* Update your sidebar to handle the collapsed state */
+.sidebar.collapsed {width: 80px;}
+.sidebar.collapsed .logo-text,
+.sidebar.collapsed .nav-item span {display: none;} /* Hide text when collapsed */
 .logo-section { display: flex; align-items: center; gap: 10px; }
 .logo-bg { background: #1a7b43; color: white; padding: 6px; border-radius: 6px; }
 .logo-text { font-weight: 800; font-size: 1.1rem; color: #333; }
@@ -53,7 +57,7 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
 .s-box span { font-size: 0.65rem; color: #aaa; text-transform: uppercase; }
 
 /* --- MODAL (Pic 2 / Ref) --- */
-.modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+.modal-backdrop {position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); display: flex;align-items: center; justify-content: center; z-index: 9999;}
 .modal-white-box { background: white !important; width: 95%; max-width: 650px; padding: 35px; border-radius: 18px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
 .modal-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 25px; }
 .modal-top h2 { margin: 0; font-size: 1.4rem; font-weight: 700; }
@@ -94,12 +98,14 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
 /* --- THE MODAL CONTAINER (Fixes stretching) --- */
 .modal-content-box {
   background: white !important;
-  width: 95%;
-  max-width: 600px; /* Limits the width so it doesn't stretch */
-  border-radius: 12px;
+  width: 90%;
+  max-width: 650px; /* Prevents the form from looking too wide on big screens */
+  max-height: 90vh; /* Prevents modal from going off-screen */
+  overflow-y: auto; /* Adds scrollbar if the form is long */
+  border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  color: #1a1a1a !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .modal-header {
@@ -193,4 +199,34 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
 
 .modal-submit-btn:hover {
   background-color: #2563eb;
+}
+
+/* --- HEATMAP PAGE STYLES --- */
+.heatmap-container {
+  height: calc(100vh - 120px); /* Adjust based on your header height */
+  width: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  margin-top: 20px;
+  position: relative;
+}
+
+/* Ensure Leaflet map fills the container */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1; /* Keep map below dropdowns/modals */
+}
+
+/* Custom Heatmap Legend Overlay */
+.map-legend {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }

@@ -1,16 +1,19 @@
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import MainLayout from './MainLayout.jsx'; 
 import LoginPage from './LoginPage.jsx'
 import Home from './Home.jsx'
 import LandingPage from './LandingPage.jsx'
 import ResidentPage from './ResidentPage.jsx'
 import AnalyticsPage from './AnalyticsPage.jsx' 
 import RecordsPage from './RecordsPage.jsx'     
+import HeatmapPage from './HeatmapPage'; // Heatmap imported
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion' 
 
 function App() {
-  const [isAuthed, setIsAuthed] = useState(Boolean(localStorage.getItem('authToken')))
-  const [page, setPage] = useState(() => localStorage.getItem('currentPage') || 'landing')
-  const [submittedId, setSubmittedId] = useState(null)
+  const navigate = useNavigate();
+  const [isAuthed, setIsAuthed] = useState(Boolean(localStorage.getItem('authToken')));
+  const [submittedId, setSubmittedId] = useState(null);
 
   // --- INACTIVITY STATES ---
   const [showWarning, setShowWarning] = useState(false);
@@ -20,24 +23,19 @@ function App() {
   const warningTimerRef = useRef(null);
   const countdownIntervalRef = useRef(null);
 
-  useEffect(() => {
-    localStorage.setItem('currentPage', page);
-  }, [page]);
-
-  function handleLoginSuccess() {
-    localStorage.setItem('authToken', 'sample-token')
-    setIsAuthed(true)
-    setPage('home')
-  }
-
   const handleLogout = useCallback(() => {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('currentPage') 
-    setIsAuthed(false)
-    setPage('landing')
+    localStorage.removeItem('authToken');
+    setIsAuthed(false);
     setShowWarning(false);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-  }, []);
+    navigate('/'); // Redirect via Router
+  }, [navigate]);
+
+  function handleLoginSuccess() {
+    localStorage.setItem('authToken', 'sample-token');
+    setIsAuthed(true);
+    navigate('/Dashboard'); // Redirect via Router
+  }
 
   const resetInactivityTimer = useCallback(() => {
     setShowWarning(false);
@@ -74,82 +72,59 @@ function App() {
     };
   }, [isAuthed, resetInactivityTimer]);
 
-  function handleResidentSuccess(newId) {
-    setSubmittedId(newId);
-    setPage('landing');
-  }
-
   return (
     <div className="app-root">
-      {/* --- WARNING OVERLAY --- */}
       <AnimatePresence>
         {showWarning && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            style={overlayStyle}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              style={aestheticModalStyle}
-            >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} style={aestheticModalStyle}>
               <div style={iconCircleStyle}>⌛</div>
-              <h5 style={{ fontWeight: '700', marginBottom: '8px' }}>Inactivity Timeout</h5>
-              <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '20px' }}>
-                Your session expires in <strong style={{ color: '#ff4757' }}>{countdown}s</strong>
-              </p>
-              
+              <h5>Inactivity Timeout</h5>
+              <p>Your session expires in <strong style={{ color: '#ff4757' }}>{countdown}s</strong></p>
               <div style={progressBgStyle}>
-                <motion.div 
-                  initial={{ width: '100%' }}
-                  animate={{ width: '0%' }}
-                  transition={{ duration: 60, ease: "linear" }}
-                  style={progressFillStyle}
-                />
+                <motion.div initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: 60, ease: "linear" }} style={progressFillStyle} />
               </div>
-
-              <button 
-                onClick={resetInactivityTimer} 
-                style={stayButtonStyle}
-              >
-                Keep working
-              </button>
+              <button onClick={resetInactivityTimer} style={stayButtonStyle}>Keep working</button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="app-content">
+        <Routes>
+          <Route path="/" element={
+            <LandingPage 
+              onHealthWorkerClick={() => navigate('/HWLogin')} 
+              onResidentClick={() => navigate('/Resident')} 
+            />
+          } />
+          
+          <Route path="/Resident" element={<ResidentPage onCancel={() => navigate('/')} />} />
+          
+          <Route path="/HWLogin" element={
+            isAuthed ? (
+              <Navigate to="/Dashboard" />
+            ) : (
+              <LoginPage 
+                onLoginSuccess={handleLoginSuccess} 
+                onReturnToLanding={() => navigate('/')} // Add this line
+              />
+            )
+          } />
 
-        {page === 'landing' && (
-          <LandingPage 
-            onHealthWorkerClick={() => { setSubmittedId(null); setPage('login'); }}
-            onResidentClick={() => { setSubmittedId(null); setPage('resident'); }}
-            submissionStatus={submittedId}
-          />
-        )}
+          <Route element={isAuthed ? <MainLayout onLogout={handleLogout} /> : <Navigate to="/HWLogin" />}>
+            <Route path="/Dashboard" element={<Home />} />
+            <Route path="/Records" element={<RecordsPage />} />
+            <Route path="/Records/AddResident" element={<RecordsPage autoOpenForm={true} />} />
+            <Route path="/Analytics" element={<AnalyticsPage />} />
+            <Route path="/Heatmap" element={<HeatmapPage />} />
+          </Route>
 
-        {page === 'resident' && (
-          <ResidentPage onCancel={() => setPage('landing')} onSubmitSuccess={handleResidentSuccess} />
-        )}
-
-        {page === 'login' && (
-          <LoginPage onLoginSuccess={handleLoginSuccess} onReturnToLanding={() => setPage('landing')} />
-        )}
-
-        {isAuthed && (
-          <>
-            {page === 'home' && <Home onLogout={handleLogout} />}
-            {page === 'analytics' && <AnalyticsPage />}
-            {page === 'records' && <RecordsPage />}
-            {page === 'healthform' && <RecordsPage autoOpenForm={true} />} 
-          </>
-        )}
-      </div>
-    </div>
-  )
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div> 
+    </div> 
+  );
 }
 
 // --- WARNING STYLES ---
