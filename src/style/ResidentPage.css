@@ -7,15 +7,17 @@
   padding: 32px;
   z-index: 9999;
   overflow: hidden;
-  
-  background: linear-gradient(135deg, 
-    rgba(153, 246, 228, 1) 0%, 
-    rgba(134, 239, 172, 1) 50%, 
-    rgba(125, 211, 252, 1) 100%);
+
+  background: linear-gradient(
+    135deg,
+    rgba(153, 246, 228, 1) 0%,
+    rgba(134, 239, 172, 1) 50%,
+    rgba(125, 211, 252, 1) 100%
+  );
 }
 
 .resident-page-root::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background-image: var(--resident-bg-image, none);
@@ -27,13 +29,15 @@
 }
 
 .resident-page-root::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, 
-    rgba(153, 246, 228, 0.5) 0%, 
-    rgba(134, 239, 172, 0.3) 50%, 
-    rgba(125, 211, 252, 0.3) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(153, 246, 228, 0.5) 0%,
+    rgba(134, 239, 172, 0.3) 50%,
+    rgba(125, 211, 252, 0.3) 100%
+  );
   pointer-events: none;
   z-index: 1;
 }
@@ -110,7 +114,7 @@
   margin-bottom: 25px;
   text-align: center;
   color: white;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border-bottom: 3px solid rgba(255, 255, 255, 0.3);
   padding-bottom: 12px;
 }
@@ -316,12 +320,12 @@
     height: auto;
     max-height: 90vh;
   }
-  
+
   .resident-form-left {
     flex: 1 1 auto;
     max-height: 50vh;
   }
-  
+
   .resident-schedule-right {
     flex: 0 0 auto;
     min-height: 300px;
@@ -333,31 +337,31 @@
   .resident-page-root {
     padding: 20px;
   }
-  
+
   .return-btn {
     top: 15px;
     left: 15px;
     padding: 8px 16px;
     font-size: 13px;
   }
-  
+
   .resident-form-wrapper {
     width: 100%;
   }
-  
+
   .resident-form-left {
     padding: 30px 25px;
   }
-  
+
   .resident-schedule-right {
     padding: 30px 25px;
   }
-  
+
   .schedule-title {
     font-size: 1.5rem;
     margin-bottom: 25px;
   }
-  
+
   .resident-page-root h3 {
     font-size: 1.4rem;
   }

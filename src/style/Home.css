@@ -84,15 +84,23 @@
   font-size: 0.75rem;
 }
 
-/* Recent Activity Card */
 .activity-card {
   margin: 1.5rem 2.5rem;
   border: 1px solid #e5e7eb !important;
 }
 
 .activity-card .card-header {
-  background-color: #fafbfc !important;
-  border-bottom: 1px solid #e5e7eb !important;
+  background: linear-gradient(135deg, #f8fafb 0%, #f3f4f6 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  padding: 1rem 1.5rem !important;
+}
+
+.activity-card .card-header h5 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #1f2937;
+  text-transform: uppercase;
 }
 
 .activity-list {
@@ -102,6 +110,74 @@
 
 .activity-icon {
   font-size: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.activity-list .list-group-item {
+  padding: 1.25rem 1.5rem !important;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid #f3f4f6 !important;
+  transition:
+    background-color 0.2s ease,
+    border-left-color 0.2s ease;
+}
+
+.activity-list .list-group-item:hover {
+  background: #f9fafb !important;
+  border-left-color: #14b8a6;
+}
+
+.activity-list .list-group-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Admin Username Styling */
+.activity-list strong:last-of-type {
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #5eead4;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+/* Alisin nalang yung 2 if gusto lagyan color sa time (recent - xian */
+.activity-list .activity-time2 {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: "Courier New", monospace;
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+/* Date Styling */
+.activity-list .activity-date {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+/* Patient/Record Name Highlight */
+.activity-list .record-name {
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 0.95rem;
+  background: #f3f4f6;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  display: inline-block;
 }
 
 /* Dashboard Overview */
@@ -117,7 +193,7 @@
 }
 
 .dashboard-overview-title::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -8px;
   left: 0;
@@ -164,16 +240,6 @@
   letter-spacing: 0.5px;
 }
 
-/* PWD Card Special Styling */
-.bg-light.border-primary {
-  background-color: #f0fdfa !important;
-}
-
-.pwd-stat-label {
-  font-size: 0.75rem;
-  letter-spacing: 0.8px;
-}
-
 /* Gender Distribution Card */
 .gender-chart-header {
   background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
@@ -213,7 +279,7 @@
   background: #94a3b8;
 }
 
-/* Zoom Modal Styles */
+/* Zoom Modal Styles - ENHANCED FROM HOME1 */
 .zoom-overlay {
   position: fixed;
   top: 0;
@@ -224,31 +290,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 10000;
   animation: fadeIn 0.2s ease-in-out;
   backdrop-filter: blur(4px);
+  padding: 1rem;
 }
 
 .zoom-content {
   background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  max-width: 90vw;
+  border-radius: 24px;
+  padding: 0;
+  width: 90vw;
+  max-width: 550px;
   max-height: 90vh;
   position: relative;
   animation: zoomIn 0.3s ease-out;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .zoom-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.75rem;
+  right: 0.75rem;
   background: #ef4444;
   color: white;
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -256,12 +327,14 @@
   cursor: pointer;
   font-size: 1.2rem;
   transition: all 0.2s ease;
-  z-index: 10;
+  z-index: 10001;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .zoom-close:hover {
   background: #dc2626;
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
 
 .zoom-card {
@@ -326,11 +399,11 @@
     font-size: 1.8rem;
     letter-spacing: 1px;
   }
-  
+
   .top-actions-bar h2 {
     font-size: 1.8rem;
   }
-  
+
   .dashboard-overview-title {
     font-size: 1.5rem;
   }
@@ -342,32 +415,32 @@
     padding: 1rem 1.5rem;
     min-height: 80px;
   }
-  
+
   .header-banner h2 {
     font-size: 1.4rem;
     letter-spacing: 0.5px;
     text-align: center;
     width: 100%;
   }
-  
+
   .header-banner .d-flex {
     width: 100%;
     justify-content: center;
   }
-  
+
   .top-actions-bar {
     margin: 0 1.5rem;
     padding: 1.5rem 0 1rem;
   }
-  
+
   .activity-card {
     margin: 1.5rem 1.5rem;
   }
-  
+
   .dashboard-overview-title {
     margin: 1.5rem 1.5rem 1rem 1.5rem;
   }
-  
+
   .dashboard-overview-content {
     margin: 0 1.5rem 1.5rem;
     padding: 1.5rem !important;
@@ -380,75 +453,91 @@
     padding: 1rem;
     min-height: auto;
   }
-  
+
   .header-banner h2 {
     font-size: 1.1rem;
     letter-spacing: 0.3px;
     line-height: 1.3;
     margin-bottom: 0.75rem;
   }
-  
+
   .header-banner .d-flex.gap-2 {
     gap: 0.5rem !important;
     flex-wrap: wrap;
   }
-  
+
   .header-banner .btn {
     font-size: 0.85rem;
     padding: 0.4rem 0.8rem;
   }
-  
+
   .notification-dropdown {
     width: 280px;
     right: -10px;
   }
-  
+
   .top-actions-bar {
     margin: 0 1rem;
     padding: 1rem 0 0.75rem;
   }
-  
+
   .top-actions-bar h2 {
     font-size: 1.3rem;
   }
-  
+
   .top-actions-bar .badge {
     font-size: 0.65rem;
     padding: 0.3rem 0.6rem;
   }
-  
+
   .activity-card {
     margin: 1rem;
   }
-  
+
   .activity-card .card-header h5 {
     font-size: 0.95rem;
   }
-  
+
   .activity-list {
     max-height: 280px;
   }
-  
+
   .activity-list li {
     font-size: 0.85rem;
   }
-  
+
   .dashboard-overview-title {
     margin: 1rem 1rem 0.75rem 1rem;
     font-size: 1.2rem;
   }
-  
+
   .dashboard-overview-content {
     margin: 0 1rem 1rem;
     padding: 1rem !important;
   }
-  
+
   .dashboard-overview-content h2 {
     font-size: 1.5rem;
   }
-  
+
   .dashboard-overview-content small {
     font-size: 0.7rem;
+  }
+
+  .zoom-overlay {
+    padding: 0.75rem;
+  }
+
+  .zoom-content {
+    width: 95vw;
+    max-width: 500px;
+    max-height: 85vh;
+  }
+
+  .zoom-close {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
   }
 }
 
@@ -458,26 +547,89 @@
     font-size: 0.95rem;
     letter-spacing: 0.2px;
   }
-  
+
   .header-banner .btn {
     font-size: 0.75rem;
     padding: 0.35rem 0.6rem;
   }
-  
+
   .notification-dropdown {
     width: calc(100vw - 30px);
     right: -5px;
   }
-  
+
   .top-actions-bar h2 {
     font-size: 1.1rem;
   }
-  
+
   .dashboard-overview-title {
     font-size: 1rem;
   }
-  
-  .zoom-content {
-    padding: 1rem;
+
+  .zoom-overlay {
+    padding: 0.5rem;
   }
+
+  .zoom-content {
+    width: 96vw;
+    max-width: 450px;
+    max-height: 80vh;
+  }
+
+  .zoom-close {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+}
+
+/* Action text colors */
+.activity-action-added {
+  color: #059669 !important;
+  font-weight: 700;
+}
+
+.activity-action-modified {
+  color: #f59e0b !important;
+  font-weight: 700;
+}
+
+.activity-action-deleted,
+.activity-action-rejected {
+  color: #dc2626 !important;
+  font-weight: 700;
+}
+
+/* Activity bullet colors */
+.activity-bullet-added {
+  color: #059669 !important;
+}
+
+.activity-bullet-modified {
+  color: #f59e0b !important;
+}
+
+.activity-bullet-deleted,
+.activity-bullet-rejected {
+  color: #dc2626 !important;
+}
+
+.dashboard-overview-content .col-lg-4 .row .border:hover {
+  transform: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.activity-list {
+  max-height: 290px; /* DITO PAPALITAN HEIGHT NG TABLE NG RECENT ACTIVITY - XIAN */
+  overflow-y: auto;
+}
+
+.activity-list .list-group-item {
+  padding: 1.25rem 1.5rem !important;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid #f3f4f6 !important;
+  transition:
+    background-color 0.2s ease,
+    border-left-color 0.2s ease;
+  font-size: 1.2rem; /* DITO PAPALITAN TEXT SIZE SA RECENT ACTIVITY - XIAN */
 }
