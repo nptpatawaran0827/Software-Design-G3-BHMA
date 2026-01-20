@@ -2,9 +2,6 @@ import React, { useState } from 'react'; //
 import StreetHeatmap from './components/StreetHeatmap';
 import './style/HeatmapPage.css';
 
-
-
-
 const HeatmapPage = () => {
     const [filterCondition, setFilterCondition] = useState('All'); //
 
