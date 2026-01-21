@@ -1,0 +1,253 @@
+/* ========== HEADER BANNER ========== */
+.header-banner {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  min-height: 100px;
+  border-radius: 0;
+  margin: 0;
+  padding: 1.5rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  align-items: center;
+  color: white;
+}
+
+.header-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+  position: relative;
+}
+
+.header-buttons {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Wrapper for notification button and dropdown */
+.notification-wrapper {
+  position: relative;
+}
+
+.header-banner h2 {
+  font-size: 2.2rem;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  flex-grow: 1;
+  color: white;
+  margin: 0;
+}
+
+/*  NOTIFICATION BELL BUTTON  */
+.notification-bell-btn {
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-bell-btn i {
+  font-size: 1.4rem;
+}
+
+/*  NOTIFICATION DROPDOWN - PORTAL STYLE  */
+.notification-dropdown-portal {
+  width: 380px;
+  overflow: hidden;
+  max-height: 500px;
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item-subtitle {
+  font-size: 0.75rem;
+}
+
+.min-width-0 {
+  min-width: 0;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Notification List Scrollbar */
+.notification-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+/* Tablets and Small Laptops */
+@media (max-width: 1200px) {
+  .header-banner h2 {
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+  }
+
+  .notification-bell-btn i {
+    font-size: 1.3rem;
+  }
+}
+
+/* Tablets */
+@media (max-width: 992px) {
+  .header-banner {
+    padding: 1rem 1.5rem;
+    min-height: 80px;
+  }
+
+  .header-content-wrapper {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .header-banner h2 {
+    font-size: 1.4rem;
+    letter-spacing: 0.5px;
+    text-align: center;
+    width: 100%;
+    order: 1;
+  }
+
+  .header-buttons {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .notification-bell-btn i {
+    font-size: 1.2rem;
+  }
+
+  /* Better dropdown positioning for tablets */
+  .notification-dropdown-portal {
+    width: 360px;
+  }
+}
+
+/* Mobile and Small Tablets */
+@media (max-width: 768px) {
+  .header-banner {
+    padding: 1rem;
+    min-height: auto;
+  }
+
+  .header-content-wrapper {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .header-banner h2 {
+    font-size: 1rem;
+    letter-spacing: 0.3px;
+    line-height: 1.3;
+    margin-bottom: 0;
+    text-align: center;
+    width: 100%;
+    order: 1;
+  }
+
+  .header-buttons {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-banner .d-flex.gap-2 {
+    gap: 0.5rem !important;
+  }
+
+  .header-banner .btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .notification-bell-btn {
+    padding: 0.5rem 0.7rem;
+  }
+
+  .notification-bell-btn i {
+    font-size: 1.1rem;
+  }
+
+  /* Smart dropdown positioning - keep it visible */
+  .notification-dropdown-portal {
+    width: calc(100vw - 2rem);
+    max-width: 360px;
+  }
+
+  .notification-list {
+    max-height: 350px;
+  }
+}
+
+/* Small Mobile Devices */
+@media (max-width: 576px) {
+  .header-banner h2 {
+    font-size: 0.9rem;
+    letter-spacing: 0.2px;
+  }
+
+  .header-banner .btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .notification-bell-btn {
+    padding: 0.45rem 0.65rem;
+  }
+
+  .notification-bell-btn i {
+    font-size: 1rem;
+  }
+
+  .notification-dropdown-portal {
+    width: calc(100vw - 2rem);
+    max-width: 320px;
+  }
+
+  .notification-list {
+    max-height: 300px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+  .header-banner h2 {
+    font-size: 0.8rem;
+  }
+
+  .notification-dropdown-portal {
+    max-width: 280px;
+  }
+}

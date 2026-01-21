@@ -1,25 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, User } from "lucide-react";
+import "./style/HealthForm.css";
 
 const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
-   const [streetList, setStreetList] = useState([]);
-
-   useEffect(() => {
-    const fetchStreets = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/streets');
-        const data = await res.json();
-        setStreetList(data);
-      } catch (err) {
-        console.error("Failed to fetch streets:", err);
-      }
-    };
-    fetchStreets();
-  }, []);
-
-   const [message, setMessage] = useState(null);
-   const [formData, setFormData] = useState({
+  const [streetList, setStreetList] = useState([]);
+  const [message, setMessage] = useState(null);
+  
+  const [formData, setFormData] = useState({
     First_Name: '',
     Middle_Name: '',
     Last_Name: '',
@@ -46,273 +33,447 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     Recorded_By_Name: ''
   });
 
+  // ===== FETCH STREETS FROM DATABASE =====
+  useEffect(() => {
+    const fetchStreets = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/streets');
+        const data = await res.json();
+        setStreetList(data);
+      } catch (err) {
+        console.error("Failed to fetch streets:", err);
+      }
+    };
+    fetchStreets();
+  }, []);
 
+  // ===== CALCULATE AGE FROM BIRTHDATE =====
   const calculateAge = (birthdate) => {
-    if (!birthdate) return '';
+    if (!birthdate) return "";
     const today = new Date();
     const birthDate = new Date(birthdate);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
-    return age >= 0 ? age : '';
+    return age >= 0 ? age : "";
   };
 
-
+  // ===== CALCULATE NUTRITION STATUS FROM BMI =====
   const calculateNutritionStatus = (bmi) => {
-    if (!bmi || bmi === '') return '';
+    if (!bmi || bmi === "") return "";
     const bmiValue = parseFloat(bmi);
-    if (bmiValue < 18.5) return 'Underweight';
-    if (bmiValue >= 18.5 && bmiValue < 25) return 'Normal';
-    if (bmiValue >= 25 && bmiValue < 30) return 'Overweight';
-    if (bmiValue >= 30) return 'Obese';
-    return '';
+    if (bmiValue < 18.5) return "Underweight";
+    if (bmiValue >= 18.5 && bmiValue < 25) return "Normal";
+    if (bmiValue >= 25 && bmiValue < 30) return "Overweight";
+    if (bmiValue >= 30) return "Obese";
+    return "";
   };
 
-
+  // ===== GENERATE RESIDENT ID =====
   const generateResidentID = () => {
     const part1 = Math.floor(1000000 + Math.random() * 9000000);
-    const part2 = Math.floor(1000 + Math.random() * 9000);      
+    const part2 = Math.floor(1000 + Math.random() * 9000);
     return `RES-${part1}-${part2}`;
   };
 
-
+  // ===== INITIALIZE FORM DATA =====
   useEffect(() => {
-    const currentAdmin = localStorage.getItem('username') || 'System';
-    const deviceToday = new Date().toISOString().split('T')[0];
-
+    const currentAdmin = localStorage.getItem("username") || "System";
+    const deviceToday = new Date().toISOString().split("T")[0];
 
     if (initialData) {
-      const rawBirthDate = initialData.Birthdate || '';
-      const formattedBirthdate = rawBirthDate ? rawBirthDate.split('T')[0] : '';
-      const formattedVisitDate = initialData.Date_Visited ? initialData.Date_Visited.split('T')[0] : deviceToday;
-      
+      // EDIT MODE: Load existing data
+      const rawBirthDate = initialData.Birthdate || "";
+      const formattedBirthdate = rawBirthDate ? rawBirthDate.split("T")[0] : "";
+      const formattedVisitDate = initialData.Date_Visited
+        ? initialData.Date_Visited.split("T")[0]
+        : deviceToday;
+
       setFormData({
         ...initialData,
         Birthdate: formattedBirthdate,
         Date_Visited: formattedVisitDate,
         Age: initialData.Age || calculateAge(formattedBirthdate),
         Is_PWD: initialData.Is_PWD === 1 || initialData.Is_PWD === true,
-        Weight: initialData.Weight ? String(initialData.Weight) : '',
-        Height: initialData.Height ? String(initialData.Height) : '',
-        BMI: initialData.BMI ? String(initialData.BMI) : '',
-        Nutrition_Status: initialData.Nutrition_Status || calculateNutritionStatus(initialData.BMI),
-        Barangay: initialData.Barangay || 'Marikina Heights',
-        Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin
+        Weight: initialData.Weight ? String(initialData.Weight) : "",
+        Height: initialData.Height ? String(initialData.Height) : "",
+        BMI: initialData.BMI ? String(initialData.BMI) : "",
+        Nutrition_Status:
+          initialData.Nutrition_Status ||
+          calculateNutritionStatus(initialData.BMI),
+        Barangay: initialData.Barangay || "Marikina Heights",
+        Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin,
       });
     } else {
-      setFormData(prev => ({
+      // ADD MODE: Initialize with defaults
+      setFormData((prev) => ({
         ...prev,
         Resident_ID: generateResidentID(),
-        Barangay: 'Marikina Heights',
+        Barangay: "Marikina Heights",
         Recorded_By_Name: currentAdmin,
-        Date_Visited: deviceToday 
+        Date_Visited: deviceToday,
       }));
     }
   }, [initialData]);
 
-
+  // ===== HANDLE FORM INPUT CHANGES =====
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const finalValue = type === 'checkbox' ? checked : value;
-   
+    const finalValue = type === "checkbox" ? checked : value;
+
     let updatedData = { ...formData, [name]: finalValue };
 
-
-    if (name === 'Birthdate') {
+    // AUTO-CALCULATE AGE
+    if (name === "Birthdate") {
       updatedData.Age = calculateAge(value);
     }
 
-
-    if ((name === 'Weight' || name === 'Height') && updatedData.Weight && updatedData.Height) {
+    // AUTO-CALCULATE BMI & NUTRITION STATUS
+    if (
+      (name === "Weight" || name === "Height") &&
+      updatedData.Weight &&
+      updatedData.Height
+    ) {
       const heightInMeters = parseFloat(updatedData.Height) / 100;
       if (heightInMeters > 0) {
-        const calculatedBMI = (parseFloat(updatedData.Weight) / (heightInMeters * heightInMeters)).toFixed(2);
+        const calculatedBMI = (
+          parseFloat(updatedData.Weight) /
+          (heightInMeters * heightInMeters)
+        ).toFixed(2);
         updatedData.BMI = calculatedBMI;
         updatedData.Nutrition_Status = calculateNutritionStatus(calculatedBMI);
       }
     }
+
     setFormData(updatedData);
   };
 
+  // ===== AUTO-SCROLL TO MESSAGE =====
   useEffect(() => {
     if (message) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [message]);
 
+  // ===== HANDLE FORM SUBMISSION =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
 
-
+    // VALIDATION: ONE NAME POLICY
     if (!formData.First_Name.trim() || !formData.Last_Name.trim()) {
       setMessage({
-        type: 'error',
-        text: '⚠️ ONE NAME POLICY: Both First Name and Last Name are required.'
+        type: "error",
+        text: "⚠️ ONE NAME POLICY: Both First Name and Last Name are required.",
       });
       return;
     }
 
-
     try {
       const recordId = initialData?.Health_Record_ID;
-      const adminId = localStorage.getItem('adminId');
-      const adminUsername = localStorage.getItem('username') || 'System';
-     
-      let url = 'http://localhost:5000/api/health-records';
-      const method = editMode ? 'PUT' : 'POST';
+      const adminId = localStorage.getItem("adminId");
+      const adminUsername = localStorage.getItem("username") || "System";
+
+      let url = "http://localhost:5000/api/health-records";
+      const method = editMode ? "PUT" : "POST";
       if (editMode && recordId) {
         url = `${url}/${recordId}`;
       }
 
-
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
           Recorded_By: adminId,
           Recorded_By_Name: adminUsername,
           adminId: adminId,
-          admin_username: adminUsername
-        })
+          admin_username: adminUsername,
+        }),
       });
-
 
       const result = await response.json();
 
-      // DUPLICATE LOGIC: Pass back to parent and exit form
+      // DUPLICATE CHECK: Pass back to parent and exit form
       if (result.isDuplicate) {
         if (onSubmit) onSubmit(formData, editMode, true);
-        onCancel(); 
-        return; 
+        onCancel();
+        return;
       }
 
-
-      if (!response.ok) throw new Error(result.details || 'Submission failed');
-
+      if (!response.ok) throw new Error(result.details || "Submission failed");
 
       const successText = editMode
         ? `✅ Record for ${formData.First_Name} ${formData.Last_Name} has been modified successfully!`
         : `✅ Registration Successful! Resident ID: ${formData.Resident_ID} has been added.`;
 
-
-      setMessage({ type: 'success', text: successText });
-
+      setMessage({ type: "success", text: successText });
 
       setTimeout(() => {
-        // We pass 'editMode' as the second argument so RecordsPage knows what to display
         if (onSubmit) onSubmit(formData, editMode);
         onCancel();
       }, 2500);
-
-
     } catch (error) {
-      console.error('Error:', error);
-      setMessage({ type: 'error', text: `❌ ${error.message}` });
+      console.error("Error:", error);
+      setMessage({ type: "error", text: `❌ ${error.message}` });
     }
   };
 
-
+  // ===== RENDER =====
   return (
-    <div className="p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="fw-bold text-dark">{editMode ? 'Edit Health Record' : 'Add New Health Record'}</h3>
-        <button className="btn btn-outline-secondary btn-sm rounded-pill px-3" onClick={onCancel}>
-          <i className="bi bi-arrow-left me-1"></i> Back
+    <div className="health-form-wrapper">
+      {/* HEADER */}
+      <div className="form-header">
+        <h3 className="form-title">
+          {editMode ? "Edit Health Record" : "Add New Health Record"}
+        </h3>
+        <button className="btn-back" onClick={onCancel}>
+          <ArrowLeft size={18} /> Back to Records
         </button>
       </div>
 
+      <div className="form-container">
+        <div className="form-body">
+          {/* LEGEND */}
+          <div className="form-legend">
+            <div className="legend-title">📋 Field Guide:</div>
+            <div className="legend-items">
+              <div className="legend-item">
+                <div className="legend-color legend-color-teal"></div>
+                <span className="legend-text">Auto-Generated</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color legend-color-blue"></div>
+                <span className="legend-text">Auto-Calculated</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color legend-color-red"></div>
+                <span className="legend-text">Important Date</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color legend-color-green"></div>
+                <span className="legend-text">Normal Status</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color legend-color-yellow"></div>
+                <span className="legend-text">Under / Over Range</span>
+              </div>
+            </div>
+          </div>
 
-      <div className="card border-0 shadow-sm rounded-4" style={{ backgroundColor: '#f8fbfe' }}>
-        <div className="card-body p-4">
-         
+          {/* MESSAGE ALERT */}
           {message && (
-            <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'} mb-4 shadow-sm border-0 rounded-3`}>
-              {message.text}
+            <div
+              className={`form-alert ${message.type === "success" ? "form-alert-success" : "form-alert-error"}`}
+            >
+              <span className="alert-icon">
+                {message.type === "success" ? "✓" : "⚠️"}
+              </span>
+              <span className="alert-text">{message.text}</span>
             </div>
           )}
 
+          {/* FORM */}
           <form onSubmit={handleSubmit}>
-            <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Personal Information</h5>
-            <div className="row g-3 mb-4">
-              <div className="col-md-4">
-                <label className="form-label small fw-bold">First Name</label>
-                <input className="form-control rounded-3" name="First_Name" value={formData.First_Name} onChange={handleChange} required />
+            {/* ===== PERSONAL INFORMATION ===== */}
+            <h5 className="section-header">👤 Personal Information</h5>
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label form-label-required">
+                  First Name
+                </label>
+                <input
+                  className="form-input"
+                  name="First_Name"
+                  value={formData.First_Name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter first name"
+                />
               </div>
-              <div className="col-md-4">
-                <label className="form-label small fw-bold">Middle Name</label>
-                <input className="form-control rounded-3" name="Middle_Name" value={formData.Middle_Name} onChange={handleChange} />
+              <div className="form-group">
+                <label className="form-label">Middle Name</label>
+                <input
+                  className="form-input"
+                  name="Middle_Name"
+                  value={formData.Middle_Name}
+                  onChange={handleChange}
+                  placeholder="Enter middle name (optional)"
+                />
               </div>
-              <div className="col-md-4">
-                <label className="form-label small fw-bold">Last Name</label>
-                <input className="form-control rounded-3" name="Last_Name" value={formData.Last_Name} onChange={handleChange} required />
+              <div className="form-group">
+                <label className="form-label form-label-required">
+                  Last Name
+                </label>
+                <input
+                  className="form-input"
+                  name="Last_Name"
+                  value={formData.Last_Name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter last name"
+                />
               </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Resident ID</label>
-                <input className="form-control bg-light fw-bold" name="Resident_ID" value={formData.Resident_ID} disabled />
+            </div>
+
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label form-label-generated">
+                  Resident ID
+                </label>
+                <input
+                  className="form-input input-resident-id"
+                  name="Resident_ID"
+                  value={formData.Resident_ID}
+                  disabled
+                />
               </div>
-              <div className="col-md-3">
-                <label className="form-label small fw-bold">Birthdate</label>
-                <input type="date" className="form-control rounded-3" name="Birthdate" value={formData.Birthdate} onChange={handleChange} required />
+              <div className="form-group">
+                <label className="form-label form-label-required">
+                  📅 Birthdate
+                </label>
+                <input
+                  type="date"
+                  className="form-input"
+                  name="Birthdate"
+                  value={formData.Birthdate}
+                  onChange={handleChange}
+                  required
+                />
               </div>
-              <div className="col-md-3">
-                <label className="form-label small fw-bold text-primary">Calculated Age</label>
-                <div className="form-control bg-primary bg-opacity-10 fw-bold border-primary border-opacity-25">
-                  {formData.Age || '---'} <span className="small fw-normal text-muted">years old</span>
-                </div>
+              <div className="form-group">
+                <label className="form-label form-label-calculated">
+                  Calculated Age
+                </label>
+                <input
+                  className="form-input input-calculated"
+                  value={formData.Age ? `${formData.Age} years old` : "---"}
+                  disabled
+                />
               </div>
-              <div className="col-md-4">
-                <label className="form-label small fw-bold">Sex</label>
-                <select className="form-select" name="Sex" value={formData.Sex} onChange={handleChange}>
-                  <option value="">Select...</option>
+            </div>
+
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label">👥 Sex</label>
+                <select
+                  className="form-select"
+                  name="Sex"
+                  value={formData.Sex}
+                  onChange={handleChange}
+                >
+                  <option value="">Select gender...</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>
               </div>
-              <div className="col-md-4">
-                <label className="form-label small fw-bold">Civil Status</label>
-                <select className="form-select" name="Civil_Status" value={formData.Civil_Status} onChange={handleChange}>
-                  <option value="">Select...</option>
+              <div className="form-group">
+                <label className="form-label">👰 Civil Status</label>
+                <select
+                  className="form-select"
+                  name="Civil_Status"
+                  value={formData.Civil_Status}
+                  onChange={handleChange}
+                >
+                  <option value="">Select civil status...</option>
                   <option value="Single">Single</option>
                   <option value="Married">Married</option>
                   <option value="Widowed">Widowed</option>
                 </select>
               </div>
-              <div className="col-md-4">
-                <label className="form-label small fw-bold">Contact Number</label>
-                <input className="form-control" name="Contact_Number" value={formData.Contact_Number} onChange={handleChange} />
+              <div className="form-group">
+                <label className="form-label">📱 Contact Number</label>
+                <input
+                  className="form-input"
+                  name="Contact_Number"
+                  value={formData.Contact_Number}
+                  onChange={handleChange}
+                  placeholder="e.g. 09123456789"
+                />
               </div>
             </div>
 
-            <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Vitals & Measurements</h5>
-            <div className="row g-3 mb-4">
-              <div className="col-md-3">
-                <label className="form-label small fw-bold">Blood Pressure</label>
-                <input className="form-control" name="Blood_Pressure" value={formData.Blood_Pressure} onChange={handleChange} placeholder="e.g. 120/80" />
+            {/* ===== VITALS & MEASUREMENTS ===== */}
+            <h5 className="section-header">💉 Vitals & Measurements</h5>
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label">💓 Blood Pressure</label>
+                <input
+                  className="form-input"
+                  name="Blood_Pressure"
+                  value={formData.Blood_Pressure}
+                  onChange={handleChange}
+                  placeholder="e.g. 120/80"
+                />
               </div>
-              <div className="col-md-3">
-                <label className="form-label small fw-bold">Weight (kg)</label>
-                <input type="number" step="0.1" className="form-control" name="Weight" value={formData.Weight} onChange={handleChange} />
+              <div className="form-group">
+                <label className="form-label">⚖️ Weight (kg)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="form-input"
+                  name="Weight"
+                  value={formData.Weight}
+                  onChange={handleChange}
+                  placeholder="Enter weight"
+                />
               </div>
-              <div className="col-md-3">
-                <label className="form-label small fw-bold">Height (cm)</label>
-                <input type="number" step="0.1" className="form-control" name="Height" value={formData.Height} onChange={handleChange} />
+              <div className="form-group">
+                <label className="form-label">📏 Height (cm)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="form-input"
+                  name="Height"
+                  value={formData.Height}
+                  onChange={handleChange}
+                  placeholder="Enter height"
+                />
               </div>
-              <div className="col-md-3">
-                <label className="form-label small fw-bold">BMI</label>
-                <input className="form-control bg-light" name="BMI" value={formData.BMI} disabled />
+              <div className="form-group">
+                <label className="form-label form-label-calculated">
+                  📊 BMI
+                </label>
+                <input
+                  className="form-input input-calculated"
+                  name="BMI"
+                  value={formData.BMI || "---"}
+                  disabled
+                />
               </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Nutrition Status</label>
-                <input className={`form-control fw-bold ${formData.Nutrition_Status === 'Normal' ? 'text-success' : 'text-danger'}`} value={formData.Nutrition_Status} disabled />
+            </div>
+
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label form-label-calculated">
+                  🥗 Nutrition Status
+                </label>
+                <input
+                  className={`form-input input-calculated ${
+                    formData.Nutrition_Status === "Normal"
+                      ? "nutrition-status-normal"
+                      : formData.Nutrition_Status
+                        ? "nutrition-status-warning"
+                        : ""
+                  }`}
+                  value={formData.Nutrition_Status || "---"}
+                  disabled
+                />
               </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Health Condition</label>
-                <select className="form-select" name="Health_Condition" value={formData.Health_Condition} onChange={handleChange}>
-                  <option value="">Select Condition...</option>
+              <div className="form-group">
+                <label className="form-label">💚 Health Condition</label>
+                <select
+                  className="form-select"
+                  name="Health_Condition"
+                  value={formData.Health_Condition}
+                  onChange={handleChange}
+                >
+                  <option value="">Select condition...</option>
                   <option value="Good">Good</option>
                   <option value="Fair">Fair</option>
                   <option value="Poor">Poor</option>
@@ -320,69 +481,131 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Medical History</h5>
-            <div className="row g-3 mb-4">
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Diagnosis</label>
-                <textarea className="form-control" name="Diagnosis" rows="2" value={formData.Diagnosis} onChange={handleChange} placeholder="Current medical diagnosis..."></textarea>
+            {/* ===== MEDICAL HISTORY ===== */}
+            <h5 className="section-header">🏥 Medical History</h5>
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label">🩺 Diagnosis</label>
+                <textarea
+                  className="form-textarea"
+                  name="Diagnosis"
+                  value={formData.Diagnosis}
+                  onChange={handleChange}
+                  placeholder="Current medical diagnosis..."
+                  rows="3"
+                ></textarea>
               </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Allergies</label>
-                <textarea className="form-control" name="Allergies" rows="2" value={formData.Allergies} onChange={handleChange} placeholder="List of allergies..."></textarea>
-              </div>
-              <div className="col-12">
-                <div className="form-check form-switch p-3 bg-white rounded-3 border">
-                  <input className="form-check-input ms-0 me-3" type="checkbox" id="Is_PWD" name="Is_PWD" checked={formData.Is_PWD} onChange={handleChange} />
-                  <label className="form-check-label fw-bold" htmlFor="Is_PWD">Person with Disability (PWD)</label>
-                </div>
+              <div className="form-group">
+                <label className="form-label">⚠️ Allergies</label>
+                <textarea
+                  className="form-textarea"
+                  name="Allergies"
+                  value={formData.Allergies}
+                  onChange={handleChange}
+                  placeholder="List of allergies..."
+                  rows="3"
+                ></textarea>
               </div>
             </div>
 
-            <h5 className="text-primary mb-3 fw-bold border-bottom pb-2">Address & Visit Details</h5>
-            <div className="row g-3 mb-4">
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Street</label>
-                <select className="form-select rounded-3" name="Street_ID" value={formData.Street_ID} onChange={handleChange} required>
-                  <option value="">Select Street...</option>
-                     {streetList.map((s) => (
-                      <option key={s.Street_ID} value={s.Street_ID}>
-                       {s.Street_Name}
-                   </option>
+            {/* ===== PWD CHECKBOX ===== */}
+            <div className="checkbox-container">
+              <div className="checkbox-switch">
+                <input
+                  className="checkbox-input"
+                  type="checkbox"
+                  id="Is_PWD"
+                  name="Is_PWD"
+                  checked={formData.Is_PWD}
+                  onChange={handleChange}
+                />
+                <label className="checkbox-label" htmlFor="Is_PWD">
+                  ♿ Person with Disability (PWD)
+                </label>
+              </div>
+            </div>
+
+            {/* ===== ADDRESS & VISIT DETAILS ===== */}
+            <h5 className="section-header">📍 Address & Visit Details</h5>
+            
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label form-label-required">
+                  🛣️ Street
+                </label>
+                <select
+                  className="form-select"
+                  name="Street_ID"
+                  value={formData.Street_ID}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select street...</option>
+                  {streetList.map((street) => (
+                    <option key={street.Street_ID} value={street.Street_ID}>
+                      {street.Street_Name}
+                    </option>
                   ))}
                 </select>
               </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-bold">Barangay</label>
-                <input className="form-control" name="Barangay" value={formData.Barangay} onChange={handleChange} />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small fw-bold text-danger">Date of Visit</label>
-                <input 
-                  type="date" 
-                  className="form-control border-danger border-opacity-50 fw-bold" 
-                  name="Date_Visited" 
-                  value={formData.Date_Visited} 
+              <div className="form-group">
+                <label className="form-label">🏘️ Barangay</label>
+                <input
+                  className="form-input"
+                  name="Barangay"
+                  value={formData.Barangay}
                   onChange={handleChange}
-                  required 
                 />
-                <small className="text-muted">Auto-filled based on system date.</small>
-              </div>
-              <div className="col-md-6 d-flex align-items-end">
-                <div className="p-2 bg-primary-subtle border border-primary-subtle rounded-3 w-100">
-                  <small className="fw-bold text-primary">Recording as: {formData.Recorded_By_Name}</small>
-                </div>
-              </div>
-              <div className="col-md-12">
-                <label className="form-label small fw-bold">Medical Remarks</label>
-                <textarea className="form-control" name="Remarks" rows="2" value={formData.Remarks} onChange={handleChange} placeholder="General health remarks..."></textarea>
               </div>
             </div>
 
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label form-label-required">
+                  📅 Date of Visit
+                </label>
+                <input
+                  type="date"
+                  className="form-input input-date-visited"
+                  name="Date_Visited"
+                  value={formData.Date_Visited}
+                  onChange={handleChange}
+                  required
+                />
+                <small className="form-helper-text">
+                  Auto-filled based on system date
+                </small>
+              </div>
+              <div className="form-group">
+                <label className="form-label">👤 Recorded By</label>
+                <div className="recorder-info">
+                  <User className="recorder-icon" size={20} />
+                  <p className="recorder-text">{formData.Recorded_By_Name}</p>
+                </div>
+              </div>
+            </div>
 
-            <div className="d-flex justify-content-end gap-2 border-top pt-4">
-              <button type="button" className="btn btn-light px-4 fw-bold" onClick={onCancel}>Cancel</button>
-              <button type="submit" className="btn btn-success px-5 fw-bold shadow-sm">
-                {editMode ? 'Update Health Record' : 'Save Health Record'}
+            <div className="form-group-row">
+              <div className="form-group">
+                <label className="form-label">📝 Medical Remarks</label>
+                <textarea
+                  className="form-textarea"
+                  name="Remarks"
+                  value={formData.Remarks}
+                  onChange={handleChange}
+                  placeholder="General health remarks..."
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            {/* ===== FORM ACTIONS ===== */}
+            <div className="form-actions">
+              <button type="button" className="btn-cancel" onClick={onCancel}>
+                ❌ Cancel
+              </button>
+              <button type="submit" className="btn-submit">
+                {editMode ? "✏️ Update Health Record" : "💾 Save Health Record"}
               </button>
             </div>
           </form>
@@ -391,6 +614,5 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     </div>
   );
 };
-
 
 export default HealthForm;
