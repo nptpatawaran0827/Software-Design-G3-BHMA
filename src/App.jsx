@@ -113,11 +113,11 @@ function App() {
           } />
 
           <Route element={isAuthed ? <MainLayout onLogout={handleLogout} /> : <Navigate to="/HWLogin" />}>
-            <Route path="/Dashboard" element={<Home />} />
-            <Route path="/Records" element={<RecordsPage />} />
-            <Route path="/Records/AddResident" element={<RecordsPage autoOpenForm={true} />} />
-            <Route path="/Analytics" element={<AnalyticsPage />} />
-            <Route path="/Heatmap" element={<HeatmapPage />} />
+           <Route path="/Dashboard" element={<Home onLogout={handleLogout} />} />
+           <Route path="/Records" element={<RecordsPage />} />
+           <Route path="/Analytics" element={<AnalyticsPage />} />
+           <Route path="/Heatmap" element={<HeatmapPage />} />
+           <Route path="/Resident/:id" element={<ResidentPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />
