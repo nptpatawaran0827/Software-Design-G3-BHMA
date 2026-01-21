@@ -13,249 +13,786 @@ import { Pie, Bar, Doughnut } from "react-chartjs-2";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { Calendar, X, Activity, Filter, FileText } from "lucide-react";
+import { Calendar, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import HeaderBanner from "./HeaderBanner";
 import "./style/AnalyticsPage.css";
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, ChartDataLabels);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  ChartDataLabels,
+);
 
 const AnalyticsPage = ({ onLogout }) => {
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const reportRef = useRef(null);
+  const [zoomedContent, setZoomedContent] = useState(null);
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString("en-CA"));
+  // Calendar Modal States
   const [showCalendar, setShowCalendar] = useState(false);
-  const [filterMode, setFilterMode] = useState("weekly"); // Default changed to weekly
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
-  // HELPER: Get the Sunday and Saturday of a given date's week
-  const getWeekRange = (dateStr) => {
-    const date = new Date(dateStr + "T00:00:00");
-    const day = date.getDay(); // 0 (Sun) to 6 (Sat)
-    const diffToSun = date.getDate() - day;
-    
-    const startOfWeek = new Date(date.setDate(diffToSun));
-    const endOfWeek = new Date(date.setDate(startOfWeek.getDate() + 6));
-    
-    return { startOfWeek, endOfWeek };
-  };
+  const [stats, setStats] = useState({
+    totalResidents: 0,
+    maleCount: 0,
+    femaleCount: 0,
+    activeCases: 0,
+    topCondition: "N/A",
+    pwdCount: 0,
+  });
 
-  const formatToLongDate = (dateStr) => {
-    if (!dateStr) return "";
-    const options = { month: "long", day: "numeric", year: "numeric" };
-    
-    if (filterMode === "weekly") {
-      const { startOfWeek, endOfWeek } = getWeekRange(dateStr);
-      return `${startOfWeek.toLocaleDateString("en-US", options)} – ${endOfWeek.toLocaleDateString("en-US", options)}`;
-    }
-    
-    return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  };
-
-  const [stats, setStats] = useState({ totalResidents: 0, maleCount: 0, femaleCount: 0, pwdCount: 0 });
   const [chartsData, setChartsData] = useState({
-    residentsPerStreet: null, ageGroupDistribution: null, healthConditions: null, nutritionStatus: null, pwdDistribution: null,
+    residentsPerStreet: null,
+    ageGroupDistribution: null,
+    healthConditions: null,
+    nutritionStatus: null,
+    pwdDistribution: null,
   });
 
   useEffect(() => {
     const fetchHealthRecords = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/health-records");
+        const response = await fetch(
+          "http://localhost:5000/api/health-records",
+        );
         const data = await response.json();
-        if (Array.isArray(data)) setHealthRecords(data);
-      } catch (error) { console.error(error); } finally { setLoading(false); }
+        if (Array.isArray(data)) {
+          setHealthRecords(data);
+          calculateAnalytics(data);
+        }
+      } catch (error) {
+        console.error("Error fetching health records:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchHealthRecords();
   }, []);
 
-  useEffect(() => {
-    if (healthRecords.length === 0) return;
+  /* ==================== CALENDAR MODAL HANDLERS ==================== */
+  const handleOpenCalendar = () => {
+    setShowCalendar(true);
+  };
 
-    const filtered = healthRecords.filter((record) => {
-      const dateField = record.Date_Visited || record.Date;
-      const recordD = new Date(dateField);
-      
-      if (filterMode === "weekly") {
-        const { startOfWeek, endOfWeek } = getWeekRange(selectedDate);
-        // Normalize to midnight for comparison
-        recordD.setHours(0,0,0,0);
-        startOfWeek.setHours(0,0,0,0);
-        endOfWeek.setHours(0,0,0,0);
-        return recordD >= startOfWeek && recordD <= endOfWeek;
-      } else {
-        // Monthly
-        const selectedD = new Date(selectedDate + "T00:00:00");
-        return recordD.getFullYear() === selectedD.getFullYear() && recordD.getMonth() === selectedD.getMonth();
-      }
-    });
-    calculateAnalytics(filtered);
-  }, [selectedDate, filterMode, healthRecords]);
+  const handleCloseCalendar = () => {
+    setShowCalendar(false);
+  };
+
+  const handleDateChange = (dateString) => {
+    setSelectedDate(dateString);
+  };
 
   const handleExportPDF = async () => {
     const element = reportRef.current;
-    if (!element) return;
-    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
+
     const imgData = canvas.toDataURL("image/png");
-    const imgWidth = canvas.width * 0.132; 
-    const imgHeight = canvas.height * 0.132;
-    const pdf = new jsPDF({ orientation: imgWidth > imgHeight ? "l" : "p", unit: "mm", format: [imgWidth, imgHeight] });
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-    pdf.save(`Health_Report_${filterMode}_${selectedDate}.pdf`);
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(
+      `Health_Analytics_Report_${new Date().toISOString().split("T")[0]}.pdf`,
+    );
   };
 
   const calculateAnalytics = (records) => {
-    if (!records.length) {
-      setStats({ totalResidents: 0, maleCount: 0, femaleCount: 0, pwdCount: 0 });
-      setChartsData({ residentsPerStreet: null, ageGroupDistribution: null, healthConditions: null, nutritionStatus: null, pwdDistribution: null });
-      return;
-    }
+    if (!records || records.length === 0) return;
     const uniqueResidents = new Set(records.map((r) => r.Resident_ID));
     const maleCount = records.filter((r) => r.Sex === "Male").length;
     const femaleCount = records.filter((r) => r.Sex === "Female").length;
-    const pwdCount = records.filter((r) => (r.Is_PWD == 1 || r.Is_PWD === true)).length;
+    const pwdCount = records.filter(
+      (r) => r.Is_PWD == 1 || r.Is_PWD === true,
+    ).length;
 
     const conditionCounts = {};
-    const nutritionCounts = {};
-    const streetCounts = {};
-    const ageGroupCounts = { Infants: 0, Children: 0, Teens: 0, Adults: 0, Seniors: 0 };
+    records.forEach((record) => {
+      if (record.Health_Condition) {
+        conditionCounts[record.Health_Condition] =
+          (conditionCounts[record.Health_Condition] || 0) + 1;
+      }
+    });
+    const topCondition =
+      Object.entries(conditionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+      "N/A";
 
+    setStats({
+      totalResidents: uniqueResidents.size,
+      maleCount,
+      femaleCount,
+      topCondition,
+      pwdCount,
+    });
+    buildChartsData(records, conditionCounts, pwdCount);
+  };
+
+  const buildChartsData = (records, conditionCounts, pwdCount) => {
+    const streetCounts = {};
     records.forEach((r) => {
-      if (r.Health_Condition) conditionCounts[r.Health_Condition] = (conditionCounts[r.Health_Condition] || 0) + 1;
-      if (r.Nutrition_Status) nutritionCounts[r.Nutrition_Status] = (nutritionCounts[r.Nutrition_Status] || 0) + 1;
-      const street = r.Street || "Unknown";
-      streetCounts[street] = (streetCounts[street] || 0) + 1;
-      const age = r.Age || 0;
-      if (age <= 2) ageGroupCounts["Infants"]++;
+      if (r.Street) {
+        const street = r.Street.trim();
+        streetCounts[street] = (streetCounts[street] || 0) + 1;
+      }
+    });
+    const sortedStreets = Object.entries(streetCounts).sort(
+      (a, b) => b[1] - a[1],
+    );
+
+    const ageGroupCounts = {
+      Infants: 0,
+      Children: 0,
+      Teens: 0,
+      Adults: 0,
+      Seniors: 0,
+    };
+    records.forEach((r) => {
+      let age =
+        r.Age ||
+        (r.Birthdate
+          ? new Date().getFullYear() - new Date(r.Birthdate).getFullYear()
+          : 0);
+      if (age <= 1) ageGroupCounts["Infants"]++;
       else if (age <= 12) ageGroupCounts["Children"]++;
       else if (age <= 19) ageGroupCounts["Teens"]++;
       else if (age <= 59) ageGroupCounts["Adults"]++;
       else ageGroupCounts["Seniors"]++;
     });
 
-    setStats({ totalResidents: uniqueResidents.size, maleCount, femaleCount, pwdCount });
+    const nutritionCounts = {};
+    records.forEach((r) => {
+      if (r.Nutrition_Status)
+        nutritionCounts[r.Nutrition_Status] =
+          (nutritionCounts[r.Nutrition_Status] || 0) + 1;
+    });
+
     setChartsData({
-      residentsPerStreet: { labels: Object.keys(streetCounts), datasets: [{ label: "Residents", data: Object.values(streetCounts), backgroundColor: "#4A90E2" }] },
-      ageGroupDistribution: { labels: Object.keys(ageGroupCounts), datasets: [{ data: Object.values(ageGroupCounts), backgroundColor: ["#FFB3A7", "#86EFAC", "#67E8F9", "#FFD700", "#DDA0DD"] }] },
-      healthConditions: { labels: Object.keys(conditionCounts), datasets: [{ data: Object.values(conditionCounts), backgroundColor: ["#FFB3A7", "#86EFAC", "#67E8F9", "#FFD700", "#DDA0DD"] }] },
-      nutritionStatus: { labels: Object.keys(nutritionCounts), datasets: [{ data: Object.values(nutritionCounts), backgroundColor: ["#FFB3A7", "#86EFAC", "#67E8F9", "#FFD700"] }] },
-      pwdDistribution: { labels: ["PWD", "Non-PWD"], datasets: [{ data: [pwdCount, records.length - pwdCount], backgroundColor: ["#4A90E2", "#F5A623"] }] },
+      residentsPerStreet: {
+        labels: sortedStreets.map(([s]) => s),
+        datasets: [
+          {
+            label: "Residents",
+            data: sortedStreets.map(([, c]) => c),
+            backgroundColor: "#4A90E2",
+            borderRadius: 8,
+          },
+        ],
+      },
+      ageGroupDistribution: {
+        labels: Object.keys(ageGroupCounts),
+        datasets: [
+          {
+            data: Object.values(ageGroupCounts),
+            backgroundColor: [
+              "#FFB3A7",
+              "#86EFAC",
+              "#67E8F9",
+              "#FFD700",
+              "#DDA0DD",
+            ],
+            borderRadius: 8,
+          },
+        ],
+      },
+      healthConditions: {
+        labels: Object.keys(conditionCounts),
+        datasets: [
+          {
+            data: Object.values(conditionCounts),
+            backgroundColor: [
+              "#FFB3A7",
+              "#86EFAC",
+              "#67E8F9",
+              "#FFD700",
+              "#DDA0DD",
+            ],
+          },
+        ],
+      },
+      nutritionStatus: {
+        labels: Object.keys(nutritionCounts),
+        datasets: [
+          {
+            data: Object.values(nutritionCounts),
+            backgroundColor: ["#FFB3A7", "#86EFAC", "#67E8F9", "#FFD700"],
+          },
+        ],
+      },
+      pwdDistribution: {
+        labels: ["PWD", "Non-PWD"],
+        datasets: [
+          {
+            data: [pwdCount, records.length - pwdCount],
+            backgroundColor: ["#4A90E2", "#F5A623"],
+          },
+        ],
+      },
     });
   };
 
-  const commonOptions = {
-    animation: false, responsive: true, maintainAspectRatio: true,
-    plugins: { datalabels: { display: true, color: "#000", font: { weight: "bold" } }, legend: { position: "bottom" } },
+  const handleAcceptResident = (residentData) => {
+    console.log("Resident accepted:", residentData);
   };
 
-  if (loading) return <div className="p-5 text-center">Loading Analytics...</div>;
+  const commonOptions = {
+    animation: false,
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      datalabels: {
+        display: true,
+        color: "#000000",
+        font: { weight: "bold", size: 14 },
+        formatter: (value) => (value > 0 ? value : ""),
+      },
+    },
+  };
+
+  const barOptions = {
+    ...commonOptions,
+    plugins: {
+      ...commonOptions.plugins,
+      legend: { display: false },
+      datalabels: {
+        ...commonOptions.plugins.datalabels,
+        anchor: "end",
+        align: "top",
+        offset: 4,
+      },
+    },
+    scales: { y: { beginAtZero: true, grace: "15%", ticks: { stepSize: 1 } } },
+  };
+
+  const pieOptions = {
+    ...commonOptions,
+    plugins: {
+      ...commonOptions.plugins,
+      legend: { position: "bottom" },
+      datalabels: {
+        ...commonOptions.plugins.datalabels,
+        anchor: "center",
+        align: "center",
+        textStrokeColor: "#ffffff",
+        textStrokeWidth: 2,
+      },
+    },
+  };
+
+  const zoomedBarOptions = {
+    ...barOptions,
+    plugins: {
+      ...barOptions.plugins,
+      datalabels: {
+        ...barOptions.plugins.datalabels,
+        font: { weight: "bold", size: 18 },
+      },
+    },
+  };
+
+  const zoomedPieOptions = {
+    ...pieOptions,
+    plugins: {
+      ...pieOptions.plugins,
+      legend: {
+        position: "bottom",
+        labels: {
+          font: { size: 18, weight: "bold" },
+          padding: 25,
+          usePointStyle: true,
+          pointStyle: "circle",
+        },
+      },
+      tooltip: {
+        titleFont: { size: 16 },
+        bodyFont: { size: 16 },
+        padding: 14,
+      },
+      datalabels: {
+        ...pieOptions.plugins.datalabels,
+        font: { weight: "bold", size: 18 },
+      },
+    },
+  };
+
+  if (loading)
+    return (
+      <div className="dashboard-container d-flex">
+        <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
+          <main className="flex-grow-1 main-content">
+            <HeaderBanner
+              onAcceptResident={handleAcceptResident}
+              onLogout={onLogout}
+            />
+            <div className="p-5 text-center">
+              <div className="spinner-border text-primary" role="status"></div>
+              <p className="mt-3 text-muted">Loading analytics...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
 
   const totalGender = stats.maleCount + stats.femaleCount;
-  const mPct = totalGender > 0 ? Math.round((stats.maleCount / totalGender) * 100) : 0;
+  const mPct =
+    totalGender > 0 ? Math.round((stats.maleCount / totalGender) * 100) : 0;
   const fPct = totalGender > 0 ? 100 - mPct : 0;
 
   return (
     <div className="dashboard-container d-flex">
       <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
         <main className="flex-grow-1 main-content">
-          <HeaderBanner onLogout={onLogout} />
+          <HeaderBanner
+            onAcceptResident={handleAcceptResident}
+            onLogout={onLogout}
+          />
 
           <div className="analytics-page-wrapper">
+            {/* Calendar Modal */}
             <AnimatePresence>
               {showCalendar && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="calendar-modal-overlay" onClick={() => setShowCalendar(false)}>
-                  <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="calendar-modal-content" onClick={(e) => e.stopPropagation()}>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="calendar-modal-overlay"
+                  onClick={handleCloseCalendar}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="calendar-modal-content"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="calendar-header">
-                      <h3 className="calendar-title">📅 Filter Data</h3>
-                      <button className="calendar-close-btn" onClick={() => setShowCalendar(false)}><X size={20} /></button>
+                      <h3 className="calendar-title">📅 Search by Date</h3>
+                      <button
+                        className="calendar-close-btn"
+                        onClick={handleCloseCalendar}
+                      >
+                        <X size={20} />
+                      </button>
                     </div>
-                    <div className="filter-mode-selector p-3">
-                      <div className="btn-group w-100 mb-3">
-                        <button className={`btn ${filterMode === 'weekly' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setFilterMode('weekly')}>Weekly</button>
-                        <button className={`btn ${filterMode === 'monthly' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setFilterMode('monthly')}>Monthly</button>
-                      </div>
-                      <input type="date" className="calendar-date-input" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                      <p className="text-muted small mt-2">Selecting any date will filter for that entire week.</p>
+
+                    <div className="calendar-input-wrapper">
+                      <label className="calendar-input-label">
+                        Select Date
+                      </label>
+                      <input
+                        type="date"
+                        className="calendar-date-input"
+                        value={selectedDate}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                      />
                     </div>
                   </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="analytics-header d-flex justify-content-between align-items-center p-4">
+            {/* Header Section */}
+            <div className="analytics-header">
               <div>
                 <h2 className="analytics-title">ANALYTICS DASHBOARD</h2>
-                <p className="analytics-subtitle">{filterMode.toUpperCase()}: {formatToLongDate(selectedDate)}</p>
+                <p className="analytics-subtitle">
+                  Comprehensive Health Data Insights & Reporting
+                </p>
               </div>
-              <div className="d-flex gap-2">
-                <button className="btn-filter-toggle" onClick={() => setShowCalendar(true)}><Filter size={18} className="me-2" /> Change Period</button>
-                <button className="btn-export-pdf" onClick={handleExportPDF}><FileText size={18} className="me-2" /> Export PDF</button>
-              </div>
+              <button className="btn-export-pdf" onClick={handleExportPDF}>
+                <i className="bi bi-file-earmark-pdf me-2"></i>Export PDF Report
+              </button>
             </div>
 
-            <div ref={reportRef} className="report-container p-4 bg-white" style={{ width: "fit-content", minWidth: "1000px" }}>
-              <div className="report-header-pdf text-center mb-4">
-                <h2 className="report-title-pdf" style={{color: '#1e293b', fontWeight: '800'}}>HEALTH ANALYTICS REPORT</h2>
-                <h5 className="report-subtitle-pdf text-muted">{filterMode.toUpperCase()} | {formatToLongDate(selectedDate)}</h5>
+            {/* Printable Report Section */}
+            <div ref={reportRef} className="report-container">
+              <div className="report-header-pdf">
+                <h2 className="report-title-pdf">HEALTH ANALYTICS REPORT</h2>
+                <h5 className="report-subtitle-pdf">
+                  Community Health Information System
+                </h5>
               </div>
 
-              <div className="stats-section-pdf mb-4">
-                <h3 className="section-heading mb-3">KEY STATISTICS</h3>
-                <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                  <div className="stat-card-modern border rounded p-3 text-center">
-                    <h3 className="stat-number">{stats.totalResidents}</h3>
-                    <p className="stat-label">Total Residents Checked</p>
-                  </div>
-
-                  <div className="stat-card-modern border rounded p-3 text-center">
-                    <h3 className="stat-number">M: {mPct}% | F: {fPct}%</h3>
-                    <p className="stat-label">Gender Split</p>
-                    <div className="gender-bar mt-2" style={{height: '10px', background: '#eee', borderRadius: '5px', overflow: 'hidden', display: 'flex'}}>
-                      <div style={{width: `${mPct}%`, background: '#4A90E2'}}></div>
-                      <div style={{width: `${fPct}%`, background: '#F5A623'}}></div>
+              {/* Stats Overview Inside PDF */}
+              <div className="stats-section-pdf">
+                <h3 className="section-heading">KEY STATISTICS</h3>
+                <div className="stats-grid">
+                  <div className="stat-card-modern">
+                    <i className="bi bi-people stat-icon text-success"></i>
+                    <div className="stat-content">
+                      <h3 className="stat-number">{stats.totalResidents}</h3>
+                      <p className="stat-label">Total Residents</p>
                     </div>
                   </div>
 
-                  <div className="stat-card-modern border rounded p-3 text-center">
-                    <h3 className="stat-number">{stats.pwdCount}</h3>
-                    <p className="stat-label">PWD Residents</p>
+                  <div className="stat-card-modern">
+                    <div className="stat-content">
+                      <h3 className="stat-number">
+                        M: {mPct}% | F: {fPct}%
+                      </h3>
+                      <p className="stat-label">Gender Split</p>
+                      <div className="gender-bar">
+                        <div
+                          className="gender-bar-male"
+                          style={{ width: `${mPct}%` }}
+                        ></div>
+                        <div
+                          className="gender-bar-female"
+                          style={{ width: `${fPct}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="stat-card-modern">
+                    <i className="bi bi-person-wheelchair stat-icon text-success"></i>
+                    <div className="stat-content">
+                      <h3 className="stat-number">{stats.pwdCount}</h3>
+                      <p className="stat-label">PWD Residents</p>
+                    </div>
+                  </div>
+
+                  {/* Date Card - Clickable */}
+                  <div
+                    className="stat-card-modern stat-card-clickable"
+                    onClick={handleOpenCalendar}
+                  >
+                    <div className="stat-icon-calendar">
+                      <Calendar size={24} />
+                    </div>
+                    <div className="stat-content">
+                      <h3 className="stat-number">
+                        {new Date(selectedDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </h3>
+                      <p className="stat-label">Today's Date</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="charts-grid mb-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                <div className="chart-box border rounded p-3">
-                  <h6 className="text-center mb-2">Residents per Street</h6>
-                  {chartsData.residentsPerStreet && <Bar data={chartsData.residentsPerStreet} options={commonOptions} />}
-                </div>
-                <div className="chart-box border rounded p-3">
-                  <h6 className="text-center mb-2">Age Distribution</h6>
-                  {chartsData.ageGroupDistribution && <Bar data={chartsData.ageGroupDistribution} options={commonOptions} />}
+              {/* Charts Section */}
+              <div className="charts-section">
+                <h3 className="section-heading">COMMUNITY DEMOGRAPHICS</h3>
+                <div className="charts-grid">
+                  <div
+                    className="chart-card-modern zoom-card"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      setZoomedContent(
+                        <div
+                          className="d-flex flex-column align-items-center justify-content-center"
+                          style={{ padding: "2rem", minHeight: "500px" }}
+                        >
+                          <div
+                            className="text-white text-center fw-bold mb-4 rounded-3 d-flex align-items-center justify-content-center"
+                            style={{
+                              backgroundColor: "#14b8a6",
+                              fontSize: "clamp(1.2rem, 3vw, 1.8rem)",
+                              letterSpacing: "2px",
+                              width: "100%",
+                              height: "80px",
+                              padding: "1rem",
+                            }}
+                          >
+                            RESIDENTS PER STREET
+                          </div>
+                          <div
+                            className="d-flex align-items-center justify-content-center flex-grow-1"
+                            style={{
+                              width: "100%",
+                              maxWidth: "600px",
+                              padding: "1rem",
+                            }}
+                          >
+                            {chartsData.residentsPerStreet && (
+                              <Bar
+                                data={chartsData.residentsPerStreet}
+                                options={zoomedBarOptions}
+                              />
+                            )}
+                          </div>
+                        </div>,
+                      )
+                    }
+                  >
+                    <div className="chart-header">
+                      <h6 className="chart-title">Residents per Street</h6>
+                    </div>
+                    <div className="chart-body">
+                      {chartsData.residentsPerStreet && (
+                        <Bar
+                          data={chartsData.residentsPerStreet}
+                          options={barOptions}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className="chart-card-modern zoom-card"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      setZoomedContent(
+                        <div
+                          className="d-flex flex-column align-items-center justify-content-center"
+                          style={{ padding: "2rem", minHeight: "500px" }}
+                        >
+                          <div
+                            className="text-white text-center fw-bold mb-4 rounded-3 d-flex align-items-center justify-content-center"
+                            style={{
+                              backgroundColor: "#14b8a6",
+                              fontSize: "clamp(1.2rem, 3vw, 1.8rem)",
+                              letterSpacing: "2px",
+                              width: "100%",
+                              height: "80px",
+                              padding: "1rem",
+                            }}
+                          >
+                            AGE GROUP DISTRIBUTION
+                          </div>
+                          <div
+                            className="d-flex align-items-center justify-content-center flex-grow-1"
+                            style={{
+                              width: "100%",
+                              maxWidth: "600px",
+                              padding: "1rem",
+                            }}
+                          >
+                            {chartsData.ageGroupDistribution && (
+                              <Bar
+                                data={chartsData.ageGroupDistribution}
+                                options={zoomedBarOptions}
+                              />
+                            )}
+                          </div>
+                        </div>,
+                      )
+                    }
+                  >
+                    <div className="chart-header">
+                      <h6 className="chart-title">Age Group Distribution</h6>
+                    </div>
+                    <div className="chart-body">
+                      {chartsData.ageGroupDistribution && (
+                        <Bar
+                          data={chartsData.ageGroupDistribution}
+                          options={barOptions}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="charts-grid-three" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                <div className="chart-box border rounded p-3">
-                  <h6 className="text-center mb-2">PWD Distribution</h6>
-                  {chartsData.pwdDistribution && <Doughnut data={chartsData.pwdDistribution} options={commonOptions} />}
-                </div>
-                <div className="chart-box border rounded p-3">
-                  <h6 className="text-center mb-2">Health Conditions</h6>
-                  {chartsData.healthConditions && <Pie data={chartsData.healthConditions} options={commonOptions} />}
-                </div>
-                <div className="chart-box border rounded p-3">
-                  <h6 className="text-center mb-2">Nutrition Status</h6>
-                  {chartsData.nutritionStatus && <Doughnut data={chartsData.nutritionStatus} options={commonOptions} />}
+              <div className="charts-section">
+                <h3 className="section-heading">
+                  HEALTH & DISABILITY OVERVIEW
+                </h3>
+                <div className="charts-grid-three">
+                  <div
+                    className="chart-card-modern zoom-card"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      setZoomedContent(
+                        <div
+                          className="d-flex flex-column align-items-center justify-content-center"
+                          style={{ padding: "2rem", minHeight: "500px" }}
+                        >
+                          <div
+                            className="text-white text-center fw-bold mb-4 rounded-3 d-flex align-items-center justify-content-center"
+                            style={{
+                              backgroundColor: "#14b8a6",
+                              fontSize: "clamp(1.2rem, 3vw, 1.8rem)",
+                              letterSpacing: "2px",
+                              width: "100%",
+                              height: "80px",
+                              padding: "1rem",
+                            }}
+                          >
+                            PWD DISTRIBUTION
+                          </div>
+                          <div
+                            className="d-flex align-items-center justify-content-center flex-grow-1"
+                            style={{
+                              width: "100%",
+                              maxWidth: "500px",
+                              padding: "1rem",
+                            }}
+                          >
+                            {chartsData.pwdDistribution && (
+                              <Doughnut
+                                data={chartsData.pwdDistribution}
+                                options={zoomedPieOptions}
+                              />
+                            )}
+                          </div>
+                        </div>,
+                      )
+                    }
+                  >
+                    <div className="chart-header">
+                      <h6 className="chart-title">PWD Distribution</h6>
+                    </div>
+                    <div className="chart-body">
+                      {chartsData.pwdDistribution && (
+                        <Doughnut
+                          data={chartsData.pwdDistribution}
+                          options={pieOptions}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className="chart-card-modern zoom-card"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      setZoomedContent(
+                        <div
+                          className="d-flex flex-column align-items-center justify-content-center"
+                          style={{ padding: "2rem", minHeight: "500px" }}
+                        >
+                          <div
+                            className="text-white text-center fw-bold mb-4 rounded-3 d-flex align-items-center justify-content-center"
+                            style={{
+                              backgroundColor: "#14b8a6",
+                              fontSize: "clamp(1.2rem, 3vw, 1.8rem)",
+                              letterSpacing: "2px",
+                              width: "100%",
+                              height: "80px",
+                              padding: "1rem",
+                            }}
+                          >
+                            HEALTH CONDITIONS
+                          </div>
+                          <div
+                            className="d-flex align-items-center justify-content-center flex-grow-1"
+                            style={{
+                              width: "100%",
+                              maxWidth: "500px",
+                              padding: "1rem",
+                            }}
+                          >
+                            {chartsData.healthConditions && (
+                              <Pie
+                                data={chartsData.healthConditions}
+                                options={zoomedPieOptions}
+                              />
+                            )}
+                          </div>
+                        </div>,
+                      )
+                    }
+                  >
+                    <div className="chart-header">
+                      <h6 className="chart-title">Health Conditions</h6>
+                    </div>
+                    <div className="chart-body">
+                      {chartsData.healthConditions && (
+                        <Pie
+                          data={chartsData.healthConditions}
+                          options={pieOptions}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className="chart-card-modern zoom-card"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      setZoomedContent(
+                        <div
+                          className="d-flex flex-column align-items-center justify-content-center"
+                          style={{ padding: "2rem", minHeight: "500px" }}
+                        >
+                          <div
+                            className="text-white text-center fw-bold mb-4 rounded-3 d-flex align-items-center justify-content-center"
+                            style={{
+                              backgroundColor: "#14b8a6",
+                              fontSize: "clamp(1.2rem, 3vw, 1.8rem)",
+                              letterSpacing: "2px",
+                              width: "100%",
+                              height: "80px",
+                              padding: "1rem",
+                            }}
+                          >
+                            NUTRITION STATUS
+                          </div>
+                          <div
+                            className="d-flex align-items-center justify-content-center flex-grow-1"
+                            style={{
+                              width: "100%",
+                              maxWidth: "500px",
+                              padding: "1rem",
+                            }}
+                          >
+                            {chartsData.nutritionStatus && (
+                              <Doughnut
+                                data={chartsData.nutritionStatus}
+                                options={zoomedPieOptions}
+                              />
+                            )}
+                          </div>
+                        </div>,
+                      )
+                    }
+                  >
+                    <div className="chart-header">
+                      <h6 className="chart-title">Nutrition Status</h6>
+                    </div>
+                    <div className="chart-body">
+                      {chartsData.nutritionStatus && (
+                        <Doughnut
+                          data={chartsData.nutritionStatus}
+                          options={pieOptions}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="text-center mt-5 text-muted small border-top pt-3">
-                Generated by Health Information System &copy; 2026 | Weekly Summary Report
+              <div className="report-footer-pdf">
+                <p>
+                  Generated by Health Information System Dashboard &copy; 2026
+                </p>
               </div>
             </div>
           </div>
         </main>
       </div>
+
+      {/* ZOOM MODAL for charts */}
+      {zoomedContent && (
+        <div className="zoom-overlay" onClick={() => setZoomedContent(null)}>
+          <div className="zoom-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="zoom-close"
+              onClick={() => setZoomedContent(null)}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+            {zoomedContent}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
