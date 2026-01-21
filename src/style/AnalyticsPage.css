@@ -48,6 +48,95 @@
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
 }
 
+/*  CALENDAR  */
+.calendar-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+  backdrop-filter: blur(4px);
+}
+
+.calendar-modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.calendar-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+}
+
+.calendar-close-btn {
+  background: #f3f4f6;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.calendar-close-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.calendar-input-wrapper {
+  margin-bottom: 1.5rem;
+}
+
+.calendar-input-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.calendar-date-input {
+  width: 100%;
+  padding: 0.875rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.calendar-date-input:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
 /* ========== SECTION HEADINGS ========== */
 .section-heading {
   font-size: 1.5rem;
@@ -62,7 +151,7 @@
 }
 
 .section-heading::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -105,19 +194,32 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.stat-card-modern:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+/* Clickable stat card (Date card) */
+.stat-card-clickable {
+  cursor: pointer;
 }
 
-.stat-card-pwd {
-  background-color: #f0fdfa;
-  border-color: #14b8a6;
+.stat-card-clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
   font-size: 2.5rem;
   flex-shrink: 0;
+}
+
+/* Calendar icon styling */
+.stat-icon-calendar {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #e0e7ff;
+  color: #6366f1;
 }
 
 .stat-icon-pwd {
@@ -136,10 +238,6 @@
   line-height: 1;
 }
 
-.stat-number-pwd {
-  color: #14b8a6;
-}
-
 .stat-label {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -147,11 +245,6 @@
   color: #6b7280;
   font-weight: 600;
   margin: 0;
-}
-
-.stat-label-pwd {
-  color: #0d9488;
-  font-weight: 700;
 }
 
 /* Gender Bar */
@@ -164,12 +257,12 @@
 }
 
 .gender-bar-male {
-  background-color: #4A90E2;
+  background-color: #4a90e2;
   transition: width 0.3s ease;
 }
 
 .gender-bar-female {
-  background-color: #F56969;
+  background-color: #f56969;
   transition: width 0.3s ease;
 }
 
@@ -177,12 +270,13 @@
 .report-header-pdf {
   text-align: center;
   padding-bottom: 2rem;
+  padding-top: 0.5rem; /* dito mag adjust spacing */
   margin-bottom: 2.5rem;
   border-bottom: 2px solid #e5e7eb;
 }
 
 .report-title-pdf {
-  font-size: 2rem;
+  font-size: 3.5rem; /* dito aadjust font size ng "HEALTH ANALYTICS REPORT" - xian*/
   font-weight: 900;
   letter-spacing: 2px;
   color: #1f2937;
@@ -190,10 +284,10 @@
 }
 
 .report-subtitle-pdf {
-  font-size: 1.1rem;
+  font-size: 1.8rem; /* dito aadjust font size ng "Community Health Information System" - xian*/
   color: #6b7280;
   font-weight: 600;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem; /* dito mag adjust spacing */
 }
 
 .report-meta-pdf {
@@ -272,12 +366,99 @@
   color: #9ca3af;
 }
 
+/* ========== ZOOM MODAL STYLES ========== */
+.zoom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-in-out;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.zoom-content {
+  background: white;
+  border-radius: 24px;
+  padding: 0;
+  width: 90vw;
+  max-width: 650px;
+  max-height: 90vh;
+  position: relative;
+  animation: zoomIn 0.3s ease-out;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.zoom-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+  z-index: 10001;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.zoom-close:hover {
+  background: #dc2626;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.zoom-card {
+  transition: all 0.3s ease;
+}
+
+.zoom-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .charts-grid-three {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -287,47 +468,84 @@
   .analytics-page-wrapper {
     padding: 1.5rem;
   }
-  
+
   .analytics-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .btn-export-pdf {
     width: 100%;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .charts-grid,
   .charts-grid-three {
     grid-template-columns: 1fr;
   }
-  
+
   .stat-card-modern {
     padding: 1.25rem;
   }
-  
-  .stat-icon {
+
+  .stat-icon,
+  .stat-icon-calendar {
     font-size: 2rem;
+    width: 45px;
+    height: 45px;
   }
-  
+
   .stat-number {
     font-size: 1.5rem;
   }
-  
+
   .report-container {
     padding: 1.5rem;
   }
-  
+
   .analytics-title {
     font-size: 1.75rem;
   }
-  
+
   .section-heading {
     font-size: 1.25rem;
+  }
+
+  .zoom-overlay {
+    padding: 0.75rem;
+  }
+
+  .zoom-content {
+    width: 95vw;
+    max-width: 550px;
+    max-height: 85vh;
+  }
+
+  .zoom-close {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .zoom-overlay {
+    padding: 0.5rem;
+  }
+
+  .zoom-content {
+    width: 96vw;
+    max-width: 500px;
+    max-height: 80vh;
+  }
+
+  .zoom-close {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
   }
 }
