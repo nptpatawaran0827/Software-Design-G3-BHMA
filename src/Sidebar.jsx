@@ -83,7 +83,7 @@ const Sidebar = ({ onLogout }) => {
           className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
           style={{ fontWeight: "600" }}
         >
-          <span>🚪</span> {!isCollapsed && "Logout"}
+          <span></span> {!isCollapsed && "Logout"}
         </button>
       </div>
     </div>
