@@ -25,7 +25,7 @@ const logActivity = (recordName, action, adminUsername) => {
   const sql =
     "INSERT INTO activity_logs (record_name, action_type, admin_username) VALUES (?, ?, ?)";
   db.query(sql, [recordName, action, adminUsername || "Admin"], (err) => {
-    if (err) console.error("❌ Activity Log Error:", err);
+    if (err) console.error("Activity Log Error:", err);
   });
 };
 
@@ -54,12 +54,12 @@ app.post("/api/residents", (req, res) => {
     [d.First_Name, d.Middle_Name || "", d.Last_Name],
     (err, rows) => {
       if (err) {
-        console.error("❌ DB Error during check:", err);
+        console.error("DB Error during check:", err);
         return res.status(500).json(err);
       }
 
       if (rows.length > 0) {
-        console.log(`🚫 Duplicate blocked: ${d.First_Name} ${d.Last_Name}`);
+        console.log(`Duplicate blocked: ${d.First_Name} ${d.Last_Name}`);
         return res.json({
           success: true,
           isDuplicate: true,
@@ -89,7 +89,7 @@ app.post("/api/residents", (req, res) => {
         ],
         (err, result) => {
           if (err) {
-            console.error("❌ DB Error during insert:", err);
+            console.error("DB Error during insert:", err);
             return res.status(500).json(err);
           }
           res.json({
