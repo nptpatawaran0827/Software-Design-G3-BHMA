@@ -10,9 +10,9 @@ app.use(express.json());
 
 
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '@Group3-BHMA',
+  host: 'health-monitoring-analytics-system.colao00gscmx.us-east-1.rds.amazonaws.com',
+  user: 'admin', // or your RDS username
+  password: 'Group3-BHMA', // replace with your RDS password
   database: 'admin_db'
 });
 
