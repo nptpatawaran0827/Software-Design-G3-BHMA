@@ -153,7 +153,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     if (!formData.First_Name.trim() || !formData.Last_Name.trim()) {
       setMessage({
         type: "error",
-        text: "⚠️ ONE NAME POLICY: Both First Name and Last Name are required.",
+        text: "ONE NAME POLICY: Both First Name and Last Name are required.",
       });
       return;
     }
@@ -193,8 +193,8 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
       if (!response.ok) throw new Error(result.details || "Submission failed");
 
       const successText = editMode
-        ? `✅ Record for ${formData.First_Name} ${formData.Last_Name} has been modified successfully!`
-        : `✅ Registration Successful! Resident ID: ${formData.Resident_ID} has been added.`;
+        ? `Record for ${formData.First_Name} ${formData.Last_Name} has been modified successfully!`
+        : `Registration Successful! Resident ID: ${formData.Resident_ID} has been added.`;
 
       setMessage({ type: "success", text: successText });
 
@@ -204,7 +204,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
       }, 2500);
     } catch (error) {
       console.error("Error:", error);
-      setMessage({ type: "error", text: `❌ ${error.message}` });
+      setMessage({ type: "error", text: `${error.message}` });
     }
   };
 

@@ -110,7 +110,7 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
         // This triggers the RED alert box in your UI
         setMessage({
           type: "error",
-          text: `⚠️ RECORD ALREADY EXISTS: ${formData.First_Name} ${formData.Last_Name} is already registered with ID: ${resData.Resident_ID}. Duplicate entries are not allowed.`,
+          text: `RECORD ALREADY EXISTS: ${formData.First_Name} ${formData.Last_Name} is already registered with ID: ${resData.Resident_ID}. Duplicate entries are not allowed.`,
         });
 
         // Use a standard browser alert as a fallback/extra notification
