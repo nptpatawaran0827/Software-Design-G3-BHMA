@@ -212,7 +212,7 @@ function Home({ onLogout }) {
       );
     }
 
-    // ===== HEATMAP TAB =====
+    // ===== HEATMAP TAB (NEW - INTEGRATED SEAMLESSLY) =====
     if (activeTab === "Heatmap") {
       return <HeatmapPage />;
     }
