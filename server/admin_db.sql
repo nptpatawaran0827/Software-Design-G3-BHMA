@@ -15,6 +15,13 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+-- Create database if it doesn't exist
+CREATE DATABASE IF NOT EXISTS admin_db;
+USE admin_db;
+
+-- Disable foreign key checks before dropping tables
+SET FOREIGN_KEY_CHECKS=0;
+
 --
 -- Table structure for table `activity_logs`
 --
@@ -66,6 +73,68 @@ LOCK TABLES `admins` WRITE;
 /*!40000 ALTER TABLE `admins` DISABLE KEYS */;
 INSERT INTO `admins` VALUES (1,'Admin_H1','34f26e6e8d36cedafae5617bbd69f40963f12986b916e926a4afd5f7567a6707'),(2,'Admin_H2','63537d7fea69535a6abbba097662d374870890f6814de11c840bc7e7d0ffe91d');
 /*!40000 ALTER TABLE `admins` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `streets`
+--
+
+DROP TABLE IF EXISTS `streets`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `streets` (
+  `Street_ID` int NOT NULL AUTO_INCREMENT,
+  `Street_Name` varchar(255) NOT NULL,
+  `Latitude` decimal(10,8) NOT NULL,
+  `Longitude` decimal(11,8) NOT NULL,
+  `Created_At` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`Street_ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `streets`
+--
+
+LOCK TABLES `streets` WRITE;
+/*!40000 ALTER TABLE `streets` DISABLE KEYS */;
+INSERT INTO `streets` VALUES (1,'Apitong Street',14.65821227,121.12147766,'2026-01-20 14:07:01'),(2,'Champagnat Street',14.64854821,121.11945110,'2026-01-20 14:07:01'),(3,'Champaca Street',14.65902341,121.12826892,'2026-01-20 14:07:01'),(4,'Dao Street',14.65474914,121.11852474,'2026-01-20 14:07:01'),(5,'Ipil Street',14.65591085,121.11903996,'2026-01-20 14:07:01'),(6,'East Drive Street',14.65514586,121.12116604,'2026-01-20 14:07:01'),(7,'General Ordonez Street',14.65196997,121.11371871,'2026-01-20 14:07:01'),(8,'Liwasang Kalayaan Street',14.64877624,121.11470125,'2026-01-20 14:07:01'),(9,'Narra Street',14.66882298,121.10455466,'2026-01-20 14:07:01'),(10,'P. Valenzuela Street',14.65100107,121.11432684,'2026-01-20 14:07:01');
+/*!40000 ALTER TABLE `streets` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `residents`
+--
+
+DROP TABLE IF EXISTS `residents`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `residents` (
+  `Resident_ID` varchar(20) NOT NULL,
+  `First_Name` varchar(100) NOT NULL,
+  `Middle_Name` varchar(100) DEFAULT NULL,
+  `Last_Name` varchar(100) NOT NULL,
+  `Sex` enum('Male','Female') NOT NULL,
+  `Birthdate` date DEFAULT NULL,
+  `Civil_Status` varchar(50) DEFAULT NULL,
+  `Contact_Number` varchar(20) DEFAULT NULL,
+  `Street_ID` int DEFAULT NULL,
+  `Barangay` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`Resident_ID`),
+  UNIQUE KEY `unique_resident_identity` (`First_Name`,`Middle_Name`,`Last_Name`),
+  KEY `fk_street` (`Street_ID`),
+  CONSTRAINT `residents_ibfk_street` FOREIGN KEY (`Street_ID`) REFERENCES `streets` (`Street_ID`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `residents`
+--
+
+LOCK TABLES `residents` WRITE;
+/*!40000 ALTER TABLE `residents` DISABLE KEYS */;
+INSERT INTO `residents` VALUES ('RES-1737290-2655','Johanna Lucia','Villarama','Hizon','Female','2003-12-14','Single','09221212121121',5,'Marikina Heights'),('RES-2227150-4177','Misha','Char','Legwork','Male','2015-04-06','Single','09221212121121',10,'Marikina Heights'),('RES-2530333-4988','John','Kylle','Clarianes','Male',NULL,NULL,NULL,NULL,NULL),('RES-4071025-3317','Ikki Dominique','.','Modar','Female','2003-02-24','Single','025426544136',7,'Marikina Heights'),('RES-4479005-5451','Evelyn','Smith','Lee','Female',NULL,NULL,NULL,NULL,NULL),('RES-5393957-1568','Astra','Shin','Yao','Female',NULL,NULL,NULL,NULL,NULL),('RES-6448176-4131','Nheil Patrick','Tito','Patawaran','Male','2000-02-02',NULL,NULL,1,'Marikina Heights'),('RES-6625780-8076','Jian Vench','Virgo','Palculan','Male','1990-01-18','Single','0917-345-6789',4,'Marikina Heights'),('RES-6724323-7207','Cantarella',NULL,'Fisalia','Female','1999-05-05','Widowed','0917-345-6789',3,'Marikina Heights'),('RES-8385132-2389','Raiden','Bosenmori','Mei','Female','0200-12-05','Single','0917-345-6789',10,'Marikina Heights'),('RES-8931026-5652','Seijuro','Sota','Akashi','Male',NULL,NULL,NULL,NULL,NULL),('RES-9305375-5812','Luke',NULL,'Hersen','Male',NULL,NULL,NULL,NULL,NULL),('RES-9544085-5978','Carlotta',NULL,'Montiny','Female',NULL,NULL,NULL,NULL,NULL),('RES-9688995-9828','Justin','Lenard','Timberlake','Male',NULL,NULL,NULL,NULL,NULL),('RES-9952553-2141','Jose Emmanuel',NULL,'Hizon','Male','2002-05-21','Single','09995632576',1,'Marikina Heights');
+/*!40000 ALTER TABLE `residents` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -142,67 +211,8 @@ INSERT INTO `pending_resident` VALUES (7,'RES-4479005-5451',0,160.00,49.00,19.14
 /*!40000 ALTER TABLE `pending_resident` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Table structure for table `residents`
---
-
-DROP TABLE IF EXISTS `residents`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `residents` (
-  `Resident_ID` varchar(20) NOT NULL,
-  `First_Name` varchar(100) NOT NULL,
-  `Middle_Name` varchar(100) DEFAULT NULL,
-  `Last_Name` varchar(100) NOT NULL,
-  `Sex` enum('Male','Female') NOT NULL,
-  `Birthdate` date DEFAULT NULL,
-  `Civil_Status` varchar(50) DEFAULT NULL,
-  `Contact_Number` varchar(20) DEFAULT NULL,
-  `Street_ID` int DEFAULT NULL,
-  `Barangay` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`Resident_ID`),
-  UNIQUE KEY `unique_resident_identity` (`First_Name`,`Middle_Name`,`Last_Name`),
-  KEY `fk_street` (`Street_ID`),
-  CONSTRAINT `residents_ibfk_street` FOREIGN KEY (`Street_ID`) REFERENCES `streets` (`Street_ID`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `residents`
---
-
-LOCK TABLES `residents` WRITE;
-/*!40000 ALTER TABLE `residents` DISABLE KEYS */;
-INSERT INTO `residents` VALUES ('RES-1737290-2655','Johanna Lucia','Villarama','Hizon','Female','2003-12-14','Single','09221212121121',5,'Marikina Heights'),('RES-2227150-4177','Misha','Char','Legwork','Male','2015-04-06','Single','09221212121121',10,'Marikina Heights'),('RES-2530333-4988','John','Kylle','Clarianes','Male',NULL,NULL,NULL,NULL,NULL),('RES-4071025-3317','Ikki Dominique','.','Modar','Female','2003-02-24','Single','025426544136',7,'Marikina Heights'),('RES-4479005-5451','Evelyn','Smith','Lee','Female',NULL,NULL,NULL,NULL,NULL),('RES-5393957-1568','Astra','Shin','Yao','Female',NULL,NULL,NULL,NULL,NULL),('RES-6448176-4131','Nheil Patrick','Tito','Patawaran','Male','2000-02-02',NULL,NULL,1,'Marikina Heights'),('RES-6625780-8076','Jian Vench','Virgo','Palculan','Male','1990-01-18','Single','0917-345-6789',4,'Marikina Heights'),('RES-6724323-7207','Cantarella',NULL,'Fisalia','Female','1999-05-05','Widowed','0917-345-6789',3,'Marikina Heights'),('RES-8385132-2389','Raiden','Bosenmori','Mei','Female','0200-12-05','Single','0917-345-6789',10,'Marikina Heights'),('RES-8931026-5652','Seijuro','Sota','Akashi','Male',NULL,NULL,NULL,NULL,NULL),('RES-9305375-5812','Luke',NULL,'Hersen','Male',NULL,NULL,NULL,NULL,NULL),('RES-9544085-5978','Carlotta',NULL,'Montiny','Female',NULL,NULL,NULL,NULL,NULL),('RES-9688995-9828','Justin','Lenard','Timberlake','Male',NULL,NULL,NULL,NULL,NULL),('RES-9952553-2141','Jose Emmanuel',NULL,'Hizon','Male','2002-05-21','Single','09995632576',1,'Marikina Heights');
-/*!40000 ALTER TABLE `residents` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `streets`
---
-
-DROP TABLE IF EXISTS `streets`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `streets` (
-  `Street_ID` int NOT NULL AUTO_INCREMENT,
-  `Street_Name` varchar(255) NOT NULL,
-  `Latitude` decimal(10,8) NOT NULL,
-  `Longitude` decimal(11,8) NOT NULL,
-  `Created_At` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`Street_ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `streets`
---
-
-LOCK TABLES `streets` WRITE;
-/*!40000 ALTER TABLE `streets` DISABLE KEYS */;
-INSERT INTO `streets` VALUES (1,'Apitong Street',14.65821227,121.12147766,'2026-01-20 14:07:01'),(2,'Champagnat Street',14.64854821,121.11945110,'2026-01-20 14:07:01'),(3,'Champaca Street',14.65902341,121.12826892,'2026-01-20 14:07:01'),(4,'Dao Street',14.65474914,121.11852474,'2026-01-20 14:07:01'),(5,'Ipil Street',14.65591085,121.11903996,'2026-01-20 14:07:01'),(6,'East Drive Street',14.65514586,121.12116604,'2026-01-20 14:07:01'),(7,'General Ordonez Street',14.65196997,121.11371871,'2026-01-20 14:07:01'),(8,'Liwasang Kalayaan Street',14.64877624,121.11470125,'2026-01-20 14:07:01'),(9,'Narra Street',14.66882298,121.10455466,'2026-01-20 14:07:01'),(10,'P. Valenzuela Street',14.65100107,121.11432684,'2026-01-20 14:07:01');
-/*!40000 ALTER TABLE `streets` ENABLE KEYS */;
-UNLOCK TABLES;
+-- Re-enable foreign key checks
+SET FOREIGN_KEY_CHECKS=1;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -214,4 +224,4 @@ UNLOCK TABLES;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET @OLD_SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-20 22:21:24
+-- Dump completed on 2026-01-22 20:00:00
