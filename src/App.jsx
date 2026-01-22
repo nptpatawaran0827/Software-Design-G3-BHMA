@@ -22,18 +22,25 @@ function App() {
   const warningTimerRef = useRef(null);
   const countdownIntervalRef = useRef(null);
 
+  // --- SUCCESS HANDLER FOR RESIDENT FORM ---
+  // This function is triggered when a resident successfully submits the form
+  const handleResidentSubmitSuccess = (id) => {
+    setSubmittedId(id); // Store the ID to show in LandingPage
+    navigate('/');      // Redirect back to LandingPage
+  };
+
   const handleLogout = useCallback(() => {
     localStorage.removeItem('authToken');
     setIsAuthed(false);
     setShowWarning(false);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    navigate('/'); // Redirect via Router
+    navigate('/'); 
   }, [navigate]);
 
   function handleLoginSuccess() {
     localStorage.setItem('authToken', 'sample-token');
     setIsAuthed(true);
-    navigate('/Dashboard'); // Redirect via Router
+    navigate('/Dashboard'); 
   }
 
   const resetInactivityTimer = useCallback(() => {
@@ -95,10 +102,16 @@ function App() {
             <LandingPage 
               onHealthWorkerClick={() => navigate('/HWLogin')} 
               onResidentClick={() => navigate('/Resident')} 
+              submissionStatus={submittedId} // UPDATED: Pass the ID here
             />
           } />
           
-          <Route path="/Resident" element={<ResidentPage onCancel={() => navigate('/')} />} />
+          <Route path="/Resident" element={
+            <ResidentPage 
+              onCancel={() => navigate('/')} 
+              onSubmitSuccess={handleResidentSubmitSuccess} // UPDATED: Pass the handler here
+            />
+          } />
           
           <Route path="/HWLogin" element={
             isAuthed ? (
@@ -106,7 +119,7 @@ function App() {
             ) : (
               <LoginPage 
                 onLoginSuccess={handleLoginSuccess} 
-                onReturnToLanding={() => navigate('/')} // Add this line
+                onReturnToLanding={() => navigate('/')} 
               />
             )
           } />
@@ -126,38 +139,11 @@ function App() {
 }
 
 // --- WARNING STYLES ---
-const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  backgroundColor: 'rgba(255, 255, 255, 0.4)', 
-  backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-  zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center'
-};
-
-const aestheticModalStyle = {
-  backgroundColor: '#fff', padding: '30px', borderRadius: '24px',
-  textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-  width: '320px', border: '1px solid rgba(0,0,0,0.05)'
-};
-
-const iconCircleStyle = {
-  width: '50px', height: '50px', backgroundColor: '#f1f2f6',
-  borderRadius: '50%', display: 'flex', justifyContent: 'center',
-  alignItems: 'center', fontSize: '1.5rem', margin: '0 auto 15px'
-};
-
-const progressBgStyle = {
-  width: '100%', height: '6px', backgroundColor: '#f1f2f6',
-  borderRadius: '10px', overflow: 'hidden', marginBottom: '25px'
-};
-
-const progressFillStyle = {
-  height: '100%', backgroundColor: '#ff4757', borderRadius: '10px'
-};
-
-const stayButtonStyle = {
-  width: '100%', padding: '12px', border: 'none', borderRadius: '12px',
-  backgroundColor: '#2f3542', color: '#fff', fontWeight: '600',
-  cursor: 'pointer', transition: 'all 0.2s ease'
-};
+const overlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' };
+const aestheticModalStyle = { backgroundColor: '#fff', padding: '30px', borderRadius: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', width: '320px', border: '1px solid rgba(0,0,0,0.05)' };
+const iconCircleStyle = { width: '50px', height: '50px', backgroundColor: '#f1f2f6', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.5rem', margin: '0 auto 15px' };
+const progressBgStyle = { width: '100%', height: '6px', backgroundColor: '#f1f2f6', borderRadius: '10px', overflow: 'hidden', marginBottom: '25px' };
+const progressFillStyle = { height: '100%', backgroundColor: '#ff4757', borderRadius: '10px' };
+const stayButtonStyle = { width: '100%', padding: '12px', border: 'none', borderRadius: '12px', backgroundColor: '#2f3542', color: '#fff', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s ease' };
 
 export default App;
