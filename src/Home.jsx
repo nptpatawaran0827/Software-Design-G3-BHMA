@@ -31,9 +31,7 @@ function Home({ onLogout }) {
   const adminId = localStorage.getItem("adminId") || "N/A";
 
   // ===== STATE MANAGEMENT =====
-  const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem("activeDashboardTab") || "Home";
-  });
+  const [activeTab, setActiveTab] = useState("Home");
 
   const [filter, setFilter] = useState("All Activities");
   const [activities, setActivities] = useState([]);
@@ -599,7 +597,6 @@ function Home({ onLogout }) {
     <div className="dashboard-container d-flex">
       <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
         <main className="flex-grow-1 main-content">
-          {/* HEADER BANNER WITH TAB NAVIGATION */}
           <HeaderBanner
             activeTab={activeTab}
             setActiveTab={setActiveTab}

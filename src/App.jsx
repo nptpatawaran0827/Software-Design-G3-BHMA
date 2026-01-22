@@ -23,6 +23,13 @@ function App() {
   const warningTimerRef = useRef(null);
   const countdownIntervalRef = useRef(null);
 
+    // --- SUCCESS HANDLER FOR RESIDENT FORM ---
+  // This function is triggered when a resident successfully submits the form
+  const handleResidentSubmitSuccess = (id) => {
+    setSubmittedId(id); // Store the ID to show in LandingPage
+    navigate('/');      // Redirect back to LandingPage
+  };
+
   const handleLogout = useCallback(() => {
     localStorage.removeItem('authToken');
     setIsAuthed(false);
@@ -98,8 +105,13 @@ function App() {
               onResidentClick={() => navigate('/Resident')} 
             />
           } />
-          
-          <Route path="/Resident" element={<ResidentPage onCancel={() => navigate('/')} />} />
+
+          <Route path="/Resident" element={
+            <ResidentPage 
+              onCancel={() => navigate('/')} 
+              onSubmitSuccess={handleResidentSubmitSuccess} // UPDATED: Pass the handler here
+            />
+          } />
           
           <Route path="/HWLogin" element={
             isAuthed ? (
