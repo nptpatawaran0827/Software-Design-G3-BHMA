@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom"; // Use NavLink for routing
 import logoImage from "./assets/logo2.png";
 
+
 const Sidebar = ({ onLogout }) => {
   // Accept onLogout prop
   const [isCollapsed, setIsCollapsed] = useState(false);

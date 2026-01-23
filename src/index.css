@@ -7,18 +7,11 @@
 
 body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light); color: #212529; }
 
-/* --- DASHBOARD STRUCTURE (Pic 1) --- */
-.dashboard-container { display: flex; height: 100vh; }
+/* --- RESPONSIVE SIDEBAR LOGIC --- */
 
-.sidebar { width: 240px; background: white; border-right: 1px solid #eee; display: flex; flex-direction: column; }
-.sidebar-header { padding: 20px; }
-/* Update your sidebar to handle the collapsed state */
-.sidebar.collapsed {width: 80px;}
-.sidebar.collapsed .logo-text,
-.sidebar.collapsed .nav-item span {display: none;} /* Hide text when collapsed */
-.logo-section { display: flex; align-items: center; gap: 10px; }
-.logo-bg { background: #1a7b43; color: white; padding: 6px; border-radius: 6px; }
-.logo-text { font-weight: 800; font-size: 1.1rem; color: #333; }
+
+
+
 
 .nav-item {
   display: flex; align-items: center; gap: 12px; padding: 12px 20px; margin: 4px 10px;
