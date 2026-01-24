@@ -96,6 +96,7 @@
   font-weight: bold;
   color: #1f2937;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .landing-page .logo-text .highlight {
@@ -281,15 +282,19 @@
   }
 
   .landing-page .logo-image {
-    width: 80px;
+    width: 100px;
   }
 
   .landing-page .logo-text {
-    font-size: 28px;
+    font-size: 38px;
+  }
+
+  .landing-page .logo-text .highlight {
+    font-size: 38px;
   }
 
   .landing-page .logo-subtext {
-    font-size: 20px;
+    font-size: 26px;
   }
 
   .landing-page .welcome-title {
@@ -327,19 +332,23 @@
   .landing-page .header-logo {
     margin-bottom: 20px;
     padding-left: 0;
-    gap: 12px;
+    gap: 10px;
   }
 
   .landing-page .logo-image {
-    width: 60px;
+    width: 80px;
   }
 
   .landing-page .logo-text {
-    font-size: 22px;
+    font-size: 28px;
+  }
+
+  .landing-page .logo-text .highlight {
+    font-size: 28px;
   }
 
   .landing-page .logo-subtext {
-    font-size: 16px;
+    font-size: 20px;
   }
 
   .landing-page .left-content {
@@ -347,7 +356,7 @@
   }
 
   .landing-page .welcome-title {
-    font-size: 32px;
+    font-size: 25px;
   }
 
   .landing-page .welcome-subtitle {
