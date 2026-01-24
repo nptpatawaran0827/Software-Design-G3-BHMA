@@ -229,12 +229,6 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
                 )}
               </button>
             </div>
-
-            {onLogout && (
-              <button className="btn btn-light px-4" onClick={onLogout}>
-                Logout
-              </button>
-            )}
           </div>
         </div>
       </div>

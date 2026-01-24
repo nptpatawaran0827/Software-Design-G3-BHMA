@@ -12,6 +12,7 @@ import {
 import { Pie, Bar, Doughnut } from "react-chartjs-2";
 import RecordsPage from "./RecordsPage";
 import HeaderBanner from "./HeaderBanner";
+import HeatmapPage from "./HeatmapPage";
 import "./style/Home.css";
 
 ChartJS.register(
@@ -25,13 +26,12 @@ ChartJS.register(
 );
 
 function Home({ onLogout }) {
-  // Retrieve Admin Info from LocalStorage
+  // ===== RETRIEVE ADMIN INFO FROM LOCALSTORAGE =====
   const adminUsername = localStorage.getItem("username") || "Administrator";
   const adminId = localStorage.getItem("adminId") || "N/A";
 
-  const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem("activeDashboardTab") || "Home";
-  });
+  // ===== STATE MANAGEMENT =====
+  const [activeTab, setActiveTab] = useState("Home");
 
   const [filter, setFilter] = useState("All Activities");
   const [activities, setActivities] = useState([]);
@@ -39,6 +39,7 @@ function Home({ onLogout }) {
   const [healthRecords, setHealthRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [preFillData, setPreFillData] = useState(null);
+  const [zoomedContent, setZoomedContent] = useState(null);
 
   const [dbStats, setDbStats] = useState({
     totalPatients: 0,
@@ -51,13 +52,13 @@ function Home({ onLogout }) {
 
   const [diagnosisChartData, setDiagnosisChartData] = useState(null);
   const [genderChartData, setGenderChartData] = useState(null);
-  const [zoomedContent, setZoomedContent] = useState(null);
 
+  // ===== PERSIST ACTIVE TAB TO LOCALSTORAGE =====
   useEffect(() => {
     localStorage.setItem("activeDashboardTab", activeTab);
   }, [activeTab]);
 
-  // ==================== DATA FETCHING ====================
+  // ===== DATA FETCHING: ACTIVITIES =====
   const fetchActivities = async () => {
     try {
       const response = await fetch("http://localhost:5000/api/activity-logs");
@@ -68,6 +69,7 @@ function Home({ onLogout }) {
     }
   };
 
+  // ===== DATA FETCHING: HEALTH RECORDS =====
   const fetchHealthRecords = async () => {
     try {
       const response = await fetch("http://localhost:5000/api/health-records");
@@ -83,6 +85,7 @@ function Home({ onLogout }) {
     }
   };
 
+  // ===== AUTO-REFRESH DATA EVERY 5 SECONDS =====
   useEffect(() => {
     fetchHealthRecords();
     fetchActivities();
@@ -95,7 +98,7 @@ function Home({ onLogout }) {
     return () => clearInterval(interval);
   }, []);
 
-  // ==================== STATISTICS LOGIC ====================
+  // ===== CALCULATE STATISTICS FROM HEALTH RECORDS =====
   const calculateStatistics = (records) => {
     if (!records || records.length === 0) {
       setDbStats({
@@ -109,17 +112,23 @@ function Home({ onLogout }) {
       return;
     }
 
+    // Count unique patients
     const uniquePatients = new Set(records.map((r) => r.Resident_ID)).size;
+
+    // Count by gender
     const maleCount = records.filter(
-      (r) => r.Sex?.toLowerCase() === "male",
+      (r) => r.Sex?.toLowerCase() === "male"
     ).length;
     const femaleCount = records.filter(
-      (r) => r.Sex?.toLowerCase() === "female",
-    ).length;
-    const pwdCount = records.filter(
-      (r) => r.Is_PWD == 1 || r.Is_PWD === true,
+      (r) => r.Sex?.toLowerCase() === "female"
     ).length;
 
+    // Count PWD patients
+    const pwdCount = records.filter(
+      (r) => r.Is_PWD == 1 || r.Is_PWD === true
+    ).length;
+
+    // Calculate diagnosis counts
     const diagCounts = {};
     records.forEach((r) => {
       if (r.Diagnosis) {
@@ -128,10 +137,12 @@ function Home({ onLogout }) {
       }
     });
 
+    // Get top 5 diagnoses
     const sortedDiag = Object.entries(diagCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
+    // Set diagnosis chart data
     setDiagnosisChartData({
       labels: sortedDiag.map(([d]) => d.charAt(0).toUpperCase() + d.slice(1)),
       datasets: [
@@ -149,6 +160,7 @@ function Home({ onLogout }) {
       ],
     });
 
+    // Set gender chart data
     setGenderChartData({
       labels: ["Male", "Female"],
       datasets: [
@@ -160,6 +172,7 @@ function Home({ onLogout }) {
       ],
     });
 
+    // Update stats
     setDbStats({
       totalPatients: uniquePatients,
       newPatients: records.length,
@@ -170,6 +183,7 @@ function Home({ onLogout }) {
     });
   };
 
+  // ===== HANDLE ACCEPT RESIDENT FROM HEADER BANNER =====
   const handleAcceptResident = (residentData) => {
     setPreFillData(residentData);
     setActiveTab("Records");
@@ -178,7 +192,9 @@ function Home({ onLogout }) {
     fetchActivities();
   };
 
+  // ===== RENDER CONTENT BASED ON ACTIVE TAB =====
   const renderContent = () => {
+    // ===== RECORDS TAB =====
     if (activeTab === "Records") {
       return (
         <RecordsPage
@@ -194,6 +210,12 @@ function Home({ onLogout }) {
       );
     }
 
+    // ===== HEATMAP TAB (NEW - INTEGRATED SEAMLESSLY) =====
+    if (activeTab === "Heatmap") {
+      return <HeatmapPage />;
+    }
+
+    // ===== HOME TAB (DEFAULT DASHBOARD) =====
     return (
       <>
         {/* WELCOME SECTION */}
@@ -201,15 +223,9 @@ function Home({ onLogout }) {
           <h2 className="fw-bold mb-0 text-uppercase">
             WELCOME BACK, <span className="text-primary">{adminUsername}</span>
           </h2>
-
-          {/*<div className="d-flex align-items-center gap-3 mt-2">
-             <span className="badge bg-dark px-3 py-2">ADMIN ID: {adminId}</span>
-            <span className="text-muted small fw-semibold">
-              • System Access Authorized
-            </span>
-          </div> */}
         </div>
 
+        {/* RECENT ACTIVITY CARD */}
         <div className="card border-0 shadow-sm rounded-4 mb-3 activity-card">
           <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
             <h5 className="mb-0 fw-bold text-dark">Recent Activity</h5>
@@ -324,14 +340,18 @@ function Home({ onLogout }) {
           </div>
         </div>
 
+        {/* DASHBOARD OVERVIEW TITLE */}
         <h2 className="text-success fw-bold mb-3 dashboard-overview-title">
           Dashboard Overview
         </h2>
+
+        {/* DASHBOARD OVERVIEW CONTENT */}
         <div className="bg-white p-4 rounded-4 shadow-sm border dashboard-overview-content">
           <div className="row g-4">
-            {/* Left Column - 4 Cards */}
+            {/* LEFT COLUMN - 4 STAT CARDS */}
             <div className="col-lg-4">
               <div className="row g-4 h-100">
+                {/* Total Residents Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -344,6 +364,8 @@ function Home({ onLogout }) {
                     </small>
                   </div>
                 </div>
+
+                {/* Health Records Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -356,6 +378,8 @@ function Home({ onLogout }) {
                     </small>
                   </div>
                 </div>
+
+                {/* PWD Patients Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -370,6 +394,8 @@ function Home({ onLogout }) {
                     </small>
                   </div>
                 </div>
+
+                {/* Total Reports Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -385,7 +411,7 @@ function Home({ onLogout }) {
               </div>
             </div>
 
-            {/* Middle Column - Gender Distribution */}
+            {/* MIDDLE COLUMN - GENDER DISTRIBUTION CHART */}
             <div className="col-lg-4">
               <div
                 className="border rounded-4 overflow-hidden shadow-sm bg-white d-flex flex-column h-100 zoom-card"
@@ -443,7 +469,7 @@ function Home({ onLogout }) {
                           />
                         )}
                       </div>
-                    </div>,
+                    </div>
                   )
                 }
               >
@@ -473,7 +499,7 @@ function Home({ onLogout }) {
               </div>
             </div>
 
-            {/* Right Column - Common Diagnosis */}
+            {/* RIGHT COLUMN - COMMON DIAGNOSIS CHART */}
             <div className="col-lg-4">
               <div
                 className="border rounded-4 overflow-hidden shadow-sm bg-white d-flex flex-column h-100 zoom-card"
@@ -531,7 +557,7 @@ function Home({ onLogout }) {
                           />
                         )}
                       </div>
-                    </div>,
+                    </div>
                   )
                 }
               >
@@ -566,20 +592,24 @@ function Home({ onLogout }) {
     );
   };
 
+  // ===== RENDER HOME COMPONENT =====
   return (
     <div className="dashboard-container d-flex">
       <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
         <main className="flex-grow-1 main-content">
           <HeaderBanner
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
             onAcceptResident={handleAcceptResident}
             onLogout={onLogout}
           />
 
+          {/* MAIN CONTENT AREA */}
           {renderContent()}
         </main>
       </div>
 
-      {/* ZOOM for cards*/}
+      {/* ZOOM MODAL FOR CHARTS */}
       {zoomedContent && (
         <div className="zoom-overlay" onClick={() => setZoomedContent(null)}>
           <div className="zoom-content" onClick={(e) => e.stopPropagation()}>
