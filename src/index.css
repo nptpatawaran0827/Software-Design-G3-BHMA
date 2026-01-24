@@ -1,100 +1,323 @@
-/* --- GLOBAL --- */
+/*  GLOBAL  */
 :root {
   --primary-blue: #4da3ff;
   --sidebar-green: #00695c;
   --bg-light: #f8f9fa;
 }
 
-body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light); color: #212529; }
+/* MOBILE TOUCH OPTIMIZATION */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 
-/* --- RESPONSIVE SIDEBAR LOGIC --- */
+/* Allow text selection in inputs */
+input,
+textarea,
+select {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
 
+html,
+body {
+  touch-action: pan-y;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
 
+/* Better button touch targets */
+button,
+a {
+  touch-action: manipulation;
+}
 
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: var(--bg-light);
+  color: #212529;
+}
 
+/* RESPONSIVE SIDEBAR LOGIC */
 
 .nav-item {
-  display: flex; align-items: center; gap: 12px; padding: 12px 20px; margin: 4px 10px;
-  border: none; background: transparent; border-radius: 8px; color: #555; cursor: pointer; transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  margin: 4px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: #555;
+  cursor: pointer;
+  transition: 0.2s;
 }
-.nav-item.active { background: var(--sidebar-green); color: white; font-weight: 600; }
-.nav-item:hover:not(.active) { background: #f0f2f5; }
+.nav-item.active {
+  background: var(--sidebar-green);
+  color: white;
+  font-weight: 600;
+}
+.nav-item:hover:not(.active) {
+  background: #f0f2f5;
+}
 
-.main-wrapper { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-.header-banner { background: var(--primary-blue); color: white; padding: 1.2rem 2rem; margin: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(77,163,255,0.2); }
-.banner-title { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.main-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.header-banner {
+  background: var(--primary-blue);
+  color: white;
+  padding: 1.2rem 2rem;
+  margin: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(77, 163, 255, 0.2);
+}
+.banner-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
 
 /* --- RECORDS PAGE --- */
-.content-area { padding: 0 20px; }
-.view-intro { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.intro-text h1 { margin: 0; font-size: 1.8rem; font-weight: 800; }
-.intro-text p { margin: 0; color: #666; font-size: 0.9rem; }
-.add-patient-btn { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.content-area {
+  padding: 0 20px;
+}
+.view-intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.intro-text h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+.intro-text p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+.add-patient-btn {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-.search-box { background: white; padding: 12px 15px; border-radius: 12px; border: 1px solid #eee; display: flex; align-items: center; gap: 10px; margin-bottom: 25px; }
-.search-box input { border: none; outline: none; width: 100%; font-size: 1rem; }
+.search-box {
+  background: white;
+  padding: 12px 15px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+.search-box input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 1rem;
+}
 
 /* --- PATIENT CARDS --- */
-.patient-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-.patient-card { background: white; padding: 20px; border-radius: 15px; border: 1px solid #f0f0f0; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-.card-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-.card-avatar { background: #f0f7ff; color: var(--primary-blue); padding: 10px; border-radius: 50%; }
-.edit-btn { border: 1px solid var(--primary-blue); color: var(--primary-blue); background: white; padding: 4px; border-radius: 5px; cursor: pointer; }
-.card-info h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
-.sub { margin: 0 0 10px 0; font-size: 0.8rem; color: #888; }
-.meta { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #777; margin-top: 6px; }
-.highlight { color: var(--sidebar-green); font-weight: 600; }
-.stat-bar { display: flex; background: #f8f9fa; border-radius: 10px; padding: 12px; margin-top: 15px; text-align: center; }
-.s-box { flex: 1; }
-.s-box strong { display: block; color: var(--primary-blue); font-size: 1rem; }
-.s-box span { font-size: 0.65rem; color: #aaa; text-transform: uppercase; }
+.patient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+.patient-card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+.card-avatar {
+  background: #f0f7ff;
+  color: var(--primary-blue);
+  padding: 10px;
+  border-radius: 50%;
+}
+.edit-btn {
+  border: 1px solid var(--primary-blue);
+  color: var(--primary-blue);
+  background: white;
+  padding: 4px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.card-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.sub {
+  margin: 0 0 10px 0;
+  font-size: 0.8rem;
+  color: #888;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 6px;
+}
+.highlight {
+  color: var(--sidebar-green);
+  font-weight: 600;
+}
+.stat-bar {
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 15px;
+  text-align: center;
+}
+.s-box {
+  flex: 1;
+}
+.s-box strong {
+  display: block;
+  color: var(--primary-blue);
+  font-size: 1rem;
+}
+.s-box span {
+  font-size: 0.65rem;
+  color: #aaa;
+  text-transform: uppercase;
+}
 
 /* --- MODAL (Pic 2 / Ref) --- */
-.modal-backdrop {position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); display: flex;align-items: center; justify-content: center; z-index: 9999;}
-.modal-white-box { background: white !important; width: 95%; max-width: 650px; padding: 35px; border-radius: 18px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-.modal-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 25px; }
-.modal-top h2 { margin: 0; font-size: 1.4rem; font-weight: 700; }
-.close-icon { background: none; border: none; color: #999; cursor: pointer; }
-
-.modal-form-grid label { display: block; font-size: 0.65rem; font-weight: 800; color: #94a3b8; margin-bottom: 6px; letter-spacing: 0.5px; }
-.modal-form-grid input, .modal-form-grid select, .modal-form-grid textarea {
-  width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px; 
-  background: white !important; color: #333 !important; font-size: 0.9rem;
-}
-.grid-2 { display: flex; gap: 20px; }
-.grid-3 { display: flex; gap: 15px; }
-.input-group { flex: 1; }
-
-.diag-blue { border: 1px solid var(--primary-blue) !important; background: #f0f7ff !important; }
-.bmi-gray { background: #f8fafc !important; }
-
-.submit-action-btn {
-  width: 100%; background: var(--primary-blue); color: white; border: none; padding: 15px;
-  border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px;
-}
-
-/* --- MODAL BACKDROP --- */
 .modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5); /* Dim the background */
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
-  align-items: center; /* Vertical center */
-  justify-content: center; /* Horizontal center */
+  align-items: center;
+  justify-content: center;
   z-index: 10000;
-  backdrop-filter: blur(2px);
+}
+
+.modal-white-box {
+  background: white !important;
+  width: 95%;
+  max-width: 650px;
+  padding: 35px;
+  border-radius: 18px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+}
+.modal-top h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.close-icon {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+}
+
+.modal-form-grid label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+.modal-form-grid input,
+.modal-form-grid select,
+.modal-form-grid textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  background: white !important;
+  color: #333 !important;
+  font-size: 0.9rem;
+}
+.grid-2 {
+  display: flex;
+  gap: 20px;
+}
+.grid-3 {
+  display: flex;
+  gap: 15px;
+}
+.input-group {
+  flex: 1;
+}
+
+.diag-blue {
+  border: 1px solid var(--primary-blue) !important;
+  background: #f0f7ff !important;
+}
+.bmi-gray {
+  background: #f8fafc !important;
+}
+
+.submit-action-btn {
+  width: 100%;
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 /* --- THE MODAL CONTAINER (Fixes stretching) --- */
 .modal-content-box {
   background: white !important;
   width: 90%;
-  max-width: 650px; /* Prevents the form from looking too wide on big screens */
-  max-height: 90vh; /* Prevents modal from going off-screen */
-  overflow-y: auto; /* Adds scrollbar if the form is long */
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
   border-radius: 20px;
   padding: 30px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
@@ -138,8 +361,8 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
   text-transform: uppercase;
 }
 
-.form-input-group input, 
-.form-input-group select, 
+.form-input-group input,
+.form-input-group select,
 .form-input-group textarea {
   width: 100% !important;
   padding: 10px !important;
@@ -163,7 +386,6 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
   gap: 10px;
 }
 
-/* Custom Styles from your image */
 .blue-border-input {
   border: 1px solid #3b82f6 !important;
 }
@@ -196,11 +418,11 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
 
 /* --- HEATMAP PAGE STYLES --- */
 .heatmap-container {
-  height: calc(100vh - 120px); /* Adjust based on your header height */
+  height: calc(100vh - 120px);
   width: 100%;
   border-radius: 15px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-top: 20px;
   position: relative;
 }
@@ -209,7 +431,7 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
 .leaflet-container {
   height: 100%;
   width: 100%;
-  z-index: 1; /* Keep map below dropdowns/modals */
+  z-index: 1;
 }
 
 /* Custom Heatmap Legend Overlay */
@@ -221,5 +443,67 @@ body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-light);
   padding: 15px;
   border-radius: 10px;
   z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* MOBILE RESPONSIVE IMPROVEMENTS */
+@media (max-width: 768px) {
+  .patient-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row,
+  .form-row-three {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content-box {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .view-intro {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .header-banner {
+    margin: 15px;
+    padding: 1rem 1.5rem;
+  }
+
+  .content-area {
+    padding: 0 15px;
+  }
+
+  .intro-text h1 {
+    font-size: 1.5rem;
+  }
+
+  .grid-2,
+  .grid-3 {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-white-box,
+  .modal-content-box {
+    width: 98%;
+    padding: 20px 15px;
+  }
+
+  .banner-title {
+    font-size: 1rem;
+  }
+
+  .patient-card {
+    padding: 15px;
+  }
+
+  .card-info h3 {
+    font-size: 1rem;
+  }
 }

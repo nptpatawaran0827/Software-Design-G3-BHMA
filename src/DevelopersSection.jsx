@@ -1,31 +1,34 @@
-import React from 'react';
-import './style/DevelopersSection.css';
-import developersBgImage from './assets/bg-cloud.jpg'; 
-import example from './assets/example-1.jpg';
+import React from "react";
+import "./style/DevelopersSection.css";
+import developersBgImage from "./assets/bg-cloud.jpg";
+import image1 from "./assets/Modar.png";
+import image2 from "./assets/PALCULAN.jpg";
+import image3 from "./assets/Hizon_FP.jpg";
+import image4 from "./assets/Patawaran.png";
+import image5 from "./assets/pelon_1.png";
+import image6 from "./assets/example-1.jpg";
 
-const DEVELOPERS_BG = developersBgImage; 
+const DEVELOPERS_BG = developersBgImage;
 
 const DevelopersSection = () => {
   const developers = [
-    { id: 1, name: "Developer 1", role: "(ROLE)", image: example }, /* palitan nalang ng name, role and image */
-    { id: 2, name: "Developer 2", role: "(ROLE)", image: example },
-    { id: 3, name: "Developer 3", role: "(ROLE)", image: example },
-    { id: 4, name: "Developer 4", role: "(ROLE)", image: example },
-    { id: 5, name: "Developer 5", role: "(ROLE)", image: example },
-    { id: 6, name: "Developer 6", role: "(ROLE)", image: example }
+    /* palitan nalang ng name, role and image */
+    { id: 1, name: "Nheil Patrick T. Patawaran", role: "Team Leader", image: image4 },
+    { id: 2, name: "Jian Vench V. Palculan", role: "Backend Developer", image: image2 },
+    { id: 3, name: "Johanna Lucia V. Hizon", role: "Backend Developer", image: image3 },
+    { id: 4, name: "Ikki Dominique Modar", role: "Backend Developer", image: image1 },
+    { id: 5, name: "Xian Kylle Pelon", role: "Frontend Developer", image: image5 },
+    { id: 6, name: "Developer 6", role: "Frontend Developer", image: image6 },
   ];
 
-  const topRowDevs = developers.slice(0, 3);
-  const bottomRowDevs = developers.slice(3, 6);
-
   return (
-    <section 
+    <section
       className="developers-system-section"
       style={{
         backgroundImage: `url(${DEVELOPERS_BG})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       <div className="developers-system-overlay"></div>
@@ -35,30 +38,13 @@ const DevelopersSection = () => {
           The talented team behind this innovative healthcare solution
         </p>
 
-        {/* Top Row - 3 Developers */}
-        <div className="developers-row-top">
-          {topRowDevs.map((dev) => (
+        {/* All Developers in One Grid */}
+        <div className="developers-grid">
+          {developers.map((dev) => (
             <div key={dev.id} className="developer-card">
               <div className="developer-image-wrapper">
-                <img 
-                  src={dev.image} 
-                  alt={dev.name}
-                  className="developer-image"
-                />
-              </div>
-              <h3 className="developer-name">{dev.name}</h3>
-              <p className="developer-role">{dev.role}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom Row - 3 Developers */}
-        <div className="developers-row-bottom">
-          {bottomRowDevs.map((dev) => (
-            <div key={dev.id} className="developer-card">
-              <div className="developer-image-wrapper">
-                <img 
-                  src={dev.image} 
+                <img
+                  src={dev.image}
                   alt={dev.name}
                   className="developer-image"
                 />

@@ -270,24 +270,26 @@
 .report-header-pdf {
   text-align: center;
   padding-bottom: 2rem;
-  padding-top: 0.5rem; /* dito mag adjust spacing */
+  padding-top: 0.5rem;
   margin-bottom: 2.5rem;
   border-bottom: 2px solid #e5e7eb;
 }
 
 .report-title-pdf {
-  font-size: 3.5rem; /* dito aadjust font size ng "HEALTH ANALYTICS REPORT" - xian*/
+  font-size: 3.5rem;
   font-weight: 900;
   letter-spacing: 2px;
   color: #1f2937;
   margin-bottom: 0.5rem;
+  line-height: 1.2;
+  word-wrap: break-word;
 }
 
 .report-subtitle-pdf {
-  font-size: 1.8rem; /* dito aadjust font size ng "Community Health Information System" - xian*/
+  font-size: 1.8rem;
   color: #6b7280;
   font-weight: 600;
-  margin-bottom: 1.5rem; /* dito mag adjust spacing */
+  margin-bottom: 1.5rem;
 }
 
 .report-meta-pdf {
@@ -530,6 +532,15 @@
     height: 38px;
     font-size: 1.1rem;
   }
+
+  .report-title-pdf {
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+  }
+
+  .report-subtitle-pdf {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -547,5 +558,30 @@
     width: 36px;
     height: 36px;
     font-size: 1rem;
+  }
+
+  .analytics-page-wrapper {
+    padding: 1rem;
+  }
+
+  .analytics-title {
+    font-size: 1.4rem;
+  }
+
+  .section-heading {
+    font-size: 1.1rem;
+  }
+
+  .report-title-pdf {
+    font-size: 1.5rem;
+    letter-spacing: 0.5px;
+  }
+
+  .report-subtitle-pdf {
+    font-size: 0.9rem;
+  }
+
+  .report-container {
+    padding: 1rem;
   }
 }

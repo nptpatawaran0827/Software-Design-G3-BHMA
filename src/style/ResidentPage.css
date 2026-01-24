@@ -2,11 +2,13 @@
   position: fixed;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 32px;
   z-index: 9999;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 
   background: linear-gradient(
     135deg,
@@ -49,10 +51,10 @@
   background-color: #059669;
   border: none;
   color: white;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: 50px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 1000;
@@ -75,13 +77,15 @@
   width: min(1300px, 96%);
   height: min(750px, 90vh);
   border-radius: 20px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: stretch;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   background: transparent;
   position: relative;
   z-index: 2;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 /* Left panel - Form */
@@ -94,6 +98,7 @@
   min-width: 320px;
   position: relative;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
@@ -105,6 +110,7 @@
   padding: 40px 30px;
   color: white;
   overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: -5px 0 20px rgba(0, 0, 0, 0.1);
 }
 
@@ -314,55 +320,174 @@
 
 /* Responsive: stack on smaller screens */
 @media (max-width: 1024px) {
+  .resident-page-root {
+    padding: 16px;
+    overflow-y: auto;
+    align-items: flex-start;
+  }
+
   .resident-form-wrapper {
     flex-direction: column;
-    width: min(800px, 96%);
+    width: calc(100% - 32px);
     height: auto;
-    max-height: 90vh;
+    max-height: none;
+    min-height: auto;
+    overflow: visible;
+    margin: 0 auto;
+    margin-top: 0;
+    margin-bottom: 16px;
   }
 
   .resident-form-left {
     flex: 1 1 auto;
-    max-height: 50vh;
+    max-height: none;
+    min-height: auto;
+    overflow-y: visible;
+    min-width: 100%;
+    padding: 80px 30px 20px 30px;
   }
 
   .resident-schedule-right {
     flex: 0 0 auto;
-    min-height: 300px;
-    max-height: 40vh;
+    min-width: 100%;
+    min-height: auto;
+    max-height: none;
+    overflow-y: visible;
+    padding: 30px;
+  }
+
+  .return-btn {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    padding: 10px 20px;
+    font-size: 14px;
   }
 }
 
 @media (max-width: 768px) {
   .resident-page-root {
-    padding: 20px;
+    padding: 16px;
+    align-items: flex-start;
+    overflow-y: auto;
   }
 
   .return-btn {
-    top: 15px;
-    left: 15px;
-    padding: 8px 16px;
+    top: 20px;
+    left: 20px;
+    padding: 10px 18px;
     font-size: 13px;
+    z-index: 1001;
+    position: fixed;
   }
 
   .resident-form-wrapper {
-    width: 100%;
+    width: calc(100% - 16px);
+    border-radius: 12px;
+    min-height: auto;
+    height: auto;
+    overflow: visible;
+    margin: 8px;
   }
 
   .resident-form-left {
-    padding: 30px 25px;
+    padding: 60px 16px 20px 16px;
+    min-width: 100%;
+    overflow-y: visible;
+    max-height: none;
   }
 
   .resident-schedule-right {
-    padding: 30px 25px;
+    padding: 24px 16px;
+    min-width: 100%;
+    overflow-y: visible;
+    max-height: none;
   }
 
   .schedule-title {
-    font-size: 1.5rem;
-    margin-bottom: 25px;
+    font-size: 1.35rem;
+    margin-bottom: 16px;
   }
 
   .resident-page-root h3 {
-    font-size: 1.4rem;
+    font-size: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .resident-page-root .form-label {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+
+  .resident-page-root .form-control,
+  .resident-page-root .form-select {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .resident-page-root .btn {
+    padding: 10px 24px;
+    font-size: 0.9rem;
+  }
+
+  .resident-page-root .col-md-3,
+  .resident-page-root .col-md-4,
+  .resident-page-root .col-md-6,
+  .resident-page-root .col-12 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .schedule-day {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .schedule-day-name {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+
+  .schedule-service {
+    font-size: 0.85rem;
+  }
+
+  .schedule-time {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .resident-page-root {
+    padding: 12px;
+  }
+
+  .return-btn {
+    top: 16px;
+    left: 16px;
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+
+  .resident-form-wrapper {
+    margin: 6px;
+    width: calc(100% - 12px);
+  }
+
+  .resident-form-left {
+    padding: 55px 12px 16px 12px;
+  }
+
+  .resident-schedule-right {
+    padding: 20px 12px;
+  }
+
+  .resident-page-root h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .schedule-title {
+    font-size: 1.2rem;
   }
 }
