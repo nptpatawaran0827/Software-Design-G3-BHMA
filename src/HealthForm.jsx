@@ -2,48 +2,52 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, User } from "lucide-react";
 import "./style/HealthForm.css";
 
-const STREETS = [
-  "Apitong Street",
-  "Champagnat Street",
-  "Champaca Street",
-  "Dao Street",
-  "Ipil Street",
-  "East Drive Street",
-  "General Ordonez Street",
-  "Liwasang Kalayaan Street",
-  "Narra Street",
-  "P. Valenzuela Street",
-];
-
 const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
+  const [streetList, setStreetList] = useState([]);
   const [message, setMessage] = useState(null);
+  
   const [formData, setFormData] = useState({
-    First_Name: "",
-    Middle_Name: "",
-    Last_Name: "",
-    Resident_ID: "",
-    Birthdate: "",
-    Age: "",
-    Sex: "",
-    Civil_Status: "",
-    Blood_Pressure: "",
-    Weight: "",
-    Height: "",
-    BMI: "",
-    Nutrition_Status: "",
-    Health_Condition: "",
+    First_Name: '',
+    Middle_Name: '',
+    Last_Name: '',
+    Resident_ID: '',
+    Birthdate: '',
+    Age: '',
+    Sex: '',
+    Civil_Status: '',
+    Blood_Pressure: '',
+    Weight: '',
+    Height: '',
+    BMI: '',
+    Nutrition_Status: '',
+    Health_Condition: '',
     Is_PWD: false,
-    Diagnosis: "",
-    Allergies: "",
-    Contact_Number: "",
-    Street: "",
-    Barangay: "Marikina Heights",
-    Date_Visited: "",
-    Remarks: "",
-    status: "Active",
-    Recorded_By_Name: "",
+    Diagnosis: '',
+    Allergies: '',
+    Contact_Number: '',
+    Street_ID: '',
+    Barangay: 'Marikina Heights',
+    Date_Visited: '',
+    Remarks: '',
+    status: 'Active',
+    Recorded_By_Name: ''
   });
 
+  // ===== FETCH STREETS FROM DATABASE =====
+  useEffect(() => {
+    const fetchStreets = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/streets');
+        const data = await res.json();
+        setStreetList(data);
+      } catch (err) {
+        console.error("Failed to fetch streets:", err);
+      }
+    };
+    fetchStreets();
+  }, []);
+
+  // ===== CALCULATE AGE FROM BIRTHDATE =====
   const calculateAge = (birthdate) => {
     if (!birthdate) return "";
     const today = new Date();
@@ -59,6 +63,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     return age >= 0 ? age : "";
   };
 
+  // ===== CALCULATE NUTRITION STATUS FROM BMI =====
   const calculateNutritionStatus = (bmi) => {
     if (!bmi || bmi === "") return "";
     const bmiValue = parseFloat(bmi);
@@ -69,17 +74,20 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     return "";
   };
 
+  // ===== GENERATE RESIDENT ID =====
   const generateResidentID = () => {
     const part1 = Math.floor(1000000 + Math.random() * 9000000);
     const part2 = Math.floor(1000 + Math.random() * 9000);
     return `RES-${part1}-${part2}`;
   };
 
+  // ===== INITIALIZE FORM DATA =====
   useEffect(() => {
     const currentAdmin = localStorage.getItem("username") || "System";
     const deviceToday = new Date().toISOString().split("T")[0];
 
     if (initialData) {
+      // EDIT MODE: Load existing data
       const rawBirthDate = initialData.Birthdate || "";
       const formattedBirthdate = rawBirthDate ? rawBirthDate.split("T")[0] : "";
       const formattedVisitDate = initialData.Date_Visited
@@ -102,6 +110,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin,
       });
     } else {
+      // ADD MODE: Initialize with defaults
       setFormData((prev) => ({
         ...prev,
         Resident_ID: generateResidentID(),
@@ -112,16 +121,19 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     }
   }, [initialData]);
 
+  // ===== HANDLE FORM INPUT CHANGES =====
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const finalValue = type === "checkbox" ? checked : value;
 
     let updatedData = { ...formData, [name]: finalValue };
 
+    // AUTO-CALCULATE AGE
     if (name === "Birthdate") {
       updatedData.Age = calculateAge(value);
     }
 
+    // AUTO-CALCULATE BMI & NUTRITION STATUS
     if (
       (name === "Weight" || name === "Height") &&
       updatedData.Weight &&
@@ -137,19 +149,23 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
         updatedData.Nutrition_Status = calculateNutritionStatus(calculatedBMI);
       }
     }
+
     setFormData(updatedData);
   };
 
+  // ===== AUTO-SCROLL TO MESSAGE =====
   useEffect(() => {
     if (message) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [message]);
 
+  // ===== HANDLE FORM SUBMISSION =====
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
 
+    // VALIDATION: ONE NAME POLICY
     if (!formData.First_Name.trim() || !formData.Last_Name.trim()) {
       setMessage({
         type: "error",
@@ -183,7 +199,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
       const result = await response.json();
 
-      // DUPLICATE LOGIC: Pass back to parent and exit form
+      // DUPLICATE CHECK: Pass back to parent and exit form
       if (result.isDuplicate) {
         if (onSubmit) onSubmit(formData, editMode, true);
         onCancel();
@@ -208,8 +224,10 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     }
   };
 
+  // ===== RENDER =====
   return (
     <div className="health-form-wrapper">
+      {/* HEADER */}
       <div className="form-header">
         <h3 className="form-title">
           {editMode ? "Edit Health Record" : "Add New Health Record"}
@@ -221,9 +239,9 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
       <div className="form-container">
         <div className="form-body">
-          {/* Legend */}
+          {/* LEGEND */}
           <div className="form-legend">
-            <div className="legend-title">📋 Field Guide:</div>
+            <div className="legend-title">Field Guide:</div>
             <div className="legend-items">
               <div className="legend-item">
                 <div className="legend-color legend-color-teal"></div>
@@ -248,6 +266,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
             </div>
           </div>
 
+          {/* MESSAGE ALERT */}
           {message && (
             <div
               className={`form-alert ${message.type === "success" ? "form-alert-success" : "form-alert-error"}`}
@@ -259,9 +278,10 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
             </div>
           )}
 
+          {/* FORM */}
           <form onSubmit={handleSubmit}>
-            {/* Personal Information */}
-            <h5 className="section-header">Personal Information</h5>
+            {/* ===== PERSONAL INFORMATION ===== */}
+            <h5 className="section-header">👤 Personal Information</h5>
             <div className="form-group-row">
               <div className="form-group">
                 <label className="form-label form-label-required">
@@ -303,7 +323,9 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
 
             <div className="form-group-row">
               <div className="form-group">
-                <label className="form-label">Resident ID</label>
+                <label className="form-label form-label-generated">
+                  Resident ID
+                </label>
                 <input
                   className="form-input input-resident-id"
                   name="Resident_ID"
@@ -376,7 +398,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            {/* Vitals & Measurements */}
+            {/* ===== VITALS & MEASUREMENTS ===== */}
             <h5 className="section-header">Vitals & Measurements</h5>
             <div className="form-group-row">
               <div className="form-group">
@@ -414,7 +436,9 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label form-label-calculated">BMI</label>
+                <label className="form-label form-label-calculated">
+                  BMI
+                </label>
                 <input
                   className="form-input input-calculated"
                   name="BMI"
@@ -457,7 +481,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            {/* Medical History */}
+            {/* ===== MEDICAL HISTORY ===== */}
             <h5 className="section-header">Medical History</h5>
             <div className="form-group-row">
               <div className="form-group">
@@ -484,6 +508,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
+            {/* ===== PWD CHECKBOX ===== */}
             <div className="checkbox-container">
               <div className="checkbox-switch">
                 <input
@@ -500,22 +525,25 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            {/* Address & Visit Details */}
+            {/* ===== ADDRESS & VISIT DETAILS ===== */}
             <h5 className="section-header">Address & Visit Details</h5>
+            
             <div className="form-group-row">
               <div className="form-group">
-                <label className="form-label form-label-required">Street</label>
+                <label className="form-label form-label-required">
+                  Street
+                </label>
                 <select
                   className="form-select"
-                  name="Street"
-                  value={formData.Street}
+                  name="Street_ID"
+                  value={formData.Street_ID}
                   onChange={handleChange}
                   required
                 >
                   <option value="">Select street...</option>
-                  {STREETS.map((street) => (
-                    <option key={street} value={street}>
-                      {street}
+                  {streetList.map((street) => (
+                    <option key={street.Street_ID} value={street.Street_ID}>
+                      {street.Street_Name}
                     </option>
                   ))}
                 </select>
@@ -571,10 +599,10 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
               </div>
             </div>
 
-            {/* Form Actions */}
+            {/* ===== FORM ACTIONS ===== */}
             <div className="form-actions">
               <button type="button" className="btn-cancel" onClick={onCancel}>
-                Cancel
+                ❌ Cancel
               </button>
               <button type="submit" className="btn-submit">
                 {editMode ? "Update Health Record" : "Save Health Record"}

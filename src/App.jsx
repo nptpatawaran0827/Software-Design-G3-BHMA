@@ -6,6 +6,7 @@ import LandingPage from './LandingPage.jsx'
 import ResidentPage from './ResidentPage.jsx'
 import AnalyticsPage from './AnalyticsPage.jsx' 
 import RecordsPage from './RecordsPage.jsx'     
+import HeatmapPage from './HeatmapPage'; // Heatmap imported
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion' 
 
@@ -22,7 +23,7 @@ function App() {
   const warningTimerRef = useRef(null);
   const countdownIntervalRef = useRef(null);
 
-  // --- SUCCESS HANDLER FOR RESIDENT FORM ---
+    // --- SUCCESS HANDLER FOR RESIDENT FORM ---
   // This function is triggered when a resident successfully submits the form
   const handleResidentSubmitSuccess = (id) => {
     setSubmittedId(id); // Store the ID to show in LandingPage
@@ -105,7 +106,6 @@ function App() {
               submissionStatus={submittedId} // UPDATED: Pass the ID here
             />
           } />
-          
           <Route path="/Resident" element={
             <ResidentPage 
               onCancel={() => navigate('/')} 
@@ -125,10 +125,11 @@ function App() {
           } />
 
           <Route element={isAuthed ? <MainLayout onLogout={handleLogout} /> : <Navigate to="/HWLogin" />}>
-            <Route path="/Dashboard" element={<Home />} />
-            <Route path="/Records" element={<RecordsPage />} />
-            <Route path="/Records/AddResident" element={<RecordsPage autoOpenForm={true} />} />
-            <Route path="/Analytics" element={<AnalyticsPage />} />
+           <Route path="/Dashboard" element={<Home onLogout={handleLogout} />} />
+           <Route path="/Records" element={<RecordsPage />} />
+           <Route path="/Analytics" element={<AnalyticsPage />} />
+           <Route path="/Heatmap" element={<HeatmapPage />} />
+           <Route path="/Resident/:id" element={<ResidentPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom"; // Use NavLink for routing
 import logoImage from "./assets/logo2.png";
 
+
 const Sidebar = ({ onLogout }) => {
   // Accept onLogout prop
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -13,15 +14,16 @@ const Sidebar = ({ onLogout }) => {
       setIsMobile(mobile);
       if (!mobile) setIsCollapsed(false);
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Update paths to match your App.jsx Routes
   const menuItems = [
-    { name: "Home", icon: "🏠", path: "/Dashboard" },
-    { name: "Records", icon: "📋", path: "/Records" },
-    { name: "Analytics", icon: "📊", path: "/Analytics" },
+    { name: 'Home', icon: '🏠', path: '/Dashboard' },
+    { name: 'Records', icon: '📋', path: '/Records' },
+    { name: 'Analytics', icon: '📊', path: '/Analytics' },
+    { name: 'Heatmap', icon: '🔥', path: '/Heatmap' },
   ];
 
   const sidebarWidth = isMobile && isCollapsed ? "80px" : "240px";
@@ -83,7 +85,7 @@ const Sidebar = ({ onLogout }) => {
           className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2"
           style={{ fontWeight: "600" }}
         >
-          <span></span> {!isCollapsed && "Logout"}
+          {!isCollapsed && "Logout"}
         </button>
       </div>
     </div>
