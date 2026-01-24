@@ -1,25 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import { Menu, X } from "lucide-react";
+import "./style/MainLayout.css";
 
 const MainLayout = ({ onLogout }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", width: "100%" }}>
-      {/* Sidebar - Ensure this component uses <Link> internally */}
-      <div style={{ width: "250px", flexShrink: 0 }}>
-        <Sidebar onLogout={onLogout} />
-      </div>
+    <div className="main-layout">
+      {/* Mobile Hamburger Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="mobile-menu-btn"
+        aria-label="Toggle menu"
+      >
+        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {/* Sidebar Overlay (for closing on mobile) */}
+      {sidebarOpen && (
+        <div onClick={closeSidebar} className="sidebar-overlay" />
+      )}
+
+      {/* Sidebar */}
+      <Sidebar
+        onLogout={onLogout}
+        isOpen={sidebarOpen}
+        onClose={closeSidebar}
+      />
 
       {/* Main Content Area */}
-
-      <div
-        style={{
-          flexGrow: 1,
-          backgroundColor: "#f8f9fa",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
+      <div className="main-content-area">
         <Outlet />
       </div>
     </div>

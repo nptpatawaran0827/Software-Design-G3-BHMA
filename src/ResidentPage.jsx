@@ -89,6 +89,7 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
     try {
       // 1. ATTEMPT TO REGISTER RESIDENT
+
       const residentRes = await fetch("http://localhost:5000/api/residents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,11 +179,10 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
     <div className="resident-page-root" style={pageStyle}>
       <div className="resident-form-wrapper">
         {/* LEFT PANEL - FORM */}
+        <button className="return-btn" onClick={onCancel}>
+          ← Return
+        </button>
         <div className="resident-form-left">
-          <button className="return-btn" onClick={onCancel}>
-            ← Return
-          </button>
-
           <div className="card shadow-sm">
             <div className="card-body p-4">
               <h3 className="fw-bold mb-4">
