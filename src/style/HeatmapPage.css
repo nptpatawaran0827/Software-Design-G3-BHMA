@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 /* ===== PAGE CONTAINER ===== */
 .heatmap-page-container {
   padding: 2.5rem;
   background: linear-gradient(to bottom, #f8fafb 0%, #ffffff 100%);
   min-height: 100vh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Inter", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* ===== HEADER ===== */

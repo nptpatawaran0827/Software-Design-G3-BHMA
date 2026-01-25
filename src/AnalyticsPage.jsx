@@ -78,7 +78,7 @@ const AnalyticsPage = ({ onLogout }) => {
   useEffect(() => {
     const fetchHealthRecords = async () => {
       try {
-        const response = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/health-records");
+        const response = await fetch("http://localhost:5000/api/health-records");
         const data = await response.json();
         if (Array.isArray(data)) setHealthRecords(data);
       } catch (error) {
@@ -227,22 +227,49 @@ const AnalyticsPage = ({ onLogout }) => {
 
           <div className="analytics-page-wrapper">
             
-            {/* TOP TOOLBAR: Right-aligned filters and button */}
-            <div className="filter-toolbar-top d-flex align-items-center justify-content-end p-3 bg-white shadow-sm mb-4 rounded-3 mx-4 mt-3 gap-3">
-              <div className="d-flex align-items-center gap-2 border-end pe-3">
-                <div className="btn-group shadow-sm">
-                  <button className={`btn btn-sm ${filterMode === 'weekly' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setFilterMode('weekly')}>Weekly</button>
-                  <button className={`btn btn-sm ${filterMode === 'monthly' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setFilterMode('monthly')}>Monthly</button>
-                </div>
-                <div className="d-flex align-items-center bg-light px-2 py-1 rounded border ms-1">
-                  <Calendar size={16} className="text-muted me-2" />
-                  <input type="date" className="border-0 bg-transparent" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ fontSize: '0.9rem', outline: 'none' }} />
-                </div>
-              </div>
-              <button className="btn-export-pdf" onClick={handleExportPDF}>
-                <i className="bi bi-file-earmark-pdf me-2"></i>Export PDF
-              </button>
-            </div>
+          {/* TOP TOOLBAR */}
+<div className="filter-toolbar-top d-flex align-items-center justify-content-end bg-white shadow-sm mb-4 rounded-3 mt-3 gap-3"
+     style={{ 
+       margin: "0 1.5rem", // This matches the natural padding of your report container
+       padding: "0.75rem 1.5rem" 
+     }}>
+  
+  <div className="d-flex align-items-center gap-3 border-end pe-3">
+    {/* TOGGLE */}
+    <div className="btn-group shadow-sm">
+      <button 
+        className={`btn btn-sm ${filterMode === 'weekly' ? 'btn-primary' : 'btn-outline-secondary'}`} 
+        onClick={() => setFilterMode('weekly')}
+      >
+        Weekly
+      </button>
+      <button 
+        className={`btn btn-sm ${filterMode === 'monthly' ? 'btn-primary' : 'btn-outline-secondary'}`} 
+        onClick={() => setFilterMode('monthly')}
+      >
+        Monthly
+      </button>
+    </div>
+
+    {/* DATE PICKER */}
+    <div className="d-flex align-items-center bg-light rounded px-2" style={{ height: '40px', border: '1px solid #e5e7eb' }}>
+      <Calendar size={16} className="text-muted me-2" />
+      <input 
+        type="date" 
+        className="border-0 bg-transparent"
+        style={{ outline: 'none', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
+        value={selectedDate} 
+        onChange={(e) => setSelectedDate(e.target.value)} 
+      />
+    </div>
+  </div>
+
+  {/* EXPORT BUTTON */}
+  <button className="btn-export-pdf" onClick={handleExportPDF}>
+    <i className="bi bi-file-earmark-pdf me-2"></i>Export PDF
+  </button>
+</div>
+
 
             {/* REPORT START */}
             <div ref={reportRef} className="report-container px-4">
@@ -346,5 +373,7 @@ const AnalyticsPage = ({ onLogout }) => {
     </div>
   );
 };
+
+
 
 export default AnalyticsPage;
