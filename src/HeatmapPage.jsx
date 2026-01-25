@@ -52,7 +52,7 @@ const HeatmapPage = ({ onLogout }) => {
             <div className="heatmap-header">
               <h1>BARANGAY HEALTH MAP</h1>
               <p>
-                Real-time heatmap visualization of health conditions across
+                Real-time map visualization of health conditions across
                 streets
               </p>
             </div>
