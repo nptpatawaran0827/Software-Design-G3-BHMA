@@ -12,7 +12,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
   // Fetch pending residents
   const fetchPending = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/pending-residents");
+      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/pending-residents");
       const data = await res.json();
       setPendingResidents(data);
     } catch (err) {
@@ -22,12 +22,6 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
 
   useEffect(() => {
     fetchPending();
-
-    const interval = setInterval(() => {
-      fetchPending();
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
 
   // Calculate dropdown position
@@ -94,7 +88,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
       const currentAdminId = localStorage.getItem("adminId");
 
       const res = await fetch(
-        `http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`,
+        `https://software-design-g3-bhma-2026.onrender.com/api/pending-residents/accept/${resident.Pending_HR_ID}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -129,7 +123,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
     const currentAdminName = localStorage.getItem("username") || "Admin";
     try {
       await fetch(
-        `http://localhost:5000/api/pending-residents/remove/${id}?admin_username=${currentAdminName}`,
+        `https://software-design-g3-bhma-2026.onrender.com/api/pending-residents/remove/${id}?admin_username=${currentAdminName}`,
         {
           method: "DELETE",
         },

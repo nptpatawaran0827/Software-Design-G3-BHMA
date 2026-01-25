@@ -129,7 +129,7 @@ function App() {
            <Route path="/Dashboard" element={<Home onLogout={handleLogout} />} />
            <Route path="/Records" element={<RecordsPage />} />
            <Route path="/Analytics" element={<AnalyticsPage />} />
-           <Route path="/Heatmap" element={<HeatmapPage />} />
+           <Route path="/HealthMap" element={<HeatmapPage />} />
            <Route path="/Resident/:id" element={<ResidentPage />} />
           </Route>
 

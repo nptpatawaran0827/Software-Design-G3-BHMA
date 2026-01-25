@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/BHMA/', // This ensures the dev server starts at /BHMA/
+  base: '/', // This ensures the dev server starts at /BHMA/
    server: {
     port: 5173,
     host: 'localhost'

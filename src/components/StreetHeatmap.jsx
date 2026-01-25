@@ -31,7 +31,7 @@ const StreetHeatmap = ({ viewMode = "diagnosis", filterValue = "All" }) => {
         const queryParam =
           viewMode === "diagnosis" ? "?type=diagnosis" : "?type=condition";
         const response = await fetch(
-          `http://localhost:5000/api/heatmap-data${queryParam}`,
+          `https://software-design-g3-bhma-2026.onrender.com/api/heatmap-data${queryParam}`,
         );
 
         if (!response.ok) {

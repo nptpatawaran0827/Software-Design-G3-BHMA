@@ -21,7 +21,7 @@ function LoginPage({ onLoginSuccess, onReturnToLanding  }) {
 
     try {
       // 1. Send data to your Node.js backend
-      const response = await fetch('http://localhost:5000/api/login', {
+      const response = await fetch('https://software-design-g3-bhma-2026.onrender.com/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

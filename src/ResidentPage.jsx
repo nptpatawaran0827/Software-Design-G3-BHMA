@@ -90,7 +90,7 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
     try {
       // 1. ATTEMPT TO REGISTER RESIDENT
 
-      const residentRes = await fetch("http://localhost:5000/api/residents", {
+      const residentRes = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/residents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -126,7 +126,7 @@ export default function ResidentPage({ onCancel, onSubmitSuccess }) {
 
       // 3. PROCEED TO HEALTH SUBMISSION (Only if name is unique)
       const pendingRes = await fetch(
-        "http://localhost:5000/api/pending-resident",
+        "https://software-design-g3-bhma-2026.onrender.com/api/pending-resident",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

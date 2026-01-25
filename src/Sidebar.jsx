@@ -39,12 +39,12 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
         </NavLink>
 
         <NavLink
-          to="/Heatmap"
+          to="/HealthMap"
           className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           onClick={onClose}
         >
-          <span>🔥</span>
-          <span className="nav-text">Heatmap</span>
+          <span>🗺️</span>
+          <span className="nav-text">Health Map</span>
         </NavLink>
       </div>
 
