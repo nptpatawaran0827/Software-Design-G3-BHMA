@@ -61,7 +61,7 @@ function Home({ onLogout }) {
   // ===== DATA FETCHING: ACTIVITIES =====
   const fetchActivities = async () => {
     try {
-      const response = await fetch("http://https://software-design-g3-bhma-2026.onrender.com/api/activity-logs");
+      const response = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/activity-logs");
       const data = await response.json();
       setActivities(data);
     } catch (error) {
@@ -72,7 +72,7 @@ function Home({ onLogout }) {
   // ===== DATA FETCHING: HEALTH RECORDS =====
   const fetchHealthRecords = async () => {
     try {
-      const response = await fetch("http://https://software-design-g3-bhma-2026.onrender.com/api/health-records");
+      const response = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/health-records");
       const data = await response.json();
       if (Array.isArray(data)) {
         setHealthRecords(data);
