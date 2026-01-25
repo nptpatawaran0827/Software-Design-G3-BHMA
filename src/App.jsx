@@ -10,6 +10,7 @@ import HeatmapPage from './HeatmapPage'; // Heatmap imported
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion' 
 
+
 function App() {
   const navigate = useNavigate();
   const [isAuthed, setIsAuthed] = useState(Boolean(localStorage.getItem('authToken')));

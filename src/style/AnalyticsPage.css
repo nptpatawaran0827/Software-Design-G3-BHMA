@@ -1,8 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+body, 
+.analytics-page-wrapper, 
+.analytics-page-wrapper *, 
+.btn, 
+.stat-number {
+    font-family: 'Inter', sans-serif !important;
+}
+.analytics-page-wrapper {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 /* ========== ANALYTICS PAGE WRAPPER ========== */
 .analytics-page-wrapper {
   background: linear-gradient(to bottom, #f8fafb 0%, #ffffff 100%);
   min-height: 100vh;
-  padding: 2.5rem;
+  /* Reduced from 2.5rem to ensure the inner margins control the spacing */
+  padding: 1.5rem 0; 
 }
 
 /* ========== HEADER SECTION ========== */
@@ -31,110 +45,132 @@
 }
 
 .btn-export-pdf {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: #0d9488 !important; /* Professional Slate */
+  color: white !important;
+  border: none !important;
+  padding: 0.6rem 1.25rem !important;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  transition: 0.3s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Inter', sans-serif !important;
+  margin: 0 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.filter-toolbar-top .bg-light {
+  border-radius: 10px !important;
+  transition: border-color 0.2s ease;
 }
 
 .btn-export-pdf:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  background: #035750 !important; /* Teal on hover */
+  transform: translateY(-1px);
 }
 
-/*  CALENDAR  */
+/* ========== THE PREMIUM CALENDAR REDESIGN ========== */
+
 .calendar-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85); /* Deep Slate backdrop */
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9998;
-  backdrop-filter: blur(4px);
+  z-index: 10000;
+  backdrop-filter: blur(12px); /* High-end frosted glass effect */
+  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .calendar-modal-content {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 2.5rem;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25);
+  max-width: 480px;
+  width: 92%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
 }
 
 .calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .calendar-title {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  color: #1f2937;
+  color: #0f172a;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 
 .calendar-close-btn {
-  background: #f3f4f6;
+  background: #f1f5f9;
   border: none;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1.5rem;
-  color: #6b7280;
-  transition: all 0.2s;
+  color: #64748b;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .calendar-close-btn:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: #fee2e2;
+  color: #ef4444;
+  transform: rotate(90deg);
 }
+
+/* ========== IMPROVED INPUT FIELDS ========== */
 
 .calendar-input-wrapper {
   margin-bottom: 1.5rem;
+  position: relative;
 }
 
 .calendar-input-label {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #94a3b8; /* Muted slate for professional look */
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.75rem;
+  padding-left: 4px;
 }
 
 .calendar-date-input {
   width: 100%;
-  padding: 0.875rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  background: #f8fafc;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  color: #1e293b;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  outline: none;
 }
 
-.calendar-date-input:focus {
-  outline: none;
-  border-color: #14b8a6;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+
+
+/* Animation for Modal */
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* ========== SECTION HEADINGS ========== */
@@ -167,8 +203,11 @@
   border: 1px solid #e5e7eb;
   border-radius: 20px;
   padding: 2.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  /* Matches the toolbar margins exactly */
+  margin-left: 2.5rem !important;
+  margin-right: 2.5rem !important;
   margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 /* ========== STATS SECTION IN PDF ========== */
@@ -276,20 +315,17 @@
 }
 
 .report-title-pdf {
-  font-size: 3.5rem;
+  font-size: 2.8rem;
   font-weight: 900;
-  letter-spacing: 2px;
+  letter-spacing: -0.03em; 
+  line-height: 1.1;
   color: #1f2937;
-  margin-bottom: 0.5rem;
-  line-height: 1.2;
-  word-wrap: break-word;
 }
 
 .report-subtitle-pdf {
-  font-size: 1.8rem;
-  color: #6b7280;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+  color: #64748b;
 }
 
 .report-meta-pdf {
@@ -337,7 +373,7 @@
 }
 
 .chart-header {
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  background: #0d9488;
   padding: 1rem 1.25rem;
 }
 
@@ -584,4 +620,77 @@
   .report-container {
     padding: 1rem;
   }
+}
+
+
+.btn-group {
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.btn-group .btn {
+  border: none !important;
+  border-radius: 7px !important;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.4rem 1rem;
+}
+
+.btn-group .btn-primary {
+  background: white !important;
+  color: #0d9488 !important; /* Teal text */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+.filter-toolbar-top .btn-group,
+.filter-toolbar-top .bg-light,
+.btn-export-pdf {
+  height: 42px !important; /* Consistent target height */
+  display: flex !important;
+  align-items: center !important;
+}
+
+.filter-toolbar-top .bg-light:focus-within {
+  border-color: #0d9488 !important;
+  background-color: #ffffff !important;
+}
+
+.btn-group {
+  background: #f1f5f9;
+  padding: 3px !important; /* Tightened for Inter */
+}
+
+/* 4. Ensure the Date Input itself doesn't have extra height */
+.filter-toolbar-top input[type="date"] {
+  height: 38px !important; /* Slightly smaller than container to prevent clipping */
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.9rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.filter-toolbar-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  
+  /* Use auto margins to center the bar, but set a consistent max-width or specific side margins */
+  margin-left: 2.5rem !important;
+  margin-right: 2.5rem !important;
+  margin-bottom: 1.5rem !important;
+  
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px !important; /* Slightly softer for the Inter look */
+  padding: 0.75rem 1.5rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Specific fix for the wrapper to ensure it doesn't overflow */
+.main-content {
+    overflow-x: hidden; /* Prevents the horizontal scroll if a margin is too wide */
 }
