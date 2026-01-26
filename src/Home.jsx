@@ -185,22 +185,9 @@ function Home({ onLogout }) {
 
   // ===== HANDLE ACCEPT RESIDENT FROM HEADER BANNER =====
   const handleAcceptResident = (residentData) => {
-    // FORCE DATE TO LOCAL TODAY:
-    const now = new Date();
-    const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-      .toISOString()
-      .split("T")[0];
-
-    // Merge current data but override the date field
-    const updatedResidentData = {
-      ...residentData,
-      Date_Visited: localToday
-    };
-
-    setPreFillData(updatedResidentData);
+    setPreFillData(residentData);
     setActiveTab("Records");
     setShouldAutoOpenForm(true);
-    // Refreshing data to ensure synchronization
     fetchHealthRecords();
     fetchActivities();
   };
@@ -223,7 +210,7 @@ function Home({ onLogout }) {
       );
     }
 
-    // ===== HEATMAP TAB =====
+    // ===== HEATMAP TAB (NEW - INTEGRATED SEAMLESSLY) =====
     if (activeTab === "Heatmap") {
       return <HeatmapPage />;
     }
@@ -234,7 +221,7 @@ function Home({ onLogout }) {
         {/* WELCOME SECTION */}
         <div className="top-actions-bar">
           <h2 className="fw-bold mb-0 text-uppercase">
-           WELCOME BACK, <span className="text-primary">{adminUsername}</span>
+            WELCOME BACK, <span className="text-primary">{adminUsername}</span>
           </h2>
         </div>
 
@@ -259,28 +246,21 @@ function Home({ onLogout }) {
                 const seen = new Set();
                 const processedActivities = activities
                   .filter((item) => {
-                    const action = (item.action_type || "").toLowerCase();
-                    // EXEMPTION: Filter out any report generation logs entirely
-                    const isReport = action === "generated_report" || 
-                                     (item.record_name && (item.record_name.toUpperCase().includes("WEEKLY") || item.record_name.toUpperCase().includes("MONTHLY")));
-                    if (isReport) return false;
-
                     if (filter === "All Activities") return true;
-                    if (filter === "New Patients") return action === "added";
-                    if (filter === "Updated Records") return action === "modified" || action === "updated";
+                    if (filter === "New Patients")
+                      return item.action_type === "added";
+                    if (filter === "Updated Records")
+                      return item.action_type === "modified";
                     return true;
                   })
                   .filter((item) => {
-                    if (!item.created_at) return true;
-                    try {
-                      const dateMinute = new Date(item.created_at).toISOString().slice(0, 16);
-                      const fingerprint = `${item.resident_id}-${item.action_type}-${dateMinute}-${item.log_id}`;
-                      if (seen.has(fingerprint)) return false;
-                      seen.add(fingerprint);
-                      return true;
-                    } catch (e) {
-                      return true;
-                    }
+                    const dateMinute = new Date(item.created_at)
+                      .toISOString()
+                      .slice(0, 16);
+                    const fingerprint = `${item.record_name}-${item.action_type}-${dateMinute}`;
+                    if (seen.has(fingerprint)) return false;
+                    seen.add(fingerprint);
+                    return true;
                   });
 
                 return processedActivities.length > 0 ? (
@@ -296,29 +276,27 @@ function Home({ onLogout }) {
                       year: "numeric",
                     });
 
+                    // Determine the color class based on action type
                     let bulletClass = "";
                     let actionClass = "";
                     let actionText = "";
-                    
-                    const actionTypeLower = (log.action_type || "").toLowerCase();
-                    
-                    switch (actionTypeLower) {
+
+                    switch (log.action_type) {
                       case "added":
                         bulletClass = "activity-bullet-added";
                         actionClass = "activity-action-added";
-                        actionText = "added";
+                        actionText = "added successfully";
                         break;
                       case "modified":
-                      case "updated":
                         bulletClass = "activity-bullet-modified";
                         actionClass = "activity-action-modified";
-                        actionText = "updated";
+                        actionText = "modified";
                         break;
                       case "deleted":
                       case "removed":
                         bulletClass = "activity-bullet-deleted";
                         actionClass = "activity-action-deleted";
-                        actionText = "deleted";
+                        actionText = "removed";
                         break;
                       case "rejected":
                         bulletClass = "activity-bullet-rejected";
@@ -336,13 +314,16 @@ function Home({ onLogout }) {
                         key={log.log_id || Math.random()}
                         className="list-group-item d-flex align-items-center py-3 border-0 px-4"
                       >
-                        <i className={`bi bi-circle-fill ${bulletClass} me-3 activity-icon`}></i>
+                        <i
+                          className={`bi bi-circle-fill ${bulletClass} me-3 activity-icon`}
+                        ></i>
                         <div className="small">
-                          <strong>{adminUsername}</strong>{" "}
-                          <span className={actionClass}>{actionText}</span> a Health Record for Resident ID:{" "}
-                          <span className="fw-bold text-primary">
-                            {log.resident_id || log.Resident_ID || log.residentId || "N/A"}
-                          </span> at{" "}
+                          <span className="record-name">{log.record_name}</span>{" "}
+                          has been
+                          <span className={`${actionClass} mx-1`}>
+                            {actionText}
+                          </span>
+                          by <strong>{log.admin_username}</strong> at{" "}
                           <span className="activity-time">{time}</span> on{" "}
                           <span className="activity-date">{dateFormatted}</span>
                         </div>
@@ -367,8 +348,10 @@ function Home({ onLogout }) {
         {/* DASHBOARD OVERVIEW CONTENT */}
         <div className="bg-white p-4 rounded-4 shadow-sm border dashboard-overview-content">
           <div className="row g-4">
+            {/* LEFT COLUMN - 4 STAT CARDS */}
             <div className="col-lg-4">
               <div className="row g-4 h-100">
+                {/* Total Residents Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -382,6 +365,7 @@ function Home({ onLogout }) {
                   </div>
                 </div>
 
+                {/* Health Records Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -395,6 +379,7 @@ function Home({ onLogout }) {
                   </div>
                 </div>
 
+                {/* PWD Patients Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -410,6 +395,7 @@ function Home({ onLogout }) {
                   </div>
                 </div>
 
+                {/* Total Reports Card */}
                 <div className="col-6">
                   <div
                     className="border rounded-4 p-4 text-center shadow-sm bg-white d-flex flex-column justify-content-center"
@@ -425,6 +411,7 @@ function Home({ onLogout }) {
               </div>
             </div>
 
+            {/* MIDDLE COLUMN - GENDER DISTRIBUTION CHART */}
             <div className="col-lg-4">
               <div
                 className="border rounded-4 overflow-hidden shadow-sm bg-white d-flex flex-column h-100 zoom-card"
@@ -512,6 +499,7 @@ function Home({ onLogout }) {
               </div>
             </div>
 
+            {/* RIGHT COLUMN - COMMON DIAGNOSIS CHART */}
             <div className="col-lg-4">
               <div
                 className="border rounded-4 overflow-hidden shadow-sm bg-white d-flex flex-column h-100 zoom-card"
