@@ -7,29 +7,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ===== DATABASE CONNECTION (LOCAL MYSQL) =====
 const db = mysql.createConnection({
-  host: 'health-monitoring-analytics-system.colao00gscmx.us-east-1.rds.amazonaws.com',
-  user: 'admin', // or your RDS username
-  password: 'Group3-BHMA', // replace with your RDS password
+  host: 'localhost',
+  user: 'root',
+  password: '@Group3-BHMA',
   database: 'admin_db'
 });
-
-
-db.connect((err) => {
-  if (err) {
-    console.error("❌ Database connection failed:", err);
-    return;
-  }
-  console.log("✅ Connected to admin_db");
+db.connect(err => {
+  if (err) return console.error(err);
+  console.log('✅ Connected to admin_db');
 });
 
-/* ================= HEATMAP DATA (SUPPORTS DIAGNOSIS & CONDITION MODE) ================= */
+/* ================= HEATMAP DATA ================= */
 app.get("/api/heatmap-data", (req, res) => {
-  const type = req.query.type || "condition"; // 'condition' or 'diagnosis'
+  const type = req.query.type || "condition"; 
 
   if (type === "diagnosis") {
-    // ===== DIAGNOSIS MODE: Most common diagnosis per street =====
     const sql = `
       SELECT
         s.Street_ID,
@@ -52,22 +45,17 @@ app.get("/api/heatmap-data", (req, res) => {
         console.error("❌ Diagnosis heatmap query error:", err);
         return res.status(500).json({ error: err.message });
       }
-
-      // Filter to keep only top diagnosis per street
       const topDiagnosisPerStreet = {};
       const filteredResults = [];
-
       results.forEach((row) => {
         if (!topDiagnosisPerStreet[row.Street_ID]) {
           topDiagnosisPerStreet[row.Street_ID] = true;
           filteredResults.push(row);
         }
       });
-
       res.json(filteredResults);
     });
   } else {
-    // ===== CONDITION MODE: Health conditions =====
     const sql = `
       SELECT
         s.Street_ID,
@@ -90,18 +78,14 @@ app.get("/api/heatmap-data", (req, res) => {
         console.error("❌ Condition heatmap query error:", err);
         return res.status(500).json({ error: err.message });
       }
-
-      // Filter to keep only top condition per street
       const topConditionPerStreet = {};
       const filteredResults = [];
-
       results.forEach((row) => {
         if (!topConditionPerStreet[row.Street_ID]) {
           topConditionPerStreet[row.Street_ID] = true;
           filteredResults.push(row);
         }
       });
-
       res.json(filteredResults);
     });
   }
@@ -116,30 +100,39 @@ app.get("/api/streets", (req, res) => {
 });
 
 /* ================= ACTIVITY LOGS HELPER ================= */
-/**
- * HELPER: Logic to insert into activity_logs
- */
-const logActivity = (recordName, action, adminUsername) => {
-  const sql =
-    "INSERT INTO activity_logs (record_name, action_type, admin_username) VALUES (?, ?, ?)";
-  db.query(sql, [recordName, action, adminUsername || "Admin"], (err) => {
+const logActivity = (residentId, action, adminId) => {
+  const sql = "INSERT INTO activity_logs (record_name, action_type, Resident_ID, admin_id) VALUES (?, ?, ?, ?)";
+  // We use residentId for both columns to ensure the ID is always stored
+  db.query(sql, [residentId, action, residentId, adminId || 1], (err) => {
     if (err) console.error("❌ Activity Log Error:", err);
   });
 };
 
 /* ================= GET ACTIVITY LOGS ================= */
 app.get("/api/activity-logs", (req, res) => {
-  const sql = "SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 50";
+  const sql = `
+    SELECT 
+      al.log_id, 
+      al.action_type, 
+      al.Resident_ID AS Resident_ID, -- Force the casing here
+      al.record_name, 
+      al.created_at,
+      a.username AS admin_username
+    FROM activity_logs al
+    LEFT JOIN admins a ON al.admin_id = a.admin_id
+    ORDER BY al.created_at DESC 
+    LIMIT 50
+  `;
+  
   db.query(sql, (err, rows) => {
     if (err) return res.status(500).json(err);
     res.json(rows);
   });
 });
 
-/* ================= RESIDENT (STRICT ONE NAME POLICY) ================= */
+/* ================= RESIDENT ================= */
 app.post("/api/residents", (req, res) => {
   const d = req.body;
-
   const checkSql = `
     SELECT Resident_ID FROM residents
     WHERE TRIM(First_Name) = TRIM(?)
@@ -287,10 +280,9 @@ app.get("/api/health-records", (req, res) => {
   });
 });
 
-/* ================= ADD HEALTH RECORD (STRICT ONE NAME POLICY) ================= */
+/* ================= ADD HEALTH RECORD (REVISED LOGGING) ================= */
 app.post("/api/health-records", (req, res) => {
   const d = req.body;
-
   const checkSql = `
     SELECT Resident_ID FROM residents
     WHERE TRIM(First_Name) = TRIM(?)
@@ -361,7 +353,7 @@ app.post("/api/health-records", (req, res) => {
             const height =
               d.Height === "" || isNaN(d.Height) ? null : parseFloat(d.Height);
             const bmi = d.BMI === "" || isNaN(d.BMI) ? null : parseFloat(d.BMI);
-            let adminId = parseInt(d.Recorded_By || d.adminId) || null;
+            let adminIdForRecord = parseInt(d.Recorded_By || d.adminId) || null;
 
             db.query(
               hrSql,
@@ -378,7 +370,7 @@ app.post("/api/health-records", (req, res) => {
                 d.Allergies || null,
                 d.Date_Visited || null,
                 d.Remarks || d.Remarks_Notes || null,
-                adminId,
+                adminIdForRecord,
               ],
               (hrErr) => {
                 if (hrErr) {
@@ -389,16 +381,16 @@ app.post("/api/health-records", (req, res) => {
                 }
 
                 db.commit((commitErr) => {
-                  if (commitErr) {
-                    console.error("❌ Commit error:", commitErr);
-                    return db.rollback(() => res.status(500).json(commitErr));
-                  }
-                  logActivity(
-                    `${d.First_Name} ${d.Last_Name}`,
-                    "added",
-                    d.admin_username,
-                  );
-                  res.json({ success: true, isDuplicate: false });
+  if (commitErr) {
+    console.error("❌ Commit error:", commitErr);
+    return db.rollback(() => res.status(500).json(commitErr));
+  }
+
+  // ONLY ONE LOG CALL: Pass the ID, the Action, and the Admin ID
+  logActivity(d.Resident_ID, "added", adminIdForRecord);
+
+  res.json({ success: true, isDuplicate: false });
+});
                 });
               },
             );
@@ -407,10 +399,9 @@ app.post("/api/health-records", (req, res) => {
       });
     },
   );
-});
 
 /* ================= APPROVE PENDING (FIXED TRANSACTION & LOGGING) ================= */
-app.post("/api/pending-residents/accept/:id", (req, res) => {
+app.post("/api/pending-resident/accept/:id", (req, res) => {
   const id = req.params.id;
   const { admin_username, adminId } = req.body;
 
@@ -483,7 +474,7 @@ app.post("/api/pending-residents/accept/:id", (req, res) => {
   );
 });
 
-/* ================= UPDATE HEALTH RECORD (TRANSACTIONAL) ================= */
+/* ================= UPDATE HEALTH RECORD (REVISED LOGGING) ================= */
 app.put("/api/health-records/:id", (req, res) => {
   const healthRecordId = req.params.id;
   const d = req.body;
@@ -564,11 +555,8 @@ app.put("/api/health-records/:id", (req, res) => {
                 console.error("❌ Commit error:", commitErr);
                 return db.rollback(() => res.status(500).json(commitErr));
               }
-              logActivity(
-                `${d.First_Name} ${d.Last_Name}`,
-                "modified",
-                d.admin_username,
-              );
+              // REVISED: Using adminId
+              logActivity(d.Resident_ID, "modified", d.adminId);
               res.json({ success: true });
             });
           },
@@ -578,10 +566,10 @@ app.put("/api/health-records/:id", (req, res) => {
   });
 });
 
-/* ================= DELETE HEALTH RECORD (CASCADE TRANSACTION) ================= */
+/* ================= DELETE HEALTH RECORD (REVISED LOGGING) ================= */
 app.delete("/api/health-records/:id", (req, res) => {
   const healthRecordId = req.params.id;
-  const admin_username = req.query.admin_username;
+  const adminId = req.query.adminId; // Changed from admin_username
 
   db.query(
     "SELECT r.First_Name, r.Last_Name, r.Resident_ID FROM health_records hr JOIN residents r ON hr.Resident_ID = r.Resident_ID WHERE hr.Health_Record_ID = ?",
@@ -630,7 +618,8 @@ app.delete("/api/health-records/:id", (req, res) => {
                         console.error("❌ Commit error:", err);
                         return db.rollback(() => res.status(500).json(err));
                       }
-                      logActivity(residentName, "removed", admin_username);
+                      // REVISED: Using adminId
+                      logActivity(residentId, "removed", adminId);
                       res.json({ success: true });
                     });
                   },
@@ -645,7 +634,7 @@ app.delete("/api/health-records/:id", (req, res) => {
 });
 
 /* ================= DELETE PENDING RESIDENT ================= */
-app.delete("/api/pending-residents/remove/:id", (req, res) => {
+app.delete("/api/pending-resident/remove/:id", (req, res) => {
   const pendingId = req.params.id;
   const admin_username = req.query.admin_username;
 
@@ -668,7 +657,7 @@ app.delete("/api/pending-residents/remove/:id", (req, res) => {
         }
 
         db.query(
-          "DELETE FROM pending_resident WHERE Pending_HR_ID = ?",
+          "DELETE FROM pending-resident WHERE Pending_HR_ID = ?",
           [pendingId],
           (err) => {
             if (err) {
@@ -701,7 +690,7 @@ app.delete("/api/pending-residents/remove/:id", (req, res) => {
 });
 
 /* ================= GET PENDING RESIDENTS ================= */
-app.get("/api/pending-residents", (req, res) => {
+app.get("/api/pending-resident", (req, res) => {
   const sql = `
     SELECT pr.*, r.First_Name, r.Middle_Name, r.Last_Name, r.Sex, r.Birthdate,
     CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name
@@ -745,12 +734,6 @@ app.post("/api/login", (req, res) => {
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(
-    `📊 Heatmap endpoint: http://localhost:${PORT}/api/heatmap-data?type=diagnosis`,
-  );
-  console.log(
-    `📊 Heatmap endpoint: http://localhost:${PORT}/api/heatmap-data?type=condition`,
-  );
 });
 
 export default app;

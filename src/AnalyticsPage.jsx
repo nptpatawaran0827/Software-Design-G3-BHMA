@@ -35,9 +35,19 @@ const AnalyticsPage = ({ onLogout }) => {
   const reportRef = useRef(null);
   const [zoomedContent, setZoomedContent] = useState(null);
 
-  // Filter States
-  const [filterMode, setFilterMode] = useState("weekly"); 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  // Helper to get local YYYY-MM-DD
+  const getLocalToday = () => new Date().toLocaleDateString('en-CA');
+
+  /* ==================== FILTER STATES ==================== */
+  const [filterMode, setFilterMode] = useState("all");
+  const [selectedDate, setSelectedDate] = useState(getLocalToday());
+
+  // GUARD: If user clears the date input manually or it becomes empty, snap back to today
+  useEffect(() => {
+    if (!selectedDate) {
+      setSelectedDate(getLocalToday());
+    }
+  }, [selectedDate]);
 
   const [stats, setStats] = useState({
     totalResidents: 0,
@@ -57,21 +67,35 @@ const AnalyticsPage = ({ onLogout }) => {
 
   /* ==================== DATE FILTER HELPERS ==================== */
   const getWeekRange = (dateStr) => {
-    const date = new Date(dateStr + "T00:00:00");
-    const day = date.getDay();
-    const diffToSun = date.getDate() - day;
-    const startOfWeek = new Date(new Date(date).setDate(diffToSun));
-    const endOfWeek = new Date(new Date(startOfWeek).setDate(startOfWeek.getDate() + 6));
+    if (!dateStr) return { startOfWeek: new Date(), endOfWeek: new Date() };
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day); 
+    
+    const dayOfWeek = date.getDay(); 
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - dayOfWeek);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
     return { startOfWeek, endOfWeek };
   };
 
   const formatPeriodLabel = () => {
+    if (filterMode === "all") return "Complete Historical Records";
+    if (!selectedDate) return "Current Date";
+    
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
     const options = { month: "long", day: "numeric", year: "numeric" };
+
     if (filterMode === "weekly") {
       const { startOfWeek, endOfWeek } = getWeekRange(selectedDate);
       return `${startOfWeek.toLocaleDateString("en-US", options)} – ${endOfWeek.toLocaleDateString("en-US", options)}`;
     }
-    return new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    return localDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
   /* ==================== DATA FETCHING & FILTERING ==================== */
@@ -94,18 +118,27 @@ const AnalyticsPage = ({ onLogout }) => {
     if (healthRecords.length === 0) return;
 
     const filtered = healthRecords.filter((record) => {
+      if (filterMode === "all") return true; 
+
       const dateField = record.Date_Visited || record.Date || record.createdAt;
-      if (!dateField) return true;
+      if (!dateField) return false;
+      
       const recordD = new Date(dateField);
-      recordD.setHours(0, 0, 0, 0);
+      const recordDateOnly = new Date(recordD.getFullYear(), recordD.getMonth(), recordD.getDate());
 
       if (filterMode === "weekly") {
         const { startOfWeek, endOfWeek } = getWeekRange(selectedDate);
-        return recordD >= startOfWeek && recordD <= endOfWeek;
-      } else {
-        const selectedD = new Date(selectedDate + "T00:00:00");
-        return recordD.getFullYear() === selectedD.getFullYear() && recordD.getMonth() === selectedD.getMonth();
+        return recordDateOnly >= startOfWeek && recordDateOnly <= endOfWeek;
+      } 
+      
+      if (filterMode === "monthly") {
+        const [sYear, sMonth] = selectedDate.split('-').map(Number);
+        return (
+          recordDateOnly.getFullYear() === sYear && 
+          (recordDateOnly.getMonth() + 1) === sMonth
+        );
       }
+      return true;
     });
 
     calculateAnalytics(filtered);
@@ -121,7 +154,7 @@ const AnalyticsPage = ({ onLogout }) => {
     const uniqueResidents = new Set(records.map((r) => r.Resident_ID));
     const maleCount = records.filter((r) => r.Sex === "Male").length;
     const femaleCount = records.filter((r) => r.Sex === "Female").length;
-    const pwdCount = records.filter((r) => r.Is_PWD == 1 || r.Is_PWD === true).length;
+    const pwdCount = records.filter((r) => (r.Is_PWD == 1 || r.Is_PWD === true)).length;
 
     const conditionCounts = {};
     records.forEach((record) => {
@@ -226,63 +259,42 @@ const AnalyticsPage = ({ onLogout }) => {
           <HeaderBanner onLogout={onLogout} />
 
           <div className="analytics-page-wrapper">
-            
-          {/* TOP TOOLBAR */}
-<div className="filter-toolbar-top d-flex align-items-center justify-content-end bg-white shadow-sm mb-4 rounded-3 mt-3 gap-3"
-     style={{ 
-       margin: "0 1.5rem", // This matches the natural padding of your report container
-       padding: "0.75rem 1.5rem" 
-     }}>
-  
-  <div className="d-flex align-items-center gap-3 border-end pe-3">
-    {/* TOGGLE */}
-    <div className="btn-group shadow-sm">
-      <button 
-        className={`btn btn-sm ${filterMode === 'weekly' ? 'btn-primary' : 'btn-outline-secondary'}`} 
-        onClick={() => setFilterMode('weekly')}
-      >
-        Weekly
-      </button>
-      <button 
-        className={`btn btn-sm ${filterMode === 'monthly' ? 'btn-primary' : 'btn-outline-secondary'}`} 
-        onClick={() => setFilterMode('monthly')}
-      >
-        Monthly
-      </button>
-    </div>
+            <div className="filter-toolbar-top d-flex align-items-center justify-content-end p-3 bg-white shadow-sm mb-4 rounded-3 mx-4 mt-3 gap-3">
+              <div className="d-flex align-items-center gap-2 border-end pe-3">
+                <div className="btn-group shadow-sm">
+                  <button className={`btn btn-sm ${filterMode === 'all' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setFilterMode('all')}>All Time</button>
+                  <button className={`btn btn-sm ${filterMode === 'weekly' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setFilterMode('weekly')}>Weekly</button>
+                  <button className={`btn btn-sm ${filterMode === 'monthly' ? 'btn-primary' : 'btn-outline-secondary'}`} onClick={() => setFilterMode('monthly')}>Monthly</button>
+                </div>
+                
+                {/* DATE PICKER WITH CLEAR/RESET FUNCTIONALITY */}
+                <div className={`d-flex align-items-center bg-light px-2 py-1 rounded border ms-1 ${filterMode === 'all' ? 'opacity-50' : ''}`}>
+                  <Calendar size={16} className="text-muted me-2" />
+                  <input 
+                    type="date" 
+                    className="border-0 bg-transparent" 
+                    value={selectedDate} 
+                    onChange={(e) => setSelectedDate(e.target.value)} 
+                    disabled={filterMode === 'all'}
+                    style={{ fontSize: '0.9rem', outline: 'none' }} 
+                  />
+                 
+                </div>
+              </div>
+              <button className="btn-export-pdf" onClick={handleExportPDF}>
+                <i className="bi bi-file-earmark-pdf me-2"></i>Export PDF
+              </button>
+            </div>
 
-    {/* DATE PICKER */}
-    <div className="d-flex align-items-center bg-light rounded px-2" style={{ height: '40px', border: '1px solid #e5e7eb' }}>
-      <Calendar size={16} className="text-muted me-2" />
-      <input 
-        type="date" 
-        className="border-0 bg-transparent"
-        style={{ outline: 'none', fontFamily: 'Inter, sans-serif', fontWeight: '600' }}
-        value={selectedDate} 
-        onChange={(e) => setSelectedDate(e.target.value)} 
-      />
-    </div>
-  </div>
-
-  {/* EXPORT BUTTON */}
-  <button className="btn-export-pdf" onClick={handleExportPDF}>
-    <i className="bi bi-file-earmark-pdf me-2"></i>Export PDF
-  </button>
-</div>
-
-
-            {/* REPORT START */}
             <div ref={reportRef} className="report-container px-4">
-              <div className="report-header-pdf mb-4">
-                <h2 className="report-title-pdf">BARANGAY HEALTH ANALYTICS REPORT</h2>
-                <h5 className="report-subtitle-pdf text-muted">{filterMode.toUpperCase()} | {formatPeriodLabel()}</h5>
+              <div className="report-header-pdf mb-4 text-center">
+                <h2 className="report-title-pdf fw-bold">BARANGAY HEALTH ANALYTICS REPORT</h2>
+                <h5 className="report-subtitle-pdf text-muted text-uppercase">{filterMode} | {formatPeriodLabel()}</h5>
               </div>
 
-              {/* STATS SECTION: 3 Items in one horizontal line */}
               <div className="stats-section-pdf mb-4">
                 <h3 className="section-heading mb-3 pb-2 border-bottom">KEY STATISTICS</h3>
                 <div className="row g-3"> 
-                  {/* Total Residents */}
                   <div className="col-4">
                     <div className="stat-card-modern shadow-none border h-100 p-3">
                       <i className="bi bi-people stat-icon text-success mb-2"></i>
@@ -292,8 +304,6 @@ const AnalyticsPage = ({ onLogout }) => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Gender Split */}
                   <div className="col-4">
                     <div className="stat-card-modern shadow-none border h-100 p-3">
                       <div className="stat-content w-100">
@@ -306,8 +316,6 @@ const AnalyticsPage = ({ onLogout }) => {
                       </div>
                     </div>
                   </div>
-
-                  {/* PWD Count */}
                   <div className="col-4">
                     <div className="stat-card-modern shadow-none border h-100 p-3">
                       <i className="bi bi-person-wheelchair stat-icon text-success mb-2"></i>
@@ -320,7 +328,6 @@ const AnalyticsPage = ({ onLogout }) => {
                 </div>
               </div>
 
-              {/* CHARTS SECTION */}
               <div className="charts-section mt-4">
                 <h3 className="section-heading">COMMUNITY DEMOGRAPHICS</h3>
                 <div className="charts-grid">
@@ -361,7 +368,6 @@ const AnalyticsPage = ({ onLogout }) => {
         </main>
       </div>
 
-      {/* ZOOM MODAL */}
       {zoomedContent && (
         <div className="zoom-overlay" onClick={() => setZoomedContent(null)}>
           <div className="zoom-content" onClick={(e) => e.stopPropagation()}>
@@ -373,7 +379,5 @@ const AnalyticsPage = ({ onLogout }) => {
     </div>
   );
 };
-
-
 
 export default AnalyticsPage;
