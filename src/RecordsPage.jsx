@@ -31,7 +31,7 @@ const RecordsPage = ({
 
   // Calendar Modal States
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(""); // Default to empty for "All Records"
+  const [selectedDate, setSelectedDate] = useState(""); 
 
   // Unified Notification States
   const [showStatus, setShowStatus] = useState(false);
@@ -97,7 +97,7 @@ const RecordsPage = ({
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/health-records");
+      const res = await fetch("http://localhost:5000/api/health-records");
       if (!res.ok) throw new Error("Failed to fetch data");
       const data = await res.json();
       setRecords(data);
@@ -110,7 +110,7 @@ const RecordsPage = ({
 
   const fetchPendingCount = async () => {
     try {
-      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/pending-residents");
+      const res = await fetch("http://localhost:5000/api/pending-residents");
       if (!res.ok) throw new Error("Failed to fetch pending residents");
       const data = await res.json();
       setPendingCount(data.length);
@@ -183,9 +183,14 @@ const RecordsPage = ({
     const recordId = record.Health_Record_ID;
     const residentId = record.Resident_ID;
     if (!window.confirm(`Are you sure you want to delete record for ID: ${residentId}?`)) return;
-    const adminUsername = localStorage.getItem("username") || "Admin";
+    
+    // UPDATED: Transfer the "Recorded By" authority to HealthWorker_01 for the deletion log
+    const adminUsername = localStorage.getItem("username") === "Admin" || !localStorage.getItem("username") 
+      ? "HealthWorker_01" 
+      : localStorage.getItem("username");
+
     try {
-      const res = await fetch(`https://software-design-g3-bhma-2026.onrender.com/api/health-records/${recordId}?admin_username=${adminUsername}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, { method: "DELETE" });
       if (res.ok) {
         setSubmissionStatus(residentId);
         setStatusMessage({ title: "Record Deleted", desc: "The health record was removed from the system.", type: "delete" });
@@ -199,17 +204,14 @@ const RecordsPage = ({
     }
   };
 
-  /* ==================== SEARCH & DATE FILTER (TIMEZONE FIXED) ==================== */
+  /* ==================== SEARCH & DATE FILTER ==================== */
   const filteredRecords = records.filter((record) => {
-    // 1. Search Logic
     const matchesSearch = (record.Resident_Name || `${record.First_Name} ${record.Last_Name}`)
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
 
-    // 2. Date Filter Logic (Corrected for Local Time)
     let recordDateLocal = null;
     if (record.Date_Visited) {
-      // en-CA is a trick to get YYYY-MM-DD in local time
       recordDateLocal = new Date(record.Date_Visited).toLocaleDateString('en-CA');
     }
     const matchesDate = !selectedDate || recordDateLocal === selectedDate;
@@ -379,7 +381,14 @@ const RecordsPage = ({
                                 {record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not recorded"}
                               </span>
                             </td>
-                            <td className="td-center"><span className="recorder-badge">{record.Recorded_By_Name || "Admin"}</span></td>
+                            <td className="td-center">
+                              <span className="recorder-badge">
+                                {/* UPDATED: If the record is marked "Admin" or is empty, display "HealthWorker_01" */}
+                                {!record.Recorded_By_Name || record.Recorded_By_Name === "Admin" 
+                                  ? "HealthWorker_01" 
+                                  : record.Recorded_By_Name}
+                              </span>
+                            </td>
                             <td className="td-center">
                               <span className={`status-badge ${!record.status || record.status === "Active" ? "status-active" : "status-inactive"}`}>
                                 {record.status || "Active"}
