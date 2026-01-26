@@ -21,7 +21,6 @@ body,
 .analytics-page-wrapper {
   background: linear-gradient(to bottom, #f8fafb 0%, #ffffff 100%);
   min-height: 100vh;
-  /* Reduced from 2.5rem to ensure the inner margins control the spacing */
   padding: 1.5rem 0;
 }
 
@@ -82,12 +81,12 @@ body,
 .calendar-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.85); /* Deep Slate backdrop */
+  background: rgba(15, 23, 42, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  backdrop-filter: blur(12px); /* High-end frosted glass effect */
+  backdrop-filter: blur(12px);
   animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -375,6 +374,7 @@ body,
   overflow: hidden;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
 }
 
 .chart-card-modern:hover {
@@ -536,7 +536,7 @@ body,
 
 .btn-group {
   background: #f1f5f9;
-  padding: 3px !important;
+  padding: 3px !important; /* Tightened for Inter */
 }
 
 .filter-toolbar-top input[type="date"] {
