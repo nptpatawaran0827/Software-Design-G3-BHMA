@@ -1,14 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
-body, 
-.analytics-page-wrapper, 
-.analytics-page-wrapper *, 
-.btn, 
+body,
+.analytics-page-wrapper,
+.analytics-page-wrapper *,
+.btn,
 .stat-number {
-    font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
 }
 .analytics-page-wrapper {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
 }
 
 /* ========== ANALYTICS PAGE WRAPPER ========== */
@@ -16,7 +22,7 @@ body,
   background: linear-gradient(to bottom, #f8fafb 0%, #ffffff 100%);
   min-height: 100vh;
   /* Reduced from 2.5rem to ensure the inner margins control the spacing */
-  padding: 1.5rem 0; 
+  padding: 1.5rem 0;
 }
 
 /* ========== HEADER SECTION ========== */
@@ -56,7 +62,7 @@ body,
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
   margin: 0 !important;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
@@ -165,12 +171,16 @@ body,
   outline: none;
 }
 
-
-
 /* Animation for Modal */
 @keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* ========== SECTION HEADINGS ========== */
@@ -317,7 +327,7 @@ body,
 .report-title-pdf {
   font-size: 2.8rem;
   font-weight: 900;
-  letter-spacing: -0.03em; 
+  letter-spacing: -0.03em;
   line-height: 1.1;
   color: #1f2937;
 }
@@ -491,138 +501,6 @@ body,
   }
 }
 
-/* ========== RESPONSIVE DESIGN ========== */
-@media (max-width: 1200px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .charts-grid-three {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .analytics-page-wrapper {
-    padding: 1.5rem;
-  }
-
-  .analytics-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .btn-export-pdf {
-    width: 100%;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-grid,
-  .charts-grid-three {
-    grid-template-columns: 1fr;
-  }
-
-  .stat-card-modern {
-    padding: 1.25rem;
-  }
-
-  .stat-icon,
-  .stat-icon-calendar {
-    font-size: 2rem;
-    width: 45px;
-    height: 45px;
-  }
-
-  .stat-number {
-    font-size: 1.5rem;
-  }
-
-  .report-container {
-    padding: 1.5rem;
-  }
-
-  .analytics-title {
-    font-size: 1.75rem;
-  }
-
-  .section-heading {
-    font-size: 1.25rem;
-  }
-
-  .zoom-overlay {
-    padding: 0.75rem;
-  }
-
-  .zoom-content {
-    width: 95vw;
-    max-width: 550px;
-    max-height: 85vh;
-  }
-
-  .zoom-close {
-    width: 38px;
-    height: 38px;
-    font-size: 1.1rem;
-  }
-
-  .report-title-pdf {
-    font-size: 1.8rem;
-    letter-spacing: 1px;
-  }
-
-  .report-subtitle-pdf {
-    font-size: 1rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .zoom-overlay {
-    padding: 0.5rem;
-  }
-
-  .zoom-content {
-    width: 96vw;
-    max-width: 500px;
-    max-height: 80vh;
-  }
-
-  .zoom-close {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
-  }
-
-  .analytics-page-wrapper {
-    padding: 1rem;
-  }
-
-  .analytics-title {
-    font-size: 1.4rem;
-  }
-
-  .section-heading {
-    font-size: 1.1rem;
-  }
-
-  .report-title-pdf {
-    font-size: 1.5rem;
-    letter-spacing: 0.5px;
-  }
-
-  .report-subtitle-pdf {
-    font-size: 0.9rem;
-  }
-
-  .report-container {
-    padding: 1rem;
-  }
-}
-
-
 .btn-group {
   background: #f1f5f9;
   padding: 4px;
@@ -640,13 +518,13 @@ body,
 .btn-group .btn-primary {
   background: white !important;
   color: #0d9488 !important; /* Teal text */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
 .filter-toolbar-top .btn-group,
 .filter-toolbar-top .bg-light,
 .btn-export-pdf {
-  height: 42px !important; /* Consistent target height */
+  height: 42px !important;
   display: flex !important;
   align-items: center !important;
 }
@@ -658,16 +536,15 @@ body,
 
 .btn-group {
   background: #f1f5f9;
-  padding: 3px !important; /* Tightened for Inter */
+  padding: 3px !important;
 }
 
-/* 4. Ensure the Date Input itself doesn't have extra height */
 .filter-toolbar-top input[type="date"] {
-  height: 38px !important; /* Slightly smaller than container to prevent clipping */
+  height: 38px !important;
   border: none !important;
   background: transparent !important;
   outline: none !important;
-  font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
   font-size: 0.9rem !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -677,20 +554,262 @@ body,
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  
-  /* Use auto margins to center the bar, but set a consistent max-width or specific side margins */
+
   margin-left: 2.5rem !important;
   margin-right: 2.5rem !important;
   margin-bottom: 1.5rem !important;
-  
+
   background-color: white;
   border: 1px solid #e5e7eb;
-  border-radius: 16px !important; /* Slightly softer for the Inter look */
+  border-radius: 16px !important;
   padding: 0.75rem 1.5rem !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
 }
 
-/* Specific fix for the wrapper to ensure it doesn't overflow */
 .main-content {
-    overflow-x: hidden; /* Prevents the horizontal scroll if a margin is too wide */
+  overflow-x: hidden;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .charts-grid-three {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablets */
+@media (max-width: 992px) {
+  .filter-toolbar-top {
+    margin-left: 1.5rem !important;
+    margin-right: 1.5rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  .report-container {
+    margin-left: 1.5rem !important;
+    margin-right: 1.5rem !important;
+    padding: 2rem !important;
+  }
+
+  .section-heading {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-page-wrapper {
+    padding: 1rem 0;
+  }
+
+  .filter-toolbar-top {
+    margin-left: 1rem !important;
+    margin-right: 1rem !important;
+    margin-bottom: 1rem !important;
+    padding: 0.75rem !important;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .filter-toolbar-top .border-end {
+    border-right: none !important;
+    padding-right: 0 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .filter-toolbar-top .d-flex.align-items-center.gap-2 {
+    flex-direction: column;
+    gap: 0.75rem !important;
+    align-items: stretch !important;
+  }
+
+  .filter-toolbar-top .btn-group {
+    width: 100%;
+  }
+
+  .filter-toolbar-top .bg-light {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-export-pdf {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .report-container {
+    margin-left: 1rem !important;
+    margin-right: 1rem !important;
+    margin-bottom: 1rem !important;
+    padding: 1.5rem !important;
+  }
+
+  .report-header-pdf {
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .report-title-pdf {
+    font-size: 1.8rem;
+    letter-spacing: 0.5px;
+  }
+
+  .report-subtitle-pdf {
+    font-size: 1rem;
+  }
+
+  .stats-section-pdf .row {
+    gap: 0.75rem !important;
+  }
+
+  .stats-section-pdf .col-4 {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+
+  .stat-card-modern {
+    padding: 1.25rem !important;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .stat-icon {
+    font-size: 2rem;
+  }
+
+  .stat-number {
+    font-size: 1.75rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  .section-heading {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-heading::after {
+    width: 50px;
+    height: 3px;
+  }
+
+  .charts-grid,
+  .charts-grid-three {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .chart-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .chart-title {
+    font-size: 0.75rem;
+  }
+
+  .chart-body {
+    padding: 1rem;
+    min-height: 250px;
+  }
+
+  .zoom-overlay {
+    padding: 0.75rem;
+  }
+
+  .zoom-content {
+    width: 95vw;
+    max-width: 550px;
+    max-height: 85vh;
+  }
+
+  .zoom-close {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .analytics-page-wrapper {
+    padding: 0.75rem 0;
+  }
+
+  .filter-toolbar-top {
+    margin-left: 0.75rem !important;
+    margin-right: 0.75rem !important;
+    padding: 0.5rem !important;
+  }
+
+  .filter-toolbar-top .btn-group .btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+  }
+
+  .report-container {
+    margin-left: 0.75rem !important;
+    margin-right: 0.75rem !important;
+    padding: 1rem !important;
+    border-radius: 16px;
+  }
+
+  .report-title-pdf {
+    font-size: 1.4rem;
+    letter-spacing: 0.3px;
+  }
+
+  .report-subtitle-pdf {
+    font-size: 0.85rem;
+  }
+
+  .stat-card-modern {
+    padding: 1rem !important;
+  }
+
+  .stat-icon {
+    font-size: 1.75rem;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .section-heading {
+    font-size: 1.1rem;
+  }
+
+  .section-heading::after {
+    width: 40px;
+  }
+
+  .chart-body {
+    min-height: 220px;
+  }
+
+  .zoom-overlay {
+    padding: 0.5rem;
+  }
+
+  .zoom-content {
+    width: 96vw;
+    max-width: 500px;
+    max-height: 80vh;
+  }
+
+  .zoom-close {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
 }
