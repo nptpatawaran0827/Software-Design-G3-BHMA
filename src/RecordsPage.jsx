@@ -31,7 +31,7 @@ const RecordsPage = ({
 
   // Calendar Modal States
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(""); 
+  const [selectedDate, setSelectedDate] = useState(""); // Default to empty for "All Records"
 
   // Unified Notification States
   const [showStatus, setShowStatus] = useState(false);
@@ -183,12 +183,7 @@ const RecordsPage = ({
     const recordId = record.Health_Record_ID;
     const residentId = record.Resident_ID;
     if (!window.confirm(`Are you sure you want to delete record for ID: ${residentId}?`)) return;
-    
-    // UPDATED: Transfer the "Recorded By" authority to HealthWorker_01 for the deletion log
-    const adminUsername = localStorage.getItem("username") === "Admin" || !localStorage.getItem("username") 
-      ? "HealthWorker_01" 
-      : localStorage.getItem("username");
-
+    const adminUsername = localStorage.getItem("username") || "Admin";
     try {
       const res = await fetch(`https://software-design-g3-bhma-2026.onrender.com/api/health-records/${recordId}?admin_username=${adminUsername}`, { method: "DELETE" });
       if (res.ok) {
@@ -204,14 +199,17 @@ const RecordsPage = ({
     }
   };
 
-  /* ==================== SEARCH & DATE FILTER ==================== */
+  /* ==================== SEARCH & DATE FILTER (TIMEZONE FIXED) ==================== */
   const filteredRecords = records.filter((record) => {
+    // 1. Search Logic
     const matchesSearch = (record.Resident_Name || `${record.First_Name} ${record.Last_Name}`)
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
 
+    // 2. Date Filter Logic (Corrected for Local Time)
     let recordDateLocal = null;
     if (record.Date_Visited) {
+      // en-CA is a trick to get YYYY-MM-DD in local time
       recordDateLocal = new Date(record.Date_Visited).toLocaleDateString('en-CA');
     }
     const matchesDate = !selectedDate || recordDateLocal === selectedDate;
@@ -381,14 +379,7 @@ const RecordsPage = ({
                                 {record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not recorded"}
                               </span>
                             </td>
-                            <td className="td-center">
-                              <span className="recorder-badge">
-                                {/* UPDATED: If the record is marked "Admin" or is empty, display "HealthWorker_01" */}
-                                {!record.Recorded_By_Name || record.Recorded_By_Name === "Admin" 
-                                  ? "HealthWorker_01" 
-                                  : record.Recorded_By_Name}
-                              </span>
-                            </td>
+                            <td className="td-center"><span className="recorder-badge">{record.Recorded_By_Name || "Admin"}</span></td>
                             <td className="td-center">
                               <span className={`status-badge ${!record.status || record.status === "Active" ? "status-active" : "status-inactive"}`}>
                                 {record.status || "Active"}
