@@ -6,7 +6,7 @@ import image2 from "./assets/PALCULAN.jpg";
 import image3 from "./assets/Hizon_FP.jpg";
 import image4 from "./assets/Patawaran.png";
 import image5 from "./assets/pelon_1.png";
-import image6 from "./assets/example-1.jpg";
+import image6 from "./assets/desales.png";
 
 const DEVELOPERS_BG = developersBgImage;
 
@@ -18,7 +18,7 @@ const DevelopersSection = () => {
     { id: 3, name: "Johanna Lucia V. Hizon", role: "Backend Developer", image: image3 },
     { id: 4, name: "Ikki Dominique Modar", role: "Backend Developer", image: image1 },
     { id: 5, name: "Xian Kylle Pelon", role: "Frontend Developer", image: image5 },
-    { id: 6, name: "Developer 6", role: "Frontend Developer", image: image6 },
+    { id: 6, name: "John Carl P. Desales", role: "Frontend Developer", image: image6 },
   ];
 
   return (
