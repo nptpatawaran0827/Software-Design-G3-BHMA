@@ -93,7 +93,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            admin_username: currentAdminName,
+            admin_id: currentAdminName,
             adminId: currentAdminId,
           }),
         },
@@ -123,7 +123,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
     const currentAdminName = localStorage.getItem("username") || "Admin";
     try {
       await fetch(
-        `https://software-design-g3-bhma-2026.onrender.com/api/pending-residents/remove/${id}?admin_username=${currentAdminName}`,
+        `https://software-design-g3-bhma-2026.onrender.com/api/pending-residents/remove/${id}?admin_id=${currentAdminName}`,
         {
           method: "DELETE",
         },

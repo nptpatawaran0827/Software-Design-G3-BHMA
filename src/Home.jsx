@@ -25,6 +25,7 @@ ChartJS.register(
   Title,
 );
 
+
 function Home({ onLogout }) {
   // ===== RETRIEVE ADMIN INFO FROM LOCALSTORAGE =====
   const adminUsername = localStorage.getItem("username") || "Administrator";
@@ -61,7 +62,7 @@ function Home({ onLogout }) {
   // ===== DATA FETCHING: ACTIVITIES =====
   const fetchActivities = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/activity-logs");
+      const response = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/activity-logs");
       const data = await response.json();
       setActivities(data);
     } catch (error) {
@@ -72,7 +73,7 @@ function Home({ onLogout }) {
   // ===== DATA FETCHING: HEALTH RECORDS =====
   const fetchHealthRecords = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/health-records");
+      const response = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/health-records");
       const data = await response.json();
       if (Array.isArray(data)) {
         setHealthRecords(data);
@@ -183,24 +184,22 @@ function Home({ onLogout }) {
     });
   };
 
-  // ===== HANDLE ACCEPT RESIDENT FROM HEADER BANNER =====
+ // This function is passed to HeaderBanner
   const handleAcceptResident = (residentData) => {
-    // FORCE DATE TO LOCAL TODAY:
     const now = new Date();
     const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
       .toISOString()
       .split("T")[0];
 
-    // Merge current data but override the date field
     const updatedResidentData = {
       ...residentData,
       Date_Visited: localToday
     };
 
     setPreFillData(updatedResidentData);
-    setActiveTab("Records");
-    setShouldAutoOpenForm(true);
-    // Refreshing data to ensure synchronization
+    setActiveTab("Records"); // This switches the view
+    setShouldAutoOpenForm(true); // This tells RecordsPage to open the modal/form
+    
     fetchHealthRecords();
     fetchActivities();
   };
@@ -254,109 +253,79 @@ function Home({ onLogout }) {
             </select>
           </div>
           <div className="card-body p-0 activity-list">
-            <ul className="list-group list-group-flush">
-              {(() => {
-                const seen = new Set();
-                const processedActivities = activities
-                  .filter((item) => {
-                    const action = (item.action_type || "").toLowerCase();
-                    // EXEMPTION: Filter out any report generation logs entirely
-                    const isReport = action === "generated_report" || 
-                                     (item.record_name && (item.record_name.toUpperCase().includes("WEEKLY") || item.record_name.toUpperCase().includes("MONTHLY")));
-                    if (isReport) return false;
+  <ul className="list-group list-group-flush">
+    {(() => {
+      const seen = new Set();
+      const filtered = activities
+        .filter((item) => {
+          const action = (item.action_type || "").toLowerCase();
+          const isReport = action === "generated_report" || 
+                           (item.record_name && (item.record_name.toUpperCase().includes("WEEKLY") || item.record_name.toUpperCase().includes("MONTHLY")));
+          if (isReport) return false;
 
-                    if (filter === "All Activities") return true;
-                    if (filter === "New Patients") return action === "added";
-                    if (filter === "Updated Records") return action === "modified" || action === "updated";
-                    return true;
-                  })
-                  .filter((item) => {
-                    if (!item.created_at) return true;
-                    try {
-                      const dateMinute = new Date(item.created_at).toISOString().slice(0, 16);
-                      const fingerprint = `${item.resident_id}-${item.action_type}-${dateMinute}-${item.log_id}`;
-                      if (seen.has(fingerprint)) return false;
-                      seen.add(fingerprint);
-                      return true;
-                    } catch (e) {
-                      return true;
-                    }
-                  });
+          if (filter === "All Activities") return true;
+          if (filter === "New Patients") return action === "added";
+          if (filter === "Updated Records") return action === "modified" || action === "updated";
+          return true;
+        })
+        .filter((item) => {
+          if (!item.created_at) return true;
+          // FIX: Check for both Casing types in the fingerprint
+          const resId = item.Resident_ID || item.resident_id || "unknown";
+          const dateMinute = new Date(item.created_at).toISOString().slice(0, 16);
+          const fingerprint = `${resId}-${item.action_type}-${dateMinute}`;
+          if (seen.has(fingerprint)) return false;
+          seen.add(fingerprint);
+          return true;
+        });
 
-                return processedActivities.length > 0 ? (
-                  processedActivities.map((log) => {
-                    const dateObj = new Date(log.created_at);
-                    const time = dateObj.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
-                    const dateFormatted = dateObj.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    });
+      if (filtered.length === 0) {
+        return <li className="list-group-item py-4 text-center text-muted border-0">No recent updates found.</li>;
+      }
 
-                    let bulletClass = "";
-                    let actionClass = "";
-                    let actionText = "";
-                    
-                    const actionTypeLower = (log.action_type || "").toLowerCase();
-                    
-                    switch (actionTypeLower) {
-                      case "added":
-                        bulletClass = "activity-bullet-added";
-                        actionClass = "activity-action-added";
-                        actionText = "added";
-                        break;
-                      case "modified":
-                      case "updated":
-                        bulletClass = "activity-bullet-modified";
-                        actionClass = "activity-action-modified";
-                        actionText = "updated";
-                        break;
-                      case "deleted":
-                      case "removed":
-                        bulletClass = "activity-bullet-deleted";
-                        actionClass = "activity-action-deleted";
-                        actionText = "deleted";
-                        break;
-                      case "rejected":
-                        bulletClass = "activity-bullet-rejected";
-                        actionClass = "activity-action-rejected";
-                        actionText = "rejected";
-                        break;
-                      default:
-                        bulletClass = "text-secondary";
-                        actionClass = "fw-bold";
-                        actionText = log.action_type;
-                    }
+      return filtered.map((log) => {
+        // Find the ID regardless of casing
+        const idKey = Object.keys(log).find(k => k.toLowerCase() === 'resident_id');
+        const actualID = idKey ? log[idKey] : "N/A";
 
-                    return (
-                      <li
-                        key={log.log_id || Math.random()}
-                        className="list-group-item d-flex align-items-center py-3 border-0 px-4"
-                      >
-                        <i className={`bi bi-circle-fill ${bulletClass} me-3 activity-icon`}></i>
-                        <div className="small">
-                          <strong>{adminUsername}</strong>{" "}
-                          <span className={actionClass}>{actionText}</span> a Health Record for Resident ID:{" "}
-                          <span className="fw-bold text-primary">
-                            {log.resident_id || log.Resident_ID || log.residentId || "N/A"}
-                          </span> at{" "}
-                          <span className="activity-time">{time}</span> on{" "}
-                          <span className="activity-date">{dateFormatted}</span>
-                        </div>
-                      </li>
-                    );
-                  })
-                ) : (
-                  <li className="list-group-item py-4 text-center text-muted border-0">
-                    No recent updates found.
-                  </li>
-                );
-              })()}
-            </ul>
-          </div>
+
+        const action = (log.action_type || "").toLowerCase();
+let actionText = "updated";
+let actionClass = "text-warning";
+let bulletClass = "text-warning";
+
+if (action === "added") {
+  actionText = "added";
+  actionClass = "text-success";
+  bulletClass = "text-success";
+} 
+// CHANGE THIS LINE: from "deleted" to "removed"
+else if (action === "deleted" || action === "removed") { 
+  actionText = "deleted";
+  actionClass = "text-danger";
+  bulletClass = "text-danger";
+}
+
+        const dateObj = new Date(log.created_at);
+        const time = dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const dateFormatted = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+        return (
+          <li key={log.log_id || Math.random()} className="list-group-item d-flex align-items-center py-3 border-0 px-4">
+            <i className={`bi bi-circle-fill ${bulletClass} me-3 activity-icon`} style={{ fontSize: '10px' }}></i>
+            <div className="small">
+              <strong>{adminUsername}</strong>{" "}
+              <span className={`fw-bold ${actionClass}`}>{actionText}</span> a Health Record for Resident ID:{" "}
+              <span className="fw-bold text-primary">{actualID}</span> at{" "}
+              <span className="activity-time">{time}</span> on{" "}
+              <span className="activity-date">{dateFormatted}</span>
+            </div>
+          </li>
+        );
+      });
+    })()}
+  </ul>
+</div>
         </div>
 
         {/* DASHBOARD OVERVIEW TITLE */}

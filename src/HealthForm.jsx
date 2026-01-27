@@ -37,7 +37,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
   useEffect(() => {
     const fetchStreets = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/streets');
+        const res = await fetch('https://software-design-g3-bhma-2026.onrender.com/api/streets');
         const data = await res.json();
         setStreetList(data);
       } catch (err) {
@@ -81,7 +81,6 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
     return `RES-${part1}-${part2}`;
   };
 
-  // ===== INITIALIZE FORM DATA =====
   // ===== INITIALIZE FORM DATA =====
 useEffect(() => {
   const currentAdmin = localStorage.getItem("username") || "System";
@@ -179,7 +178,7 @@ useEffect(() => {
       const adminId = localStorage.getItem("adminId");
       const adminUsername = localStorage.getItem("username") || "System";
 
-      let url = "http://localhost:5000/api/health-records";
+      let url = "https://software-design-g3-bhma-2026.onrender.com/api/health-records";
       const method = editMode ? "PUT" : "POST";
       if (editMode && recordId) {
         url = `${url}/${recordId}`;
