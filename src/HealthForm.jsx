@@ -37,7 +37,7 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
   useEffect(() => {
     const fetchStreets = async () => {
       try {
-        const res = await fetch('https://software-design-g3-bhma-2026.onrender.com/api/streets');
+        const res = await fetch('http://localhost:5000/api/streets');
         const data = await res.json();
         setStreetList(data);
       } catch (err) {
@@ -82,44 +82,43 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
   };
 
   // ===== INITIALIZE FORM DATA =====
-  useEffect(() => {
-    const currentAdmin = localStorage.getItem("username") || "System";
-    const deviceToday = new Date().toISOString().split("T")[0];
+useEffect(() => {
+  const currentAdmin = localStorage.getItem("username") || "System";
+  
+  // Get local date in YYYY-MM-DD format
+  const today = new Date();
+  const deviceToday = today.toLocaleDateString('en-CA'); // 'en-CA' outputs YYYY-MM-DD
 
-    if (initialData) {
-      // EDIT MODE: Load existing data
-      const rawBirthDate = initialData.Birthdate || "";
-      const formattedBirthdate = rawBirthDate ? rawBirthDate.split("T")[0] : "";
-      const formattedVisitDate = initialData.Date_Visited
-        ? initialData.Date_Visited.split("T")[0]
-        : deviceToday;
+  if (initialData) {
+    // EDIT MODE
+    const rawBirthDate = initialData.Birthdate || "";
+    const formattedBirthdate = rawBirthDate ? rawBirthDate.split("T")[0] : "";
 
-      setFormData({
-        ...initialData,
-        Birthdate: formattedBirthdate,
-        Date_Visited: formattedVisitDate,
-        Age: initialData.Age || calculateAge(formattedBirthdate),
-        Is_PWD: initialData.Is_PWD === 1 || initialData.Is_PWD === true,
-        Weight: initialData.Weight ? String(initialData.Weight) : "",
-        Height: initialData.Height ? String(initialData.Height) : "",
-        BMI: initialData.BMI ? String(initialData.BMI) : "",
-        Nutrition_Status:
-          initialData.Nutrition_Status ||
-          calculateNutritionStatus(initialData.BMI),
-        Barangay: initialData.Barangay || "Marikina Heights",
-        Recorded_By_Name: initialData.Recorded_By_Name || currentAdmin,
-      });
-    } else {
-      // ADD MODE: Initialize with defaults
-      setFormData((prev) => ({
-        ...prev,
-        Resident_ID: generateResidentID(),
-        Barangay: "Marikina Heights",
-        Recorded_By_Name: currentAdmin,
-        Date_Visited: deviceToday,
-      }));
-    }
-  }, [initialData]);
+    setFormData({
+      ...initialData,
+      Birthdate: formattedBirthdate,
+      // Fixed to today regardless of what was in the database
+      Date_Visited: deviceToday, 
+      Age: initialData.Age || calculateAge(formattedBirthdate),
+      Is_PWD: initialData.Is_PWD === 1 || initialData.Is_PWD === true,
+      Weight: initialData.Weight ? String(initialData.Weight) : "",
+      Height: initialData.Height ? String(initialData.Height) : "",
+      BMI: initialData.BMI ? String(initialData.BMI) : "",
+      Nutrition_Status: initialData.Nutrition_Status || calculateNutritionStatus(initialData.BMI),
+      Barangay: initialData.Barangay || "Marikina Heights",
+      Recorded_By_Name: currentAdmin, // Updates to the person currently editing
+    });
+  } else {
+    // ADD MODE
+    setFormData((prev) => ({
+      ...prev,
+      Resident_ID: generateResidentID(),
+      Barangay: "Marikina Heights",
+      Recorded_By_Name: currentAdmin,
+      Date_Visited: deviceToday,
+    }));
+  }
+}, [initialData]);
 
   // ===== HANDLE FORM INPUT CHANGES =====
   const handleChange = (e) => {
@@ -179,23 +178,22 @@ const HealthForm = ({ onCancel, onSubmit, editMode, initialData }) => {
       const adminId = localStorage.getItem("adminId");
       const adminUsername = localStorage.getItem("username") || "System";
 
-      let url = "https://software-design-g3-bhma-2026.onrender.com/api/health-records";
+      let url = "http://localhost:5000/api/health-records";
       const method = editMode ? "PUT" : "POST";
       if (editMode && recordId) {
         url = `${url}/${recordId}`;
       }
 
       const response = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          Recorded_By: adminId,
-          Recorded_By_Name: adminUsername,
-          adminId: adminId,
-          admin_username: adminUsername,
-        }),
-      });
+  method: method,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    ...formData, // This contains Resident_ID
+    record_name: formData.Resident_ID, // Force it into the activity log's label
+    adminId: adminId,
+    admin_username: adminUsername,
+  }),
+});
 
       const result = await response.json();
 

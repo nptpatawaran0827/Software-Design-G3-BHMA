@@ -1,8 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./style/HeaderBanner.css";
 
 const HeaderBanner = ({ onAcceptResident, onLogout }) => {
+  const navigate = useNavigate();
   const [pendingResidents, setPendingResidents] = useState([]);
   const [showNotification, setShowNotification] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -12,7 +14,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
   // Fetch pending residents
   const fetchPending = async () => {
     try {
-      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/pending-residents");
+      const res = await fetch("http://localhost:5000/api/pending-residents");
       const data = await res.json();
       setPendingResidents(data);
     } catch (err) {
@@ -22,6 +24,9 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
 
   useEffect(() => {
     fetchPending();
+    // Poll every 5 seconds to update pending list
+    const interval = setInterval(fetchPending, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Calculate dropdown position
@@ -30,7 +35,6 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
       const rect = bellButtonRef.current.getBoundingClientRect();
       const screenWidth = window.innerWidth;
 
-      // Responsive dropdown width
       let dropdownWidth = 380;
       if (screenWidth <= 576) {
         dropdownWidth = Math.min(320, screenWidth - 32);
@@ -50,7 +54,6 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
     }
   };
 
-  // Calculate position when opening and on resize
   useEffect(() => {
     if (showNotification) {
       updateDropdownPosition();
@@ -65,7 +68,6 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
     }
   }, [showNotification]);
 
-  // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -81,56 +83,76 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle Accept
+  // Handle Accept - Fixed to properly accept and navigate
   const handleAccept = async (resident) => {
     try {
+      const currentAdminId = parseInt(localStorage.getItem("adminId"));
       const currentAdminName = localStorage.getItem("username") || "Admin";
-      const currentAdminId = localStorage.getItem("adminId");
 
       const res = await fetch(
-        `https://software-design-g3-bhma-2026.onrender.com/api/pending-residents/accept/${resident.Pending_HR_ID}`,
+        `http://localhost:5000/api/pending-residents/accept/${resident.Pending_HR_ID}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            admin_username: currentAdminName,
-            adminId: currentAdminId,
-          }),
-        },
+          body: JSON.stringify({ adminId: currentAdminId }),
+        }
       );
 
+      if (!res.ok) throw new Error("Failed to accept resident");
+      
       const result = await res.json();
-
-      // Call parent callback with pre-filled data
-      if (onAcceptResident) {
-        onAcceptResident({
-          ...resident,
-          Is_PWD: resident.Is_PWD == 1,
-          Health_Record_ID: result.Health_Record_ID,
-          Recorded_By_Name: currentAdminName,
-        });
-      }
 
       setShowNotification(false);
       fetchPending();
+
+      // Navigate to Records with pre-filled form data
+      navigate("/Records", {
+        state: {
+          autoOpenForm: true,
+          preFillData: {
+            Resident_ID: resident.Resident_ID,
+            First_Name: resident.First_Name,
+            Middle_Name: resident.Middle_Name || "",
+            Last_Name: resident.Last_Name,
+            Sex: resident.Sex,
+            Birthdate: resident.Birthdate,
+            Is_PWD: resident.Is_PWD == 1,
+            Height: resident.Height,
+            Weight: resident.Weight,
+            BMI: resident.BMI,
+            Health_Condition: resident.Health_Condition,
+            Allergies: resident.Allergies,
+            Health_Record_ID: result.Health_Record_ID,
+            Recorded_By_Name: currentAdminName,
+          }
+        }
+      });
     } catch (err) {
       console.error("Error accepting resident:", err);
+      alert("Failed to accept resident. Check console for details.");
     }
   };
 
-  // Handle Remove
+  // Handle Remove - Fixed
   const handleRemove = async (id) => {
-    const currentAdminName = localStorage.getItem("username") || "Admin";
+    const currentAdminId = localStorage.getItem("adminId");
+    
+    if (!window.confirm("Are you sure you want to remove this pending resident?")) {
+      return;
+    }
+
     try {
-      await fetch(
-        `https://software-design-g3-bhma-2026.onrender.com/api/pending-residents/remove/${id}?admin_username=${currentAdminName}`,
-        {
-          method: "DELETE",
-        },
+      const res = await fetch(
+        `http://localhost:5000/api/pending-resident/remove/${id}?adminId=${currentAdminId}`,
+        { method: "DELETE" }
       );
+
+      if (!res.ok) throw new Error("Failed to remove resident");
+
       fetchPending();
     } catch (err) {
       console.error("Error removing resident:", err);
+      alert("Failed to remove resident. Check console for details.");
     }
   };
 
@@ -207,7 +229,6 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
             BARANGAY HEALTH MONITORING AND ANALYTICS SYSTEM
           </h2>
 
-          {/* BUTTONS IN HEADER */}
           <div className="d-flex align-items-center gap-2 header-buttons">
             <div className="notification-wrapper">
               <button
@@ -227,9 +248,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
         </div>
       </div>
 
-      {/* RENDER DROPDOWN VIA PORTAL */}
-      {showNotification &&
-        createPortal(<NotificationDropdown />, document.body)}
+      {showNotification && createPortal(<NotificationDropdown />, document.body)}
     </>
   );
 };

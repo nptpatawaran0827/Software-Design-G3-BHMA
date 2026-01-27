@@ -7,38 +7,41 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ===== DATABASE CONNECTION (LOCAL MYSQL) =====
 const db = mysql.createConnection({
-  host: 'health-monitoring-analytics-system.colao00gscmx.us-east-1.rds.amazonaws.com',
-  user: 'admin', // or your RDS username
-  password: 'Group3-BHMA', // replace with your RDS password
+  host: 'localhost',  // Note: Update to your deployed host if needed
+  user: 'root',
+  password: '@Group3-BHMA',
   database: 'admin_db'
 });
 
-
-db.connect((err) => {
-  if (err) {
-    console.error("❌ Database connection failed:", err);
-    return;
-  }
-  console.log("✅ Connected to admin_db");
+db.connect(err => {
+  if (err) return console.error(err);
+  console.log('Connected to admin_db');
 });
 
-/* ================= HEATMAP DATA (SUPPORTS DIAGNOSIS & CONDITION MODE) ================= */
+/* ================= ACTIVITY LOGS HELPER ================= */
+// Updated to fetch username from admins table and insert correctly
+const logActivity = (residentId, action, adminId) => {
+  if (!adminId) return;
+  db.query("SELECT username FROM admins WHERE admin_id = ?", [adminId], (err, rows) => {
+    if (err || !rows.length) return console.error("Admin lookup error");
+    const username = rows[0].username;
+    const sql = "INSERT INTO activity_logs (record_name, action_type, admin_username) VALUES (?, ?, ?)";
+    db.query(sql, [residentId, action, username], (err) => {
+      if (err) console.error("❌ Activity Log Error:", err);
+    });
+  });
+};
+
+/* ================= HEATMAP DATA ================= */
 app.get("/api/heatmap-data", (req, res) => {
-  const type = req.query.type || "condition"; // 'condition' or 'diagnosis'
+  const type = req.query.type || "condition"; 
 
   if (type === "diagnosis") {
-    // ===== DIAGNOSIS MODE: Most common diagnosis per street =====
     const sql = `
       SELECT
-        s.Street_ID,
-        s.Street_Name,
-        s.Latitude,
-        s.Longitude,
-        r.Barangay,
-        hr.Diagnosis,
-        COUNT(*) as count
+        s.Street_ID, s.Street_Name, s.Latitude, s.Longitude,
+        r.Barangay, hr.Diagnosis, COUNT(*) as count
       FROM health_records hr
       JOIN residents r ON hr.Resident_ID = r.Resident_ID
       JOIN streets s ON r.Street_ID = s.Street_ID
@@ -52,31 +55,21 @@ app.get("/api/heatmap-data", (req, res) => {
         console.error("❌ Diagnosis heatmap query error:", err);
         return res.status(500).json({ error: err.message });
       }
-
-      // Filter to keep only top diagnosis per street
       const topDiagnosisPerStreet = {};
       const filteredResults = [];
-
       results.forEach((row) => {
         if (!topDiagnosisPerStreet[row.Street_ID]) {
           topDiagnosisPerStreet[row.Street_ID] = true;
           filteredResults.push(row);
         }
       });
-
       res.json(filteredResults);
     });
   } else {
-    // ===== CONDITION MODE: Health conditions =====
     const sql = `
       SELECT
-        s.Street_ID,
-        s.Street_Name,
-        s.Latitude,
-        s.Longitude,
-        r.Barangay,
-        hr.Health_Condition,
-        COUNT(*) as count
+        s.Street_ID, s.Street_Name, s.Latitude, s.Longitude,
+        r.Barangay, hr.Health_Condition, COUNT(*) as count
       FROM health_records hr
       JOIN residents r ON hr.Resident_ID = r.Resident_ID
       JOIN streets s ON r.Street_ID = s.Street_ID
@@ -90,18 +83,14 @@ app.get("/api/heatmap-data", (req, res) => {
         console.error("❌ Condition heatmap query error:", err);
         return res.status(500).json({ error: err.message });
       }
-
-      // Filter to keep only top condition per street
       const topConditionPerStreet = {};
       const filteredResults = [];
-
       results.forEach((row) => {
         if (!topConditionPerStreet[row.Street_ID]) {
           topConditionPerStreet[row.Street_ID] = true;
           filteredResults.push(row);
         }
       });
-
       res.json(filteredResults);
     });
   }
@@ -115,31 +104,23 @@ app.get("/api/streets", (req, res) => {
   });
 });
 
-/* ================= ACTIVITY LOGS HELPER ================= */
-/**
- * HELPER: Logic to insert into activity_logs
- */
-const logActivity = (recordName, action, adminUsername) => {
-  const sql =
-    "INSERT INTO activity_logs (record_name, action_type, admin_username) VALUES (?, ?, ?)";
-  db.query(sql, [recordName, action, adminUsername || "Admin"], (err) => {
-    if (err) console.error("❌ Activity Log Error:", err);
-  });
-};
-
 /* ================= GET ACTIVITY LOGS ================= */
+// Updated query to select correct fields
 app.get("/api/activity-logs", (req, res) => {
-  const sql = "SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 50";
-  db.query(sql, (err, rows) => {
-    if (err) return res.status(500).json(err);
-    res.json(rows);
+  const sql = "SELECT log_id, record_name, action_type, admin_username, created_at FROM activity_logs ORDER BY created_at DESC";
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching logs:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(results);
   });
 });
 
-/* ================= RESIDENT (STRICT ONE NAME POLICY) ================= */
+/* ================= RESIDENT ================= */
 app.post("/api/residents", (req, res) => {
   const d = req.body;
-
   const checkSql = `
     SELECT Resident_ID FROM residents
     WHERE TRIM(First_Name) = TRIM(?)
@@ -147,57 +128,38 @@ app.post("/api/residents", (req, res) => {
     AND TRIM(Last_Name) = TRIM(?)
   `;
 
-  db.query(
-    checkSql,
-    [d.First_Name, d.Middle_Name || "", d.Last_Name],
-    (err, rows) => {
-      if (err) {
-        console.error("❌ DB Error during check:", err);
-        return res.status(500).json(err);
-      }
+  db.query(checkSql, [d.First_Name, d.Middle_Name || "", d.Last_Name], (err, rows) => {
+    if (err) {
+      console.error("❌ DB Error during check:", err);
+      return res.status(500).json(err);
+    }
 
-      if (rows.length > 0) {
-        return res.json({
-          success: true,
-          isDuplicate: true,
-          Resident_ID: rows[0].Resident_ID,
-        });
-      }
+    if (rows.length > 0) {
+      return res.json({
+        success: true,
+        isDuplicate: true,
+        Resident_ID: rows[0].Resident_ID,
+      });
+    }
 
-      const sql = `
+    const sql = `
       INSERT INTO residents
       (Resident_ID, First_Name, Middle_Name, Last_Name, Sex, Civil_Status, Birthdate, Contact_Number, Street_ID, Barangay)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-      db.query(
-        sql,
-        [
-          d.Resident_ID,
-          d.First_Name,
-          d.Middle_Name || null,
-          d.Last_Name,
-          d.Sex,
-          d.Civil_Status || null,
-          d.Birthdate || null,
-          d.Contact_Number || null,
-          d.Street_ID || null,
-          d.Barangay || null,
-        ],
-        (err, result) => {
-          if (err) {
-            console.error("❌ DB Error during insert:", err);
-            return res.status(500).json(err);
-          }
-          res.json({
-            Resident_ID: d.Resident_ID,
-            success: true,
-            isDuplicate: false,
-          });
-        },
-      );
-    },
-  );
+    db.query(sql, [
+      d.Resident_ID, d.First_Name, d.Middle_Name || null, d.Last_Name, d.Sex, 
+      d.Civil_Status || null, d.Birthdate || null, d.Contact_Number || null, 
+      d.Street_ID || null, d.Barangay || null
+    ], (err, result) => {
+      if (err) {
+        console.error("❌ DB Error during insert:", err);
+        return res.status(500).json(err);
+      }
+      res.json({ Resident_ID: d.Resident_ID, success: true, isDuplicate: false });
+    });
+  });
 });
 
 app.put("/api/residents/:id", (req, res) => {
@@ -209,31 +171,20 @@ app.put("/api/residents/:id", (req, res) => {
         Birthdate = ?, Contact_Number = ?, Street_ID = ?, Barangay = ?
     WHERE Resident_ID = ?
   `;
-  db.query(
-    sql,
-    [
-      d.First_Name || null,
-      d.Middle_Name || null,
-      d.Last_Name || null,
-      d.Sex || null,
-      d.Civil_Status || null,
-      d.Birthdate || null,
-      d.Contact_Number || null,
-      d.Street_ID || null,
-      d.Barangay || null,
-      id,
-    ],
-    (err) => {
-      if (err) {
-        console.error("❌ Update error:", err);
-        return res.status(500).json(err);
-      }
-      res.json({ success: true });
-    },
-  );
+  db.query(sql, [
+    d.First_Name || null, d.Middle_Name || null, d.Last_Name || null, d.Sex || null, 
+    d.Civil_Status || null, d.Birthdate || null, d.Contact_Number || null, 
+    d.Street_ID || null, d.Barangay || null, id
+  ], (err) => {
+    if (err) {
+      console.error("❌ Update error:", err);
+      return res.status(500).json(err);
+    }
+    res.json({ success: true });
+  });
 });
 
-/* ================= PENDING RESIDENT (UPDATED WITH Is_PWD) ================= */
+/* ================= PENDING RESIDENT ================= */
 app.post("/api/pending-resident", (req, res) => {
   const d = req.body;
   const sql = `
@@ -241,41 +192,32 @@ app.post("/api/pending-resident", (req, res) => {
     (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Submitted_At)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
-  db.query(
-    sql,
-    [
-      d.Resident_ID,
-      d.Is_PWD ? 1 : 0,
-      d.Height || null,
-      d.Weight || null,
-      d.BMI || null,
-      d.Health_Condition || null,
-      d.Allergies || null,
-      d.Submitted_At || new Date().toISOString().slice(0, 19).replace("T", " "),
-    ],
-    (err) => {
-      if (err) {
-        console.error("❌ Pending resident error:", err);
-        return res.status(500).json(err);
-      }
-      res.json({ success: true });
-    },
-  );
+  db.query(sql, [
+    d.Resident_ID, d.Is_PWD ? 1 : 0, d.Height || null, d.Weight || null, d.BMI || null, 
+    d.Health_Condition || null, d.Allergies || null, 
+    d.Submitted_At || new Date().toISOString().slice(0, 19).replace("T", " "),
+  ], (err) => {
+    if (err) {
+      console.error("❌ Pending resident error:", err);
+      return res.status(500).json(err);
+    }
+    res.json({ success: true });
+  });
 });
 
 /* ================= GET HEALTH RECORDS ================= */
+// Updated query to include Last_Modified_By_Name
 app.get("/api/health-records", (req, res) => {
   const sql = `
-    SELECT hr.*,
-      r.First_Name, r.Middle_Name, r.Last_Name,
+    SELECT hr.*, r.First_Name, r.Middle_Name, r.Last_Name,
       CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name,
       r.Sex, r.Birthdate, r.Civil_Status, r.Contact_Number, r.Barangay,
-      s.Street_Name,
-      a.username AS Recorded_By_Name
+      s.Street_Name, a.username AS Recorded_By_Name, b.username AS Last_Modified_By_Name
     FROM health_records hr
     JOIN residents r ON hr.Resident_ID = r.Resident_ID
     LEFT JOIN streets s ON r.Street_ID = s.Street_ID
     LEFT JOIN admins a ON hr.Recorded_By = a.admin_id
+    LEFT JOIN admins b ON hr.last_modified_by = b.admin_id
     ORDER BY hr.Date_Registered DESC
   `;
   db.query(sql, (err, rows) => {
@@ -287,417 +229,147 @@ app.get("/api/health-records", (req, res) => {
   });
 });
 
-/* ================= ADD HEALTH RECORD (STRICT ONE NAME POLICY) ================= */
+/* ================= ADD HEALTH RECORD ================= */
+// Updated INSERT to include last_modified_by
 app.post("/api/health-records", (req, res) => {
   const d = req.body;
+  const checkSql = `SELECT Resident_ID FROM residents WHERE TRIM(First_Name) = TRIM(?) AND COALESCE(TRIM(Middle_Name), '') = COALESCE(TRIM(?), '') AND TRIM(Last_Name) = TRIM(?)`;
 
-  const checkSql = `
-    SELECT Resident_ID FROM residents
-    WHERE TRIM(First_Name) = TRIM(?)
-    AND COALESCE(TRIM(Middle_Name), '') = COALESCE(TRIM(?), '')
-    AND TRIM(Last_Name) = TRIM(?)
-  `;
+  db.query(checkSql, [d.First_Name, d.Middle_Name || "", d.Last_Name], (err, rows) => {
+    if (err) return res.status(500).json({ error: "DB Check Error", details: err.message });
+    if (rows && rows.length > 0) return res.status(200).json({ success: false, isDuplicate: true, message: "Duplicate entries are not allowed." });
 
-  db.query(
-    checkSql,
-    [d.First_Name, d.Middle_Name || "", d.Last_Name],
-    (err, rows) => {
-      if (err) {
-        console.error("❌ Check error:", err);
-        return res
-          .status(500)
-          .json({ error: "DB Check Error", details: err.message });
-      }
+    db.beginTransaction((tErr) => {
+      if (tErr) return res.status(500).json(tErr);
 
-      if (rows && rows.length > 0) {
-        return res.status(200).json({
-          success: false,
-          isDuplicate: true,
-          message: "Duplicate entries are not allowed for this name.",
+      const resSql = `INSERT INTO residents (Resident_ID, First_Name, Middle_Name, Last_Name, Sex, Civil_Status, Birthdate, Contact_Number, Street_ID, Barangay) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      db.query(resSql, [d.Resident_ID, d.First_Name, d.Middle_Name || null, d.Last_Name, d.Sex || null, d.Civil_Status || null, d.Birthdate || null, d.Contact_Number || null, d.Street_ID || null, d.Barangay || "Marikina Heights"], (resErr) => {
+        if (resErr) return db.rollback(() => res.status(500).json({ error: "Resident Insert Failed" }));
+
+        const hrSql = `INSERT INTO health_records (Resident_ID, Is_PWD, Blood_Pressure, Weight, Height, BMI, Nutrition_Status, Health_Condition, Diagnosis, Allergies, Date_Visited, Remarks_Notes, Recorded_By, last_modified_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        let adminIdForRecord = parseInt(d.Recorded_By || d.adminId) || null;
+
+        db.query(hrSql, [d.Resident_ID, d.Is_PWD ? 1 : 0, d.Blood_Pressure || null, d.Weight || null, d.Height || null, d.BMI || null, d.Nutrition_Status || null, d.Health_Condition || null, d.Diagnosis || null, d.Allergies || null, d.Date_Visited || null, d.Remarks || d.Remarks_Notes || null, adminIdForRecord, adminIdForRecord], (hrErr) => {
+          if (hrErr) return db.rollback(() => res.status(500).json({ error: "Health Record Failed" }));
+
+          db.commit((commitErr) => {
+            if (commitErr) return db.rollback(() => res.status(500).json(commitErr));
+            logActivity(d.Resident_ID, "added", adminIdForRecord);
+            res.json({ success: true, isDuplicate: false });
+          });
         });
-      }
-
-      db.beginTransaction((tErr) => {
-        if (tErr) {
-          console.error("❌ Transaction error:", tErr);
-          return res.status(500).json(tErr);
-        }
-
-        const resSql = `
-        INSERT INTO residents (Resident_ID, First_Name, Middle_Name, Last_Name, Sex, Civil_Status, Birthdate, Contact_Number, Street_ID, Barangay)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-        db.query(
-          resSql,
-          [
-            d.Resident_ID,
-            d.First_Name,
-            d.Middle_Name || null,
-            d.Last_Name,
-            d.Sex || null,
-            d.Civil_Status || null,
-            d.Birthdate || null,
-            d.Contact_Number || null,
-            d.Street_ID || null,
-            d.Barangay || "Marikina Heights",
-          ],
-          (resErr) => {
-            if (resErr) {
-              console.error("❌ Resident insert error:", resErr);
-              return db.rollback(() =>
-                res.status(500).json({ error: "Resident Insert Failed" }),
-              );
-            }
-
-            const hrSql = `
-          INSERT INTO health_records
-          (Resident_ID, Is_PWD, Blood_Pressure, Weight, Height, BMI, Nutrition_Status, Health_Condition, Diagnosis, Allergies, Date_Visited, Remarks_Notes, Recorded_By)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-            const weight =
-              d.Weight === "" || isNaN(d.Weight) ? null : parseFloat(d.Weight);
-            const height =
-              d.Height === "" || isNaN(d.Height) ? null : parseFloat(d.Height);
-            const bmi = d.BMI === "" || isNaN(d.BMI) ? null : parseFloat(d.BMI);
-            let adminId = parseInt(d.Recorded_By || d.adminId) || null;
-
-            db.query(
-              hrSql,
-              [
-                d.Resident_ID,
-                d.Is_PWD ? 1 : 0,
-                d.Blood_Pressure || null,
-                weight,
-                height,
-                bmi,
-                d.Nutrition_Status || null,
-                d.Health_Condition || null,
-                d.Diagnosis || null,
-                d.Allergies || null,
-                d.Date_Visited || null,
-                d.Remarks || d.Remarks_Notes || null,
-                adminId,
-              ],
-              (hrErr) => {
-                if (hrErr) {
-                  console.error("❌ Health record insert error:", hrErr);
-                  return db.rollback(() =>
-                    res.status(500).json({ error: "Health Record Failed" }),
-                  );
-                }
-
-                db.commit((commitErr) => {
-                  if (commitErr) {
-                    console.error("❌ Commit error:", commitErr);
-                    return db.rollback(() => res.status(500).json(commitErr));
-                  }
-                  logActivity(
-                    `${d.First_Name} ${d.Last_Name}`,
-                    "added",
-                    d.admin_username,
-                  );
-                  res.json({ success: true, isDuplicate: false });
-                });
-              },
-            );
-          },
-        );
       });
-    },
-  );
+    });
+  });
 });
 
-/* ================= APPROVE PENDING (FIXED TRANSACTION & LOGGING) ================= */
-app.post("/api/pending-residents/accept/:id", (req, res) => {
+/* ================= APPROVE PENDING ================= */
+// Updated INSERT to include last_modified_by
+app.post("/api/pending-resident/accept/:id", (req, res) => {
   const id = req.params.id;
-  const { admin_username, adminId } = req.body;
+  const { adminId } = req.body;
 
-  db.query(
-    "SELECT pr.*, r.First_Name, r.Last_Name FROM pending_resident pr JOIN residents r ON pr.Resident_ID = r.Resident_ID WHERE Pending_HR_ID = ?",
-    [id],
-    (err, rows) => {
-      if (err || rows.length === 0) {
-        console.error("❌ Query error:", err);
-        return res.sendStatus(404);
-      }
-      const p = rows[0];
+  db.query("SELECT * FROM pending_resident WHERE Pending_HR_ID = ?", [id], (err, rows) => {
+    if (err || rows.length === 0) return res.sendStatus(404);
+    const p = rows[0];
 
-      db.beginTransaction((tErr) => {
-        if (tErr) {
-          console.error("❌ Transaction error:", tErr);
-          return res.status(500).json(tErr);
-        }
-
-        db.query(
-          `INSERT INTO health_records
-            (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Recorded_By)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            p.Resident_ID,
-            p.Is_PWD || 0,
-            p.Height,
-            p.Weight,
-            p.BMI,
-            p.Health_Condition,
-            p.Allergies,
-            adminId,
-          ],
-          (err, result) => {
-            if (err) {
-              console.error("❌ Insert error:", err);
-              return db.rollback(() => res.status(500).json(err));
-            }
-
-            db.query(
-              "DELETE FROM pending_resident WHERE Pending_HR_ID = ?",
-              [id],
-              (err) => {
-                if (err) {
-                  console.error("❌ Delete error:", err);
-                  return db.rollback(() => res.status(500).json(err));
-                }
-
-                db.commit((commitErr) => {
-                  if (commitErr) {
-                    console.error("❌ Commit error:", commitErr);
-                    return db.rollback(() => res.status(500).json(commitErr));
-                  }
-                  logActivity(
-                    `${p.First_Name} ${p.Last_Name}`,
-                    "added",
-                    admin_username,
-                  );
-                  res.json({
-                    success: true,
-                    Health_Record_ID: result.insertId,
-                  });
-                });
-              },
-            );
-          },
-        );
+    db.beginTransaction((tErr) => {
+      if (tErr) return res.status(500).json(tErr);
+      db.query(`INSERT INTO health_records (Resident_ID, Is_PWD, Height, Weight, BMI, Health_Condition, Allergies, Recorded_By, last_modified_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [p.Resident_ID, p.Is_PWD || 0, p.Height, p.Weight, p.BMI, p.Health_Condition, p.Allergies, adminId, adminId], (err, result) => {
+        if (err) return db.rollback(() => res.status(500).json(err));
+        db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [id], (err) => {
+          if (err) return db.rollback(() => res.status(500).json(err));
+          db.commit((commitErr) => {
+            if (commitErr) return db.rollback(() => res.status(500).json(commitErr));
+            logActivity(p.Resident_ID, "added", adminId);
+            res.json({ success: true, Health_Record_ID: result.insertId });
+          });
+        });
       });
-    },
-  );
+    });
+  });
 });
 
-/* ================= UPDATE HEALTH RECORD (TRANSACTIONAL) ================= */
+/* ================= UPDATE HEALTH RECORD ================= */
+// Updated UPDATE to include last_modified_by
 app.put("/api/health-records/:id", (req, res) => {
   const healthRecordId = req.params.id;
   const d = req.body;
 
   db.beginTransaction((err) => {
-    if (err) {
-      console.error("❌ Transaction error:", err);
-      return res.status(500).json(err);
-    }
+    if (err) return res.status(500).json(err);
+    const resSql = `UPDATE residents r JOIN health_records hr ON r.Resident_ID = hr.Resident_ID SET r.First_Name = ?, r.Middle_Name = ?, r.Last_Name = ?, r.Sex = ?, r.Civil_Status = ?, r.Birthdate = ?, r.Contact_Number = ?, r.Street_ID = ?, r.Barangay = ? WHERE hr.Health_Record_ID = ?`;
+    db.query(resSql, [d.First_Name, d.Middle_Name || null, d.Last_Name, d.Sex, d.Civil_Status, d.Birthdate, d.Contact_Number, d.Street_ID || null, d.Barangay, healthRecordId], (resErr) => {
+      if (resErr) return db.rollback(() => res.status(500).json(resErr));
 
-    const resSql = `
-      UPDATE residents r
-      JOIN health_records hr ON r.Resident_ID = hr.Resident_ID
-      SET r.First_Name = ?, r.Middle_Name = ?, r.Last_Name = ?, r.Sex = ?,
-          r.Civil_Status = ?, r.Birthdate = ?, r.Contact_Number = ?,
-          r.Street_ID = ?, r.Barangay = ?
-      WHERE hr.Health_Record_ID = ?
-    `;
+      const hrSql = `UPDATE health_records SET Is_PWD = ?, Blood_Pressure = ?, Weight = ?, Height = ?, BMI = ?, Nutrition_Status = ?, Health_Condition = ?, Diagnosis = ?, Allergies = ?, Date_Visited = ?, Remarks_Notes = ?, last_modified_by = ? WHERE Health_Record_ID = ?`;
+      db.query(hrSql, [d.Is_PWD ? 1 : 0, d.Blood_Pressure, d.Weight || null, d.Height || null, d.BMI || null, d.Nutrition_Status, d.Health_Condition, d.Diagnosis, d.Allergies, d.Date_Visited, d.Remarks || d.Remarks_Notes || null, d.adminId, healthRecordId], (hrErr) => {
+        if (hrErr) return db.rollback(() => res.status(500).json(hrErr));
 
-    db.query(
-      resSql,
-      [
-        d.First_Name,
-        d.Middle_Name || null,
-        d.Last_Name,
-        d.Sex,
-        d.Civil_Status,
-        d.Birthdate,
-        d.Contact_Number,
-        d.Street_ID || null,
-        d.Barangay,
-        healthRecordId,
-      ],
-      (resErr) => {
-        if (resErr) {
-          console.error("❌ Resident update error:", resErr);
-          return db.rollback(() => res.status(500).json(resErr));
-        }
-
-        const hrSql = `
-        UPDATE health_records
-        SET Is_PWD = ?, Blood_Pressure = ?, Weight = ?, Height = ?,
-            BMI = ?, Nutrition_Status = ?, Health_Condition = ?,
-            Diagnosis = ?, Allergies = ?, Date_Visited = ?, Remarks_Notes = ?
-        WHERE Health_Record_ID = ?
-      `;
-
-        const weight =
-          d.Weight === "" || isNaN(d.Weight) ? null : parseFloat(d.Weight);
-        const height =
-          d.Height === "" || isNaN(d.Height) ? null : parseFloat(d.Height);
-        const bmi = d.BMI === "" || isNaN(d.BMI) ? null : parseFloat(d.BMI);
-
-        db.query(
-          hrSql,
-          [
-            d.Is_PWD ? 1 : 0,
-            d.Blood_Pressure,
-            weight,
-            height,
-            bmi,
-            d.Nutrition_Status,
-            d.Health_Condition,
-            d.Diagnosis,
-            d.Allergies,
-            d.Date_Visited,
-            d.Remarks || d.Remarks_Notes || null,
-            healthRecordId,
-          ],
-          (hrErr) => {
-            if (hrErr) {
-              console.error("❌ Health record update error:", hrErr);
-              return db.rollback(() => res.status(500).json(hrErr));
-            }
-
-            db.commit((commitErr) => {
-              if (commitErr) {
-                console.error("❌ Commit error:", commitErr);
-                return db.rollback(() => res.status(500).json(commitErr));
-              }
-              logActivity(
-                `${d.First_Name} ${d.Last_Name}`,
-                "modified",
-                d.admin_username,
-              );
-              res.json({ success: true });
-            });
-          },
-        );
-      },
-    );
+        db.commit((commitErr) => {
+          if (commitErr) return db.rollback(() => res.status(500).json(commitErr));
+          logActivity(d.Resident_ID, "modified", d.adminId);
+          res.json({ success: true });
+        });
+      });
+    });
   });
 });
 
-/* ================= DELETE HEALTH RECORD (CASCADE TRANSACTION) ================= */
+/* ================= DELETE HEALTH RECORD ================= */
 app.delete("/api/health-records/:id", (req, res) => {
   const healthRecordId = req.params.id;
-  const admin_username = req.query.admin_username;
+  const adminId = req.query.adminId;
 
-  db.query(
-    "SELECT r.First_Name, r.Last_Name, r.Resident_ID FROM health_records hr JOIN residents r ON hr.Resident_ID = r.Resident_ID WHERE hr.Health_Record_ID = ?",
-    [healthRecordId],
-    (err, rows) => {
-      if (err || rows.length === 0) {
-        console.error("❌ Delete query error:", err);
-        return res.status(404).json({ error: "Not found" });
-      }
+  db.query("SELECT Resident_ID FROM health_records WHERE Health_Record_ID = ?", [healthRecordId], (err, rows) => {
+    if (err || rows.length === 0) return res.status(404).json({ error: "Not found" });
+    const residentId = rows[0].Resident_ID;
 
-      const residentName = `${rows[0].First_Name} ${rows[0].Last_Name}`;
-      const residentId = rows[0].Resident_ID;
-
-      db.beginTransaction((err) => {
-        if (err) {
-          console.error("❌ Transaction error:", err);
-          return res.status(500).json(err);
-        }
-
-        db.query(
-          "DELETE FROM health_records WHERE Health_Record_ID = ?",
-          [healthRecordId],
-          (err) => {
-            if (err) {
-              console.error("❌ Delete health record error:", err);
-              return db.rollback(() => res.status(500).json(err));
-            }
-            db.query(
-              "DELETE FROM pending_resident WHERE Resident_ID = ?",
-              [residentId],
-              (err) => {
-                if (err) {
-                  console.error("❌ Delete pending error:", err);
-                  return db.rollback(() => res.status(500).json(err));
-                }
-                db.query(
-                  "DELETE FROM residents WHERE Resident_ID = ?",
-                  [residentId],
-                  (err) => {
-                    if (err) {
-                      console.error("❌ Delete resident error:", err);
-                      return db.rollback(() => res.status(500).json(err));
-                    }
-                    db.commit((err) => {
-                      if (err) {
-                        console.error("❌ Commit error:", err);
-                        return db.rollback(() => res.status(500).json(err));
-                      }
-                      logActivity(residentName, "removed", admin_username);
-                      res.json({ success: true });
-                    });
-                  },
-                );
-              },
-            );
-          },
-        );
+    db.beginTransaction((err) => {
+      if (err) return res.status(500).json(err);
+      db.query("DELETE FROM health_records WHERE Health_Record_ID = ?", [healthRecordId], (err) => {
+        if (err) return db.rollback(() => res.status(500).json(err));
+        db.query("DELETE FROM pending_resident WHERE Resident_ID = ?", [residentId], (err) => {
+          if (err) return db.rollback(() => res.status(500).json(err));
+          db.query("DELETE FROM residents WHERE Resident_ID = ?", [residentId], (err) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+            db.commit((err) => {
+              if (err) return db.rollback(() => res.status(500).json(err));
+              logActivity(residentId, "removed", adminId);
+              res.json({ success: true });
+            });
+          });
+        });
       });
-    },
-  );
+    });
+  });
 });
 
 /* ================= DELETE PENDING RESIDENT ================= */
-app.delete("/api/pending-residents/remove/:id", (req, res) => {
+app.delete("/api/pending-resident/remove/:id", (req, res) => {
   const pendingId = req.params.id;
-  const admin_username = req.query.admin_username;
+  const adminId = req.query.adminId;
 
-  db.query(
-    "SELECT r.First_Name, r.Last_Name, r.Resident_ID FROM pending_resident pr JOIN residents r ON pr.Resident_ID = r.Resident_ID WHERE pr.Pending_HR_ID = ?",
-    [pendingId],
-    (err, rows) => {
-      if (err || rows.length === 0) {
-        console.error("❌ Query error:", err);
-        return res.sendStatus(404);
-      }
+  db.query("SELECT Resident_ID FROM pending_resident WHERE Pending_HR_ID = ?", [pendingId], (err, rows) => {
+    if (err || rows.length === 0) return res.sendStatus(404);
+    const residentId = rows[0].Resident_ID;
 
-      const residentName = `${rows[0].First_Name} ${rows[0].Last_Name}`;
-      const residentId = rows[0].Resident_ID;
-
-      db.beginTransaction((err) => {
-        if (err) {
-          console.error("❌ Transaction error:", err);
-          return res.status(500).json(err);
-        }
-
-        db.query(
-          "DELETE FROM pending_resident WHERE Pending_HR_ID = ?",
-          [pendingId],
-          (err) => {
-            if (err) {
-              console.error("❌ Delete pending error:", err);
-              return db.rollback(() => res.status(500).json(err));
-            }
-            db.query(
-              "DELETE FROM residents WHERE Resident_ID = ?",
-              [residentId],
-              (err) => {
-                if (err) {
-                  console.error("❌ Delete resident error:", err);
-                  return db.rollback(() => res.status(500).json(err));
-                }
-                db.commit((err) => {
-                  if (err) {
-                    console.error("❌ Commit error:", err);
-                    return db.rollback(() => res.status(500).json(err));
-                  }
-                  logActivity(residentName, "removed", admin_username);
-                  res.json({ success: true });
-                });
-              },
-            );
-          },
-        );
+    db.beginTransaction((err) => {
+      if (err) return res.status(500).json(err);
+      db.query("DELETE FROM pending_resident WHERE Pending_HR_ID = ?", [pendingId], (err) => {
+        if (err) return db.rollback(() => res.status(500).json(err));
+        db.query("DELETE FROM residents WHERE Resident_ID = ?", [residentId], (err) => {
+          if (err) return db.rollback(() => res.status(500).json(err));
+          db.commit((err) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+            logActivity(residentId, "removed", adminId);
+            res.json({ success: true });
+          });
+        });
       });
-    },
-  );
+    });
+  });
 });
 
 /* ================= GET PENDING RESIDENTS ================= */
@@ -721,36 +393,19 @@ app.get("/api/pending-residents", (req, res) => {
 /* ================= AUTH LOGIN ================= */
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
-  const sql = "SELECT * FROM admins WHERE username = ?";
-  db.query(sql, [username], (err, rows) => {
-    if (err || rows.length === 0) {
-      console.error("❌ Login error:", err);
-      return res.status(401).json({ success: false });
-    }
+  db.query("SELECT * FROM admins WHERE username = ?", [username], (err, rows) => {
+    if (err || rows.length === 0) return res.status(401).json({ success: false });
     const admin = rows[0];
     const hashed = crypto.createHash("sha256").update(password).digest("hex");
     if (admin.password === hashed) {
-      res.json({
-        success: true,
-        adminId: admin.admin_id,
-        username: admin.username,
-      });
+      res.json({ success: true, adminId: admin.admin_id, username: admin.username });
     } else {
       res.status(401).json({ success: false });
     }
   });
 });
 
-/* ================= SERVER START ================= */
 const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(
-    `📊 Heatmap endpoint: http://localhost:${PORT}/api/heatmap-data?type=diagnosis`,
-  );
-  console.log(
-    `📊 Heatmap endpoint: http://localhost:${PORT}/api/heatmap-data?type=condition`,
-  );
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 export default app;

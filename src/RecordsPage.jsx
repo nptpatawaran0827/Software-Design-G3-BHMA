@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -20,6 +21,7 @@ const RecordsPage = ({
   onSubmitSuccess,
   onLogout,
 }) => {
+  const location = useLocation();
   /* ==================== STATE MANAGEMENT ==================== */
   const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
@@ -56,6 +58,16 @@ const RecordsPage = ({
       }
     }
   }, [autoOpenForm, preFillData, onSubmitSuccess]);
+
+   useEffect(() => {
+    if (location.state?.autoOpenForm) {
+      if (location.state.preFillData) {
+        setEditingRecord(location.state.preFillData);
+      }
+      setShowForm(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   /* ==================== AUTO-CLOSE TIMER ==================== */
   useEffect(() => {
@@ -97,7 +109,7 @@ const RecordsPage = ({
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/health-records");
+      const res = await fetch("http://localhost:5000/api/health-records");
       if (!res.ok) throw new Error("Failed to fetch data");
       const data = await res.json();
       setRecords(data);
@@ -110,7 +122,7 @@ const RecordsPage = ({
 
   const fetchPendingCount = async () => {
     try {
-      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/pending-residents");
+      const res = await fetch("http://localhost:5000/api/pending-residents");
       if (!res.ok) throw new Error("Failed to fetch pending residents");
       const data = await res.json();
       setPendingCount(data.length);
@@ -185,7 +197,7 @@ const RecordsPage = ({
     if (!window.confirm(`Are you sure you want to delete record for ID: ${residentId}?`)) return;
     const adminUsername = localStorage.getItem("username") || "Admin";
     try {
-      const res = await fetch(`https://software-design-g3-bhma-2026.onrender.com/api/health-records/${recordId}?admin_username=${adminUsername}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, { method: "DELETE" });
       if (res.ok) {
         setSubmissionStatus(residentId);
         setStatusMessage({ title: "Record Deleted", desc: "The health record was removed from the system.", type: "delete" });
@@ -379,7 +391,7 @@ const RecordsPage = ({
                                 {record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not recorded"}
                               </span>
                             </td>
-                            <td className="td-center"><span className="recorder-badge">{record.Recorded_By_Name || "Admin"}</span></td>
+                            <td className="td-center"><span className="recorder-badge">{record.Last_Modified_By_Name || record.Recorded_By_Name || "Admin"}</span></td>
                             <td className="td-center">
                               <span className={`status-badge ${!record.status || record.status === "Active" ? "status-active" : "status-inactive"}`}>
                                 {record.status || "Active"}
