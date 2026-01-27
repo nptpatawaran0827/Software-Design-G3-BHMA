@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -20,6 +21,7 @@ const RecordsPage = ({
   onSubmitSuccess,
   onLogout,
 }) => {
+  const location = useLocation();
   /* ==================== STATE MANAGEMENT ==================== */
   const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
@@ -56,6 +58,16 @@ const RecordsPage = ({
       }
     }
   }, [autoOpenForm, preFillData, onSubmitSuccess]);
+
+   useEffect(() => {
+    if (location.state?.autoOpenForm) {
+      if (location.state.preFillData) {
+        setEditingRecord(location.state.preFillData);
+      }
+      setShowForm(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   /* ==================== AUTO-CLOSE TIMER ==================== */
   useEffect(() => {
@@ -379,7 +391,7 @@ const RecordsPage = ({
                                 {record.Date_Visited ? new Date(record.Date_Visited).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Not recorded"}
                               </span>
                             </td>
-                            <td className="td-center"><span className="recorder-badge">{record.Recorded_By_Name || "Admin"}</span></td>
+                            <td className="td-center"><span className="recorder-badge">{record.Last_Modified_By_Name || record.Recorded_By_Name || "Admin"}</span></td>
                             <td className="td-center">
                               <span className={`status-badge ${!record.status || record.status === "Active" ? "status-active" : "status-inactive"}`}>
                                 {record.status || "Active"}
