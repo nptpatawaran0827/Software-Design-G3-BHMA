@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -20,6 +21,7 @@ const RecordsPage = ({
   onSubmitSuccess,
   onLogout,
 }) => {
+  const location = useLocation();
   /* ==================== STATE MANAGEMENT ==================== */
   const [showForm, setShowForm] = useState(false);
   const [records, setRecords] = useState([]);
@@ -56,6 +58,16 @@ const RecordsPage = ({
       }
     }
   }, [autoOpenForm, preFillData, onSubmitSuccess]);
+
+   useEffect(() => {
+    if (location.state?.autoOpenForm) {
+      if (location.state.preFillData) {
+        setEditingRecord(location.state.preFillData);
+      }
+      setShowForm(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   /* ==================== AUTO-CLOSE TIMER ==================== */
   useEffect(() => {
@@ -224,7 +236,7 @@ const RecordsPage = ({
       <div className="dashboard-container d-flex">
         <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
           <main className="flex-grow-1 main-content">
-
+            <HeaderBanner onAcceptResident={handleAcceptResident} onLogout={onLogout} />
             <HealthForm onCancel={handleCancelForm} onSubmit={handleSubmitForm} editMode={!!editingRecord?.Health_Record_ID} initialData={editingRecord} />
           </main>
         </div>

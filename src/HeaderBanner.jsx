@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import "./style/HeaderBanner.css";
 
 const HeaderBanner = ({ onAcceptResident, onLogout }) => {
+  const navigate = useNavigate();
   const [pendingResidents, setPendingResidents] = useState([]);
   const [showNotification, setShowNotification] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -115,6 +116,20 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
 
       setShowNotification(false);
       fetchPending();
+      
+      // ✅ ADDED - Navigate to Records page with state
+      navigate("/Records", {
+        state: {
+          autoOpenForm: true,
+          preFillData: {
+            ...resident,
+            Is_PWD: resident.Is_PWD == 1,
+            Health_Record_ID: result.Health_Record_ID,
+            Recorded_By_Name: currentAdminName,
+          }
+        }
+      });
+      // ✅ END OF ADDITION
     } catch (err) {
       console.error("Error accepting resident:", err);
     }

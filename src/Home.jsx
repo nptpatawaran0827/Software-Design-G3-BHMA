@@ -581,7 +581,6 @@ else if (action === "deleted" || action === "removed") {
           <HeaderBanner
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            onAcceptResident={handleAcceptResident}
             onLogout={onLogout}
           />
 
