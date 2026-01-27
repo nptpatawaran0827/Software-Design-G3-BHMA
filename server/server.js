@@ -363,10 +363,19 @@ app.delete("/api/pending-resident/remove/:id", (req, res) => {
 });
 
 /* ================= GET PENDING RESIDENTS ================= */
-app.get("/api/pending-resident", (req, res) => {
-  const sql = `SELECT pr.*, r.First_Name, r.Middle_Name, r.Last_Name, r.Sex, r.Birthdate, CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name FROM pending_resident pr JOIN residents r ON pr.Resident_ID = r.Resident_ID ORDER BY pr.Submitted_At DESC`;
+app.get("/api/pending-residents", (req, res) => {
+  const sql = `
+    SELECT pr.*, r.First_Name, r.Middle_Name, r.Last_Name, r.Sex, r.Birthdate,
+    CONCAT(r.First_Name,' ',r.Last_Name) AS Resident_Name
+    FROM pending_resident pr
+    JOIN residents r ON pr.Resident_ID = r.Resident_ID
+    ORDER BY pr.Submitted_At DESC
+  `;
   db.query(sql, (err, rows) => {
-    if (err) return res.status(500).json(err);
+    if (err) {
+      console.error("❌ Pending residents error:", err);
+      return res.status(500).json(err);
+    }
     res.json(rows);
   });
 });

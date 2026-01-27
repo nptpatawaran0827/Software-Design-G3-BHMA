@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./style/HeaderBanner.css";
@@ -49,6 +50,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
       });
     }
   };
+
 
   // Calculate position when opening and on resize
   useEffect(() => {

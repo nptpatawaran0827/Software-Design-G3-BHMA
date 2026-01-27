@@ -224,7 +224,7 @@ const RecordsPage = ({
       <div className="dashboard-container d-flex">
         <div className="main-wrapper flex-grow-1 bg-light d-flex flex-column">
           <main className="flex-grow-1 main-content">
-            <HeaderBanner onAcceptResident={handleAcceptResident} onLogout={onLogout} />
+
             <HealthForm onCancel={handleCancelForm} onSubmit={handleSubmitForm} editMode={!!editingRecord?.Health_Record_ID} initialData={editingRecord} />
           </main>
         </div>
