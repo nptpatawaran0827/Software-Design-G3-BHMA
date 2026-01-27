@@ -109,7 +109,7 @@ const RecordsPage = ({
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/health-records");
+      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/health-records");
       if (!res.ok) throw new Error("Failed to fetch data");
       const data = await res.json();
       setRecords(data);
@@ -122,7 +122,7 @@ const RecordsPage = ({
 
   const fetchPendingCount = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/pending-residents");
+      const res = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/pending-residents");
       if (!res.ok) throw new Error("Failed to fetch pending residents");
       const data = await res.json();
       setPendingCount(data.length);
@@ -197,7 +197,7 @@ const RecordsPage = ({
     if (!window.confirm(`Are you sure you want to delete record for ID: ${residentId}?`)) return;
     const adminUsername = localStorage.getItem("username") || "Admin";
     try {
-      const res = await fetch(`http://localhost:5000/api/health-records/${recordId}?admin_username=${adminUsername}`, { method: "DELETE" });
+      const res = await fetch(`https://software-design-g3-bhma-2026.onrender.com/api/health-records/${recordId}?admin_username=${adminUsername}`, { method: "DELETE" });
       if (res.ok) {
         setSubmissionStatus(residentId);
         setStatusMessage({ title: "Record Deleted", desc: "The health record was removed from the system.", type: "delete" });

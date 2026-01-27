@@ -102,7 +102,7 @@ const AnalyticsPage = ({ onLogout }) => {
   useEffect(() => {
     const fetchHealthRecords = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/health-records");
+        const response = await fetch("https://software-design-g3-bhma-2026.onrender.com/api/health-records");
         const data = await response.json();
         if (Array.isArray(data)) setHealthRecords(data);
       } catch (error) {

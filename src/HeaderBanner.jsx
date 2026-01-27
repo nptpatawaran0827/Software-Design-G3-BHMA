@@ -90,7 +90,7 @@ const HeaderBanner = ({ onAcceptResident, onLogout }) => {
       const currentAdminName = localStorage.getItem("username") || "Admin";
 
       const res = await fetch(
-        `http://localhost:5000/api/pending-resident/accept/${resident.Pending_HR_ID}`,
+        `https://software-design-g3-bhma-2026.onrender.com/api/pending-resident/accept/${resident.Pending_HR_ID}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
