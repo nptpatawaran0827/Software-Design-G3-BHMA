@@ -118,8 +118,12 @@ const HeatmapPage = ({ onLogout }) => {
             </div>
 
             {/* MAP CONTAINER */}
-            <div className="heatmap-map-container">
-              <StreetHeatmap viewMode={viewMode} filterValue={filterValue} />
+             <div className="heatmap-map-wrapper">
+              <StreetHeatmap 
+                key={viewMode} 
+                viewMode={viewMode} 
+                filterValue={filterValue} 
+              />
             </div>
 
             {/* LEGEND - Dynamic based on view mode */}

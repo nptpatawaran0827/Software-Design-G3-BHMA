@@ -1,9 +1,13 @@
 /* ===== PAGE CONTAINER ===== */
 .heatmap-page-container {
-  padding: 30px;
+    padding: 30px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
+  min-height: calc(100vh - 100px);
+  height: auto;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
  
  
@@ -98,20 +102,37 @@
   color: #333;
 }
  
- 
-/* ===== MAP CONTAINER ===== */
-.heatmap-wrapper {
-  position: relative;
-  margin-bottom: 30px;
-}
- 
- 
-.heatmap-map-container {
+ /* ===== MAP WRAPPER - NEW ===== */
+.heatmap-map-wrapper {
+  width: 100%;
+  height: 700px;
+  display: flex;
+  flex-direction: column;
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   animation: scaleIn 0.4s ease-out;
+}
+
+/* ===== MAP CONTAINER ===== */
+.heatmap-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+ 
+ 
+.heatmap-map-container {
+  background: white;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
  
  

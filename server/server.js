@@ -34,66 +34,134 @@ const logActivity = (residentId, action, adminId) => {
   });
 };
 
-/* ================= HEATMAP DATA ================= */
+/* ================= CACHE CLEARING HELPER ================= */
+const clearDatabaseCache = () => {
+  // Force MySQL to flush its internal cache
+  db.query("FLUSH TABLES", (err) => {
+    if (err) console.warn("⚠️ FLUSH TABLES warning:", err);
+  });
+  
+  // Removed: RESET QUERY CACHE (not supported in newer MySQL versions)
+};
+
+/* ================= HEATMAP DATA - UPDATED ================= */
 app.get("/api/heatmap-data", (req, res) => {
-  const type = req.query.type || "condition"; 
+  try {
+    const type = req.query.type || "condition";
+    console.log("🔵 Heatmap endpoint called - FRESH REQUEST");
+    console.log("📅 Timestamp:", new Date().toISOString());
+    console.log("🔍 Type requested:", type);
 
-  if (type === "diagnosis") {
-    const sql = `
-      SELECT
-        s.Street_ID, s.Street_Name, s.Latitude, s.Longitude,
-        r.Barangay, hr.Diagnosis, COUNT(*) as count
-      FROM health_records hr
-      JOIN residents r ON hr.Resident_ID = r.Resident_ID
-      JOIN streets s ON r.Street_ID = s.Street_ID
-      WHERE hr.Diagnosis IS NOT NULL AND hr.Diagnosis != ''
-      GROUP BY s.Street_ID, r.Barangay, hr.Diagnosis
-      ORDER BY s.Street_Name ASC, count DESC
-    `;
+    if (type === "diagnosis") {
+      const sql = `
+        SELECT 
+          s.Street_ID, 
+          s.Street_Name, 
+          s.Latitude, 
+          s.Longitude,
+          r.Barangay, 
+          hr.Diagnosis, 
+          COUNT(*) as count
+        FROM health_records hr
+        JOIN residents r ON hr.Resident_ID = r.Resident_ID
+        JOIN streets s ON r.Street_ID = s.Street_ID
+        WHERE hr.Diagnosis IS NOT NULL AND hr.Diagnosis != ''
+        GROUP BY s.Street_ID, s.Street_Name, s.Latitude, s.Longitude, r.Barangay, hr.Diagnosis
+        HAVING COUNT(*) = (
+          SELECT MAX(diagnosis_count)
+          FROM (
+            SELECT COUNT(*) as diagnosis_count
+            FROM health_records hr2
+            JOIN residents r2 ON hr2.Resident_ID = r2.Resident_ID
+            WHERE r2.Street_ID = s.Street_ID
+              AND hr2.Diagnosis IS NOT NULL 
+              AND hr2.Diagnosis != ''
+            GROUP BY hr2.Diagnosis
+          ) as counts
+        )
+        ORDER BY s.Street_Name ASC
+      `;
 
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error("❌ Diagnosis heatmap query error:", err);
-        return res.status(500).json({ error: err.message });
-      }
-      const topDiagnosisPerStreet = {};
-      const filteredResults = [];
-      results.forEach((row) => {
-        if (!topDiagnosisPerStreet[row.Street_ID]) {
-          topDiagnosisPerStreet[row.Street_ID] = true;
-          filteredResults.push(row);
+      console.log("📝 Executing diagnosis query...");
+      
+      db.query(sql, (err, results) => {
+        if (err) {
+          console.error("❌ SQL Error:", err);
+          return res.status(500).json({ error: err.message, sqlMessage: err.sqlMessage });
         }
+        
+        console.log("✅ Diagnosis Query results:", results.length, "rows returned");
+        results.slice(0, 3).forEach((row, idx) => {
+          console.log(`  Row ${idx + 1}: ${row.Street_Name} → ${row.Diagnosis} (${row.count} cases)`);
+        });
+        
+        res.set({
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Surrogate-Control': 'no-store'
+        });
+        
+        res.json(results);
       });
-      res.json(filteredResults);
-    });
-  } else {
-    const sql = `
-      SELECT
-        s.Street_ID, s.Street_Name, s.Latitude, s.Longitude,
-        r.Barangay, hr.Health_Condition, COUNT(*) as count
-      FROM health_records hr
-      JOIN residents r ON hr.Resident_ID = r.Resident_ID
-      JOIN streets s ON r.Street_ID = s.Street_ID
-      WHERE hr.Health_Condition IS NOT NULL AND hr.Health_Condition != ''
-      GROUP BY s.Street_ID, r.Barangay, hr.Health_Condition
-      ORDER BY s.Street_Name ASC, count DESC
-    `;
+    } else if (type === "condition") {
+      const sql = `
+        SELECT 
+          s.Street_ID, 
+          s.Street_Name, 
+          s.Latitude, 
+          s.Longitude,
+          r.Barangay, 
+          hr.Health_Condition, 
+          COUNT(*) as count
+        FROM health_records hr
+        JOIN residents r ON hr.Resident_ID = r.Resident_ID
+        JOIN streets s ON r.Street_ID = s.Street_ID
+        WHERE hr.Health_Condition IS NOT NULL AND hr.Health_Condition != ''
+        GROUP BY s.Street_ID, s.Street_Name, s.Latitude, s.Longitude, r.Barangay, hr.Health_Condition
+        HAVING COUNT(*) = (
+          SELECT MAX(condition_count)
+          FROM (
+            SELECT COUNT(*) as condition_count
+            FROM health_records hr2
+            JOIN residents r2 ON hr2.Resident_ID = r2.Resident_ID
+            WHERE r2.Street_ID = s.Street_ID
+              AND hr2.Health_Condition IS NOT NULL 
+              AND hr2.Health_Condition != ''
+            GROUP BY hr2.Health_Condition
+          ) as counts
+        )
+        ORDER BY s.Street_Name ASC
+      `;
 
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error("❌ Condition heatmap query error:", err);
-        return res.status(500).json({ error: err.message });
-      }
-      const topConditionPerStreet = {};
-      const filteredResults = [];
-      results.forEach((row) => {
-        if (!topConditionPerStreet[row.Street_ID]) {
-          topConditionPerStreet[row.Street_ID] = true;
-          filteredResults.push(row);
+      console.log("📝 Executing condition query...");
+      
+      db.query(sql, (err, results) => {
+        if (err) {
+          console.error("❌ SQL Error:", err);
+          return res.status(500).json({ error: err.message, sqlMessage: err.sqlMessage });
         }
+        
+        console.log("✅ Condition Query results:", results.length, "rows returned");
+        results.slice(0, 3).forEach((row, idx) => {
+          console.log(`  Row ${idx + 1}: ${row.Street_Name} → ${row.Health_Condition} (${row.count} cases)`);
+        });
+        
+        res.set({
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Surrogate-Control': 'no-store'
+        });
+        
+        res.json(results);
       });
-      res.json(filteredResults);
-    });
+    } else {
+      return res.status(400).json({ error: 'Invalid type parameter. Use "diagnosis" or "condition".' });
+    }
+  } catch (error) {
+    console.error("❌ Endpoint Error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -102,6 +170,16 @@ app.get("/api/streets", (req, res) => {
   db.query("SELECT * FROM streets ORDER BY Street_Name ASC", (err, rows) => {
     if (err) return res.status(500).json(err);
     res.json(rows);
+  });
+});
+
+app.get("/api/test-streets", (req, res) => {
+  db.query("SELECT * FROM streets LIMIT 1", (err, results) => {
+    if (err) {
+      console.error("❌ Streets query failed:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
   });
 });
 

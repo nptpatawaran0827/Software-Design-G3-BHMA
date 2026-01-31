@@ -15,6 +15,9 @@ export const diagnosisSeverityMap = {
   'Chronic Kidney Disease': { severity: 'High', color: '#FF0000', icon: '🔴' },
   'Severe Hypertension': { severity: 'High', color: '#FF0000', icon: '🔴' },
   'Tuberculosis': { severity: 'High', color: '#FF0000', icon: '🔴' },
+  'Dengue Fever': { severity: 'High', color: '#FF0000', icon: '🔴' },
+  'Kidney Failure': { severity: 'High', color: '#FF0000', icon: '🔴' },
+  'Liver Cirrhosis': { severity: 'High', color: '#FF0000', icon: '🔴' },
 
 
   // ===== MODERATE/MEDIUM SEVERITY (Orange) =====
@@ -26,6 +29,9 @@ export const diagnosisSeverityMap = {
   'High Cholesterol': { severity: 'Medium', color: '#FF7F00', icon: '🟠' },
   'Gastritis': { severity: 'Medium', color: '#FF7F00', icon: '🟠' },
   'Bronchitis': { severity: 'Medium', color: '#FF7F00', icon: '🟠' },
+  'Urinary Tract Infection': { severity: 'Medium', color: '#FF7F00', icon: '🟠' },
+  'Migraine': { severity: 'Medium', color: '#FF7F00', icon: '🟠' },
+  'Anemia': { severity: 'Medium', color: '#FF7F00', icon: '🟠' },
 
 
   // ===== MILD/LOW SEVERITY (Yellow) =====
@@ -40,6 +46,12 @@ export const diagnosisSeverityMap = {
   'Allergies': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
   'Amnesia': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
   'baliw': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
+  'Dizziness': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
+  'Back Pain': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
+  'Backpain': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
+  'Insomnia': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
+  'Nausea': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
+  'Fever': { severity: 'Low', color: '#FFFF00', icon: '🟡' },
 
 
   // ===== HEALTHY/GOOD (Green/Blue) =====

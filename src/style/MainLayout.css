@@ -15,6 +15,12 @@
   width: 100%;
 }
 
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  width: 100%;
+}
+
 /* Mobile Hamburger Button */
 .mobile-menu-btn {
   position: fixed;
